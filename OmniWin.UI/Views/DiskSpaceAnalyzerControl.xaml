@@ -1,0 +1,145 @@
+<UserControl x:Class="OmniWin.UI.Views.DiskSpaceAnalyzerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <!-- Header Card -->
+            <RowDefinition Height="Auto" />
+            <!-- Progress Section -->
+            <RowDefinition Height="Auto" />
+            <!-- Main Content (Tabs) -->
+            <RowDefinition Height="*" />
+            <!-- Status Bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- HEADER CARD -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💾 Analizador Visual de Espacio en Disco" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                        <Border Background="#064E3B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="ESTILO WIZTREE / TREESIZE" FontSize="9.5" FontWeight="Bold" Foreground="#6EE7B7" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Escaneo rápido de carpetas devoradoras de espacio, archivos gigantes ocultos y caché residual del sistema operativo."
+                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Unidad:" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,6,0" />
+                    <ComboBox x:Name="CmbDrives" Width="100" Padding="8,5" Margin="0,0,8,0" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" />
+                    <Button x:Name="BtnStartScan" Content="🚀 Iniciar Escaneo" Click="BtnStartScan_Click" Background="#10B981" Foreground="White" Margin="0,0,6,0" Padding="12,6" FontSize="12" />
+                    <Button x:Name="BtnCancelScan" Content="⏹ Detener" Click="BtnCancelScan_Click" Style="{DynamicResource SecondaryButton}" IsEnabled="False" Padding="10,6" FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- PROGRESS SECTION (VISIBLE DURING SCAN) -->
+        <Border Grid.Row="1" x:Name="PnlProgress" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,14" Visibility="Collapsed">
+            <StackPanel>
+                <Grid Margin="0,0,0,6">
+                    <TextBlock x:Name="TxtScanningPath" Text="Escaneando..." FontSize="11.5" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="TxtScanStats" Text="0 archivos | 0 MB" HorizontalAlignment="Right" FontSize="11.5" FontWeight="Bold" Foreground="#38BDF8" />
+                </Grid>
+                <ProgressBar x:Name="PbScan" IsIndeterminate="True" Height="6" Background="#050811" Foreground="#10B981" BorderThickness="0" />
+            </StackPanel>
+        </Border>
+
+        <!-- MAIN TABS -->
+        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
+            <!-- TAB 1: CARPETAS MÁS PESADAS -->
+            <TabItem Header="📁 Carpetas Más Pesadas">
+                <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,10,0,0">
+                    <DataGrid x:Name="DgFolders" AutoGenerateColumns="False" IsReadOnly="True"
+                              Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                              Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Carpeta" Binding="{Binding FolderName}" Width="180" />
+                            <DataGridTextColumn Header="Tamaño Total" Binding="{Binding FormattedSize}" Width="120" />
+                            <DataGridTextColumn Header="Archivos" Binding="{Binding FileCount, StringFormat={}{0:N0}}" Width="90" />
+                            <DataGridTextColumn Header="% del Disco" Binding="{Binding PercentOfRoot, StringFormat={}{0:F1}%}" Width="90" />
+                            <DataGridTextColumn Header="Ruta Completa" Binding="{Binding FullPath}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- TAB 2: ARCHIVOS GIGANTES -->
+            <TabItem Header="🐘 Archivos Gigantes (>50 MB)">
+                <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,10,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <DataGrid Grid.Row="0" x:Name="DgFiles" AutoGenerateColumns="False" IsReadOnly="True"
+                                  Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                  Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Archivo" Binding="{Binding FileName}" Width="240" />
+                                <DataGridTextColumn Header="Tamaño" Binding="{Binding FormattedSize}" Width="110" />
+                                <DataGridTextColumn Header="Extensión" Binding="{Binding Extension}" Width="90" />
+                                <DataGridTextColumn Header="Última Modificación" Binding="{Binding LastModified, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Width="150" />
+                                <DataGridTextColumn Header="Ruta Completa" Binding="{Binding FullPath}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button x:Name="BtnOpenSelectedFile" Content="📂 Abrir en Explorador de Windows" Click="BtnOpenSelectedFile_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- TAB 3: CATEGORÍAS Y EXTENSIONES -->
+            <TabItem Header="📊 Desglose por Tipo">
+                <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,10,0,0">
+                    <DataGrid x:Name="DgCategories" AutoGenerateColumns="False" IsReadOnly="True"
+                              Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                              Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="" Binding="{Binding Icon}" Width="40" />
+                            <DataGridTextColumn Header="Categoría de Contenido" Binding="{Binding CategoryName}" Width="240" />
+                            <DataGridTextColumn Header="Espacio Ocupado" Binding="{Binding FormattedSize}" Width="140" />
+                            <DataGridTextColumn Header="Cantidad" Binding="{Binding FileCount, StringFormat={}{0:N0}}" Width="110" />
+                            <DataGridTextColumn Header="Porcentaje" Binding="{Binding Percentage, StringFormat={}{0:F1}%}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- TAB 4: ARCHIVOS ESPECIALES DE SISTEMA -->
+            <TabItem Header="⚙️ Archivos Especiales de Sistema">
+                <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,10,0,0">
+                    <DataGrid x:Name="DgSystemFiles" AutoGenerateColumns="False" IsReadOnly="True"
+                              Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                              Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Componente" Binding="{Binding Name}" Width="240" />
+                            <DataGridTextColumn Header="Tamaño en Disco" Binding="{Binding FormattedSize}" Width="130" />
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Description}" Width="260" />
+                            <DataGridTextColumn Header="Recomendación Técnica" Binding="{Binding Recommendation}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+        </TabControl>
+
+        <!-- STATUS BAR -->
+        <Border Grid.Row="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+            <TextBlock x:Name="TxtStatus" Text="Selecciona una unidad y haz clic en 'Iniciar Escaneo'." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+        </Border>
+    </Grid>
+</UserControl>

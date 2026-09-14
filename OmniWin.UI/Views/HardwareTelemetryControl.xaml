@@ -1,0 +1,480 @@
+<UserControl x:Class="OmniWin.UI.Views.HardwareTelemetryControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:views="clr-namespace:OmniWin.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="950"
+             Foreground="{DynamicResource TextPrimary}"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+
+    <UserControl.Resources>
+        <!-- Sparkline Gradients -->
+        <LinearGradientBrush x:Key="CpuAreaGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#5010B981" Offset="0.0" />
+            <GradientStop Color="#1A10B981" Offset="0.6" />
+            <GradientStop Color="#0010B981" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="RamAreaGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#500284C7" Offset="0.0" />
+            <GradientStop Color="#1A0284C7" Offset="0.6" />
+            <GradientStop Color="#000284C7" Offset="1.0" />
+        </LinearGradientBrush>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False" PanningMode="VerticalOnly">
+        <StackPanel Margin="0,4,0,0">
+            <!-- SECTION 1: PROMETHEUS EXPORTER CARD -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar: Status, Title, Action Buttons -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border x:Name="BadgeServerStatus" Background="#064E3B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="DotServerStatus" Width="8" Height="8" Fill="#10B981" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TxtServerStatusBadge" Text="ACTIVO" FontSize="11" FontWeight="Bold" Foreground="#34D399" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="TxtServerTitle" Text="Servidor Prometheus (windows_exporter)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Servidor HTTP embebido nativo windows_exporter para ingestión directa en Prometheus, VictoriaMetrics o Grafana Agent." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnToggleServer" Content="⏹️ Detener Servidor" Click="BtnToggleServer_Click" Background="#B91C1C" Foreground="White" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
+                            <Button x:Name="BtnCopyUrl" Content="📋 Copiar URL" Click="BtnCopyUrl_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
+                            <Button x:Name="BtnOpenBrowser" Content="🌐 Abrir en Navegador" Click="BtnOpenBrowser_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Sub Bar: Live Details & Feedback -->
+                    <Border Grid.Row="1" Background="#090D16" CornerRadius="6" Padding="12,8" Margin="0,14,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <Grid>
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="URL Endpoint: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtEndpointUrl" Text="http://localhost:9182/metrics" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,18,0" />
+
+                                <TextBlock Text="Scrapes: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtScrapesCount" Text="0" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" Margin="0,0,18,0" />
+
+                                <TextBlock Text="Uptime: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtServerUptime" Text="00:00:00" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,18,0" />
+
+                                <TextBlock Text="Métricas: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock Text="8 activas (CPU, RAM, Disco, Uptime, Handles, Threads)" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            </WrapPanel>
+                            <TextBlock x:Name="TxtActionFeedback" Text="" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- SECTION 2: GAMING HUD OVERLAY & RIVATUNER / RTSS -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border x:Name="BadgeOverlayStatus" Background="#1E293B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="DotOverlayStatus" Width="8" Height="8" Fill="#64748B" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TxtOverlayStatusBadge" Text="INACTIVO" FontSize="11" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Overlay HUD en Juego &amp; RivaTuner (RTSS)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="HUD flotante no invasivo (100% inmune a anti-cheats) con CPU, RAM, GPU y Latencia + sincronización con memoria compartida de RivaTuner Statistics Server." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnToggleOverlayHud" Content="🎮 Abrir HUD en Juego" Click="BtnToggleOverlayHud_Click" Background="#10B981" Foreground="White" Margin="0,0,8,0" Padding="14,6" FontSize="12" />
+                            <Button x:Name="BtnConfigOverlayHud" Content="⚙️ Personalizar HUD" Click="BtnConfigOverlayHud_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" ToolTip="Elegir estilo (Riva Texto / Tarjeta / Barra), escala, transparencia y métricas" />
+                            <Button x:Name="BtnToggleRtssSync" Content="🔄 Sync RTSS: On" Click="BtnToggleRtssSync_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="#090D16" CornerRadius="6" Padding="12,8" Margin="0,14,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Atajo Mostrar/Ocultar: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBlock Text="Ctrl + Shift + O" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,14,0" />
+
+                            <TextBlock Text="Atajo Bloquear (En Juego): " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBlock Text="Ctrl + Shift + L" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" Margin="0,0,18,0" />
+
+                            <TextBlock Text="RivaTuner Instalado: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBlock x:Name="TxtRtssInstalled" Text="Detectando..." FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,18,0" />
+
+                            <TextBlock Text="Estado RTSS: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBlock x:Name="TxtRtssRunning" Text="Inactivo" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,18,0" />
+
+                            <TextBlock Text="Modo: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBlock Text="Ventana Layered Click-Through (Anti-Cheat Safe)" FontSize="11" Foreground="#34D399" />
+                        </WrapPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- SECTION 3: GPU HARDWARE, PCIE LINK & RESIZABLE BAR (GPU-Z DEEP INSPECTOR) -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Row: Title, Subtitle, Badges & Refresh Button -->
+                    <Grid Grid.Row="0" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border Background="#1E1B4B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" Fill="#818CF8" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="GPU-Z DEEP INSPECTION" FontSize="10.5" FontWeight="Bold" Foreground="#A5B4FC" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="TxtGpuModelHeader" Text="NVIDIA GeForce RTX 3080" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Inspección de enlace PCIe a nivel de silicio, negociación de carriles (1x/4x/8x/16x), versión VBIOS y estado real de Resizable BAR." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnRefreshGpuDiag" Content="🔄 Re-analizar Enlace" Click="BtnRefreshGpuDiag_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" ToolTip="Vuelve a consultar los registros de enlace PCIe y memoria BAR1 directamente del controlador" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Hardware Identification Chips -->
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
+                        <!-- VBIOS Chip -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="VBIOS: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtGpuVbiosChip" Text="Detectando..." FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Bus Slot Chip -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Slot PCIe: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtGpuSlotChip" Text="0000:06:00.0" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Vendor Chip -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Fabricante: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtGpuVendorChip" Text="ZOTAC Technology" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Driver Chip -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Driver: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtGpuDriverChip" Text="NVIDIA 596.02" FontSize="11" FontWeight="SemiBold" Foreground="#A78BFA" />
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+
+                    <!-- 4 Metric Cards Grid -->
+                    <Grid Grid.Row="2" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Card 1: PCIe Link Width -->
+                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
+                            <StackPanel>
+                                <TextBlock Text="CARRIL PCIE (LINK WIDTH)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,4">
+                                    <TextBlock x:Name="TxtPcieWidthVal" Text="x4" FontSize="22" FontWeight="Bold" Foreground="#F59E0B" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TxtPcieWidthMaxVal" Text=" / x16 max" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Bottom" Margin="6,0,0,2" />
+                                </StackPanel>
+                                <ProgressBar x:Name="PbPcieWidth" Value="25" Maximum="100" Height="5" Background="#1E293B" Foreground="#F59E0B" Margin="0,4,0,4" />
+                                <TextBlock x:Name="TxtPcieWidthPercent" Text="25% del bus total" FontSize="10" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 2: PCIe Generation -->
+                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                            <StackPanel>
+                                <TextBlock Text="GENERACIÓN PCIE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtPcieGenVal" Text="PCIe 4.0" FontSize="22" FontWeight="Bold" Foreground="#10B981" Margin="0,6,0,4" />
+                                <TextBlock x:Name="TxtPcieGenDetails" Text="GPU: Gen 4.0 • Host: Gen 4.0" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock Text="Velocidad: 16.0 GT/s por carril" FontSize="10" Foreground="#64748B" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 3: Resizable BAR (ReBAR) -->
+                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="RESIZABLE BAR (REBAR)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                    <Border x:Name="BadgeReBarState" Background="#450A0A" CornerRadius="3" Padding="5,1" HorizontalAlignment="Right">
+                                        <TextBlock x:Name="TxtReBarBadge" Text="INACTIVO" FontSize="9" FontWeight="Bold" Foreground="#F87171" />
+                                    </Border>
+                                </Grid>
+                                <TextBlock x:Name="TxtReBarApertureVal" Text="256 MiB" FontSize="22" FontWeight="Bold" Foreground="#F87171" Margin="0,2,0,4" />
+                                <TextBlock x:Name="TxtReBarSubtext" Text="Apertura BAR1 Legacy (32-bit)" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtReBarUsed" Text="En uso: 227 / 256 MiB" FontSize="10" Foreground="#64748B" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 4: Framebuffer VRAM -->
+                        <Border Grid.Column="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="MEMORIA VRAM" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtVramTotalVal" Text="10240 MiB" FontSize="22" FontWeight="Bold" Foreground="#38BDF8" Margin="0,6,0,4" />
+                                <TextBlock Text="10 GB GDDR6X (320-bit)" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock Text="Silicio: NVIDIA GA102" FontSize="10" Foreground="#64748B" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 3: Diagnostic Alerts & Recommendations -->
+                    <StackPanel Grid.Row="3">
+                        <!-- Width Bottleneck Alert -->
+                        <Border x:Name="BoxWidthBottleneck" Visibility="Visible" Background="#261705" BorderBrush="#D97706" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="⚠️" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Alerta de Cuello de Botella en Enlace PCIe (Negociación reducida a x4)" FontSize="11.5" FontWeight="Bold" Foreground="#FBBF24" />
+                                    <TextBlock x:Name="TxtWidthBottleneckMsg" Text="Tu placa de video está operando en modo PCIe 4.0 x4 de 16 líneas posibles (25% del ancho de banda total). Esto suele suceder si la GPU está instalada en una ranura PCIe secundaria, si comparte líneas con una unidad SSD NVMe en slots M2_2/M2_3, o si el modo de ahorro de energía PCIe ASPM está activo en reposo." FontSize="11" Foreground="#FDE68A" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- ReBAR Setup Notice -->
+                        <Border x:Name="BoxReBarNotice" Visibility="Visible" Background="#0C1D33" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="💡" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Optimización Disponible: Resizable BAR Desactivado en BIOS" FontSize="11.5" FontWeight="Bold" Foreground="#38BDF8" />
+                                    <TextBlock x:Name="TxtReBarNoticeMsg" Text="Tu RTX 3080 soporta Resizable BAR para acceso directo de la CPU a toda la VRAM (+5% a +12% FPS en títulos modernos). Para activarlo, reinicia tu PC, accede a la configuración UEFI/BIOS de tu motherboard y activa 'Above 4G Decoding' y 'Re-Size BAR Support'." FontSize="11" Foreground="#BAE6FD" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- SECTION 4: LIVE GRAPHS (SPARKLINES) -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- CPU LIVE GRAPH CARD -->
+                <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                    <StackPanel>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="#064E3B" CornerRadius="6" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock Text="⚡" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#34D399" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="USO DE PROCESADOR (CPU)" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TxtCpuCurrentVal" Text="--%" FontSize="20" FontWeight="Bold" Foreground="#10B981" Margin="14,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="TxtCpuStats" Text="Historial últimos 60 segundos • Frecuencia: 1 Hz" FontSize="11" Foreground="#64748B" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Background="#1E293B" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="60 segundos en vivo" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Canvas Box -->
+                        <Border Background="#070A12" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Height="150" ClipToBounds="True">
+                            <Grid>
+                                <!-- Subtle Guide Lines -->
+                                <Grid Margin="8,6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="0" Text="100%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+                                    
+                                    <Border Grid.Row="1" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="1" Text="75%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+
+                                    <Border Grid.Row="2" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="2" Text="50%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+
+                                    <Border Grid.Row="3" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="3" Text="25%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+                                </Grid>
+
+                                <!-- Active WPF Shapes in Canvas -->
+                                <Canvas x:Name="CanvasCpu" SizeChanged="CanvasCpu_SizeChanged" ClipToBounds="True">
+                                    <Polygon x:Name="PolyAreaCpu" Fill="{StaticResource CpuAreaGradient}" />
+                                    <Polyline x:Name="PolyLineCpu" Stroke="#10B981" StrokeThickness="2.2" StrokeLineJoin="Round" />
+                                    <Ellipse x:Name="DotCurrentCpu" Width="7" Height="7" Fill="#10B981" Stroke="#ECFDF5" StrokeThickness="1.5" Visibility="Collapsed" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- RAM LIVE GRAPH CARD -->
+                <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
+                    <StackPanel>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="#0B192C" CornerRadius="6" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock Text="🧠" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource Accent}" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="MEMORIA RAM FÍSICA" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TxtRamCurrentVal" Text="--%" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="14,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="TxtRamStats" Text="Usada: -- GB / -- GB • Disponible: -- GB" FontSize="11" Foreground="#64748B" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Background="#1E293B" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="60 segundos en vivo" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Canvas Box -->
+                        <Border Background="#070A12" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Height="150" ClipToBounds="True">
+                            <Grid>
+                                <!-- Subtle Guide Lines -->
+                                <Grid Margin="8,6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="0" Text="100%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+                                    
+                                    <Border Grid.Row="1" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="1" Text="75%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+
+                                    <Border Grid.Row="2" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="2" Text="50%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+
+                                    <Border Grid.Row="3" BorderBrush="#162032" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Row="3" Text="25%" FontSize="9" Foreground="#334155" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,2,0" />
+                                </Grid>
+
+                                <!-- Active WPF Shapes in Canvas -->
+                                <Canvas x:Name="CanvasRam" SizeChanged="CanvasRam_SizeChanged" ClipToBounds="True">
+                                    <Polygon x:Name="PolyAreaRam" Fill="{StaticResource RamAreaGradient}" />
+                                    <Polyline x:Name="PolyLineRam" Stroke="{DynamicResource Accent}" StrokeThickness="2.2" StrokeLineJoin="Round" />
+                                    <Ellipse x:Name="DotCurrentRam" Width="7" Height="7" Fill="{DynamicResource Accent}" Stroke="#F0F9FF" StrokeThickness="1.5" Visibility="Collapsed" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- SECTION 4: KERNEL DPC LATENCY & TIMER RESOLUTION -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,16,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⏱️ Latencia de Kernel &amp; Resolución de Reloj" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <Border Background="#0C4A6E" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="ESTILO LATENCYMON" FontSize="9" FontWeight="Bold" Foreground="#BAE6FD" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Auditoría de resolución del temporizador de Windows (NtQueryTimerResolution) y jitter de interrupciones DPC en microsegundos." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnApplyHighResTimer" Content="⚡ Activar Timer 0.5ms" Click="BtnApplyHighResTimer_Click" Background="#0284C7" Foreground="White" Margin="0,0,8,0" Padding="12,6" FontSize="11" />
+                            <Button x:Name="BtnBenchmarkLatency" Content="🧪 Test de Jitter DPC" Click="BtnBenchmarkLatency_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="#090D16" CornerRadius="6" Padding="14,10" Margin="0,14,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <Grid>
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Resolución Actual: " FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtTimerCurrent" Text="Calculando..." FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,24,0" />
+
+                                <TextBlock Text="Resolución Máxima: " FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtTimerMax" Text="0.500 ms" FontSize="12" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,24,0" />
+
+                                <TextBlock Text="Jitter Máximo DPC: " FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtLatencyJitter" Text="Pendiente de test" FontSize="12" FontWeight="Bold" Foreground="#F59E0B" Margin="0,0,24,0" />
+
+                                <TextBlock Text="Veredicto: " FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtLatencyVerdict" Text="Presiona 'Test de Jitter DPC' para auditar" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- SECTION 5: HARDWARE SENSORS, FANS & THERMAL ALARMS -->
+            <views:ThermalCoolerControl Margin="0,16,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

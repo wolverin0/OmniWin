@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: pauol.OmniWin
+PackageVersion: 1.2.0
+PackageLocale: en-US
+Publisher: pauol
+PublisherUrl: https://github.com/pauol
+PublisherSupportUrl: https://github.com/pauol/OmniWin/issues
+Author: pauol
+PackageName: OmniWin
+PackageUrl: https://github.com/pauol/OmniWin
+License: MIT
+LicenseUrl: https://github.com/pauol/OmniWin/blob/main/LICENSE
+Copyright: Copyright (c) 2026 pauol
+ShortDescription: High-performance Windows Control Plane, Optimizer, System Tweaker & AI Agent (MCP Server)
+Description: |
+  OmniWin is a state-of-the-art Windows control plane and optimization suite featuring:
+  - Real-time hardware telemetry and DPC latency monitor
+  - Process tree forensics, loaded modules, and TCP socket mapping
+  - RAM optimizer with standby list purging and native NT system calls
+  - Safe disk cleaner and visual TreeSize-style storage analyzer
+  - 55+ verified low-level tweaks and UWP bloatware uninstaller
+  - WinGet software package manager and OEM driver backup
+  - DISM WinSxS component store cleanup and 6-step system repair console
+  - 16 Microsoft Defender Attack Surface Reduction (ASR) rules
+  - Power plan & CPU core topology manager (P/E cores, EPP, Core Parking)
+  - Gaming HUD Overlay (Ctrl+Shift+O) and Floating Traffic Widget (Ctrl+Shift+W)
+  - 28-tool Model Context Protocol (MCP) server for Claude, Cursor, and Antigravity
+Tags:
+  - optimizer
+  - tweaks
+  - debloat
+  - windows
+  - telemetry
+  - performance
+  - gaming
+  - latency
+  - mcp
+  - control-plane
+ReleaseNotesUrl: https://github.com/pauol/OmniWin/releases/tag/v1.2.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

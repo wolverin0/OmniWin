@@ -1,0 +1,304 @@
+<UserControl x:Class="OmniWin.UI.Views.PowerCpuManagerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="850" d:DesignWidth="950"
+             Foreground="{DynamicResource TextPrimary}"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,4,0,24">
+
+            <!-- 1. HEADER HERO: CPU HARDWARE & ENERGY PROFILES -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border Background="#1C1917" BorderBrush="#78350F" BorderThickness="1" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" Fill="#F59E0B" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="CPU &amp; POWER ENGINE" FontSize="10.5" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="TxtCpuHeaderName" Text="Intel(R) Core(TM) i9-14900K" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Ajustes de silicio: Core Parking (latencia de des-estacionamiento), Energy Performance Preference (EPP), scheduler para P/E-Cores y administración inteligente de planes de energía." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnRefreshAll" Content="🔄 Actualizar Estado" Click="BtnRefreshAll_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
+                            <Button x:Name="BtnUnlockUltimate" Content="⚡ Desbloquear Ultimate Perf" Click="BtnUnlockUltimate_Click" Background="#0284C7" Foreground="White" Padding="12,6" FontSize="12" ToolTip="Desbloquea el esquema oculto de Microsoft 'Ultimate Performance' en Windows" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- CPU Hardware Specs Chips -->
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,14,0,0">
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Arquitectura: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtCpuArchChip" Text="Intel Híbrido (P-Cores + E-Cores)" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Hilos Lógicos: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtCpuThreadsChip" Text="32 Hilos" FontSize="11" FontWeight="SemiBold" Foreground="#10B981" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Timer NT: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtTimerResChip" Text="0.5 ms (Máxima Precisión)" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Plan de Energía Activo: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtActivePlanChip" Text="Azurite Power Plan" FontSize="11" FontWeight="SemiBold" Foreground="#EC4899" />
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+                </Grid>
+            </Border>
+
+            <!-- 2. POWER SCHEMES MANAGER & SMART RECOMMENDATIONS -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT: Power Schemes List & Active Selector -->
+                <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,8,0">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="🔋 Administrador de Planes de Energía" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Planes instalados en tu sistema operativo con cambio en 1 clic." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- ItemsControl of Schemes -->
+                        <ItemsControl x:Name="IcPowerSchemes">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" />
+                                                    <Border Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" Background="#064E3B" CornerRadius="4" Padding="6,1" Margin="8,0,0,0">
+                                                        <TextBlock Text="ACTIVO" FontSize="9.5" FontWeight="Bold" Foreground="#34D399" />
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Guid}" FontSize="10" Foreground="#64748B" Margin="0,2,0,0" />
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1" Content="Activar Plan" Click="BtnActivateScheme_Click" Tag="{Binding Guid}" Style="{DynamicResource SecondaryButton}" Padding="10,5" FontSize="11" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Timer Resolution Quick Switch -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Temporizador Global NT (Timer Resolution)" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock Text="Reduce el intervalo de interrupción a 0.5ms para estabilizar el frametime y reducir el input lag en juegos competitivos." FontSize="11" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <Button Grid.Column="1" x:Name="BtnToggleTimer05" Content="⚡ Fijar a 0.5 ms" Click="BtnToggleTimer05_Click" Background="#10B981" Foreground="White" Padding="10,5" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- RIGHT: SMART RECOMMENDATIONS ENGINE -->
+                <Border Grid.Column="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="8,0,0,0">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="💡 Recomendaciones Inteligentes del Perfil" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock x:Name="TxtRecTargetTitle" Text="Perfil Objetivo: Rendimiento Extremo (Gaming)" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Recommendations Details Box -->
+                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <!-- Core Parking Recommendation -->
+                                <TextBlock Text="ESTACIONAMIENTO DE NÚCLEOS (CORE PARKING):" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtRecCoreParking" Text="100% Núcleos Despiertos (Core Parking OFF) para erradicar micro-tirones." FontSize="11.5" Foreground="#34D399" Margin="0,2,0,8" TextWrapping="Wrap" />
+
+                                <!-- EPP Recommendation -->
+                                <TextBlock Text="PREFERENCIA ENERGÉTICA (EPP):" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtRecEpp" Text="EPP = 0% (Frecuencia de reloj instantánea sin latencia de escalón)." FontSize="11.5" Foreground="#38BDF8" Margin="0,2,0,8" TextWrapping="Wrap" />
+
+                                <!-- Heterogeneous CPU Recommendation -->
+                                <TextBlock Text="POLÍTICA DE SCHEDULER (P-CORES / E-CORES / AMD X3D):" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtRecHetero" Text="Priorizar núcleos de máximo rendimiento (P-Cores) en primer plano." FontSize="11.5" Foreground="#FBBF24" Margin="0,2,0,8" TextWrapping="Wrap" />
+
+                                <!-- Highlights list -->
+                                <TextBlock Text="BENEFICIOS CLAVE:" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtRecHighlights" Text="• Elimina el micro-stuttering del kernel.\n• Frametime plano y consistente.\n• Mínimo retardo de respuesta." FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Button x:Name="BtnApplyRecommendations" Content="🚀 Aplicar Ajustes Óptimos de este Perfil" Click="BtnApplyRecommendations_Click" Background="{DynamicResource Accent}" Foreground="White" Padding="14,8" FontWeight="Bold" FontSize="12" HorizontalAlignment="Stretch" ToolTip="Aplica automáticamente los valores de Core Parking, EPP y Scheduler para este plan" />
+                        <TextBlock x:Name="TxtApplyFeedback" Text="" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 3. ADVANCED SILICON CPU TUNING PANEL (CORE PARKING, EPP, HETERO SCHEDULER) -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                <StackPanel>
+                    <Grid Margin="0,0,0,14">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="⚙️ Propiedades Avanzadas del Silicio de CPU (Intel &amp; AMD)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock Text="Ajusta manualmente los parámetros de registro y scheduler del procesador para tu carga de trabajo específica." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Tuning 1: Core Parking Min Cores -->
+                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,6,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="CORE PARKING MÍNIMO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock x:Name="TxtCoreParkingVal" Text="100%" FontSize="12" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Slider x:Name="SliderCoreParking" Minimum="5" Maximum="100" Value="100" ValueChanged="SliderCoreParking_ValueChanged" TickFrequency="25" IsSnapToTickEnabled="False" Margin="0,6,0,6" />
+                                <TextBlock Text="100% = Núcleos siempre activos (Cero micro-tirones). 50% = Estacionar núcleos inactivos para ahorrar energía." FontSize="10.5" Foreground="#64748B" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Tuning 2: Energy Performance Preference (EPP) -->
+                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="3,0,3,0">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="PREFERENCIA ENERGÉTICA (EPP)" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <TextBlock x:Name="TxtEppVal" Text="0%" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Slider x:Name="SliderEpp" Minimum="0" Maximum="100" Value="0" ValueChanged="SliderEpp_ValueChanged" TickFrequency="25" IsSnapToTickEnabled="False" Margin="0,6,0,6" />
+                                <TextBlock Text="0% = Rendimiento instantáneo de silicio. 50% = Balanceado dinámico. 100% = Ahorro extremo y reposo térmico." FontSize="10.5" Foreground="#64748B" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Tuning 3: Heterogeneous Scheduler / Preset Buttons -->
+                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="6,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="PERFILES RÁPIDOS DE CPU" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,8" />
+                                <StackPanel Orientation="Vertical">
+                                    <Button x:Name="BtnCpuGamingPreset" Content="🎮 Perfil Gaming (CP 100% • EPP 0%)" Click="BtnCpuGamingPreset_Click" Background="#064E3B" Foreground="#34D399" Padding="8,5" FontSize="11" Margin="0,0,0,6" HorizontalContentAlignment="Left" />
+                                    <Button x:Name="BtnCpuBalancedPreset" Content="⚖️ Perfil Equilibrado (CP 50% • EPP 50%)" Click="BtnCpuBalancedPreset_Click" Style="{DynamicResource SecondaryButton}" Padding="8,5" FontSize="11" Margin="0,0,0,6" HorizontalContentAlignment="Left" />
+                                    <Button x:Name="BtnCpuEcoPreset" Content="🌱 Perfil Silencio (Tope 99% • EPP 80%)" Click="BtnCpuEcoPreset_Click" Style="{DynamicResource SecondaryButton}" Padding="8,5" FontSize="11" HorizontalContentAlignment="Left" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 4. UNIVERSAL MULTI-GPU SUPPORT (NVIDIA, AMD RADEON SAM & INTEL) -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="🎮 Soporte Universal de Tarjetas Gráficas (NVIDIA, AMD Radeon &amp; Intel)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <Border Background="#1E1B4B" CornerRadius="4" Padding="6,1" Margin="10,0,0,0">
+                                    <TextBlock Text="MULTI-VENDOR" FontSize="9.5" FontWeight="Bold" Foreground="#818CF8" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Detección y soporte para AMD Smart Access Memory (SAM), NVIDIA Resizable BAR e Intel Arc Graphics." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <ItemsControl x:Name="IcGpus">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- GPU Icon / Badge -->
+                                        <Border Width="40" Height="40" CornerRadius="8" Background="#0C1929" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
+                                            <TextBlock Text="🎴" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Details -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+                                                <Border Visibility="{Binding IsPrimaryHighPerformance, Converter={StaticResource BoolToVis}}" Background="#064E3B" CornerRadius="4" Padding="6,1" Margin="8,0,0,0">
+                                                    <TextBlock Text="GPU PRIMARIA" FontSize="9.5" FontWeight="Bold" Foreground="#34D399" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding PcieLinkSummary}" FontSize="11" Foreground="#38BDF8" Margin="0,2,0,0" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding ReBarTechnologyName}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                                <TextBlock Text=": " FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                                                <TextBlock Text="{Binding ReBarStatusMessage}" FontSize="10.5" Foreground="#F59E0B" />
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Latency / Driver Chip -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <Border Background="#1E293B" CornerRadius="4" Padding="8,3" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding DriverVersion, StringFormat='Driver: {0}'}" FontSize="10.5" FontWeight="SemiBold" Foreground="#94A3B8" />
+                                            </Border>
+                                            <TextBlock Text="{Binding LatencyTweakName}" FontSize="10" Foreground="#64748B" HorizontalAlignment="Right" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

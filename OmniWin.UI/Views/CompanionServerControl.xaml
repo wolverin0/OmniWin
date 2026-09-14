@@ -1,0 +1,176 @@
+<UserControl x:Class="OmniWin.UI.Views.CompanionServerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📱 OmniCompanion — Dashboard Web Móvil &amp; Tablet" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                        <Border Background="#0C243C" BorderBrush="{DynamicResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="ZERO-FRICTION QR" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Monitorea telemetría en tiempo real (CPU, GPU, RAM, Red) y ejecuta acciones remotas desde tu teléfono o tablet emparejando con QR sin instalar apps ni configurar puertos."
+                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnToggleServer" Content="⏸️ Detener Servidor" Click="BtnToggleServer_Click" Padding="14,7" FontSize="12" Margin="0,0,8,0" />
+                    <Button x:Name="BtnRefreshToken" Content="🔄 Regenerar Token" Click="BtnRefreshToken_Click" Style="{DynamicResource SecondaryButton}" Padding="12,7" FontSize="12" Margin="0,0,8,0" />
+                    <Button x:Name="BtnOpenBrowser" Content="🌐 Abrir en PC" Click="BtnOpenBrowser_Click" Style="{DynamicResource SecondaryButton}" Padding="12,7" FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- MAIN STAGE -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: QR CODE & CONNECTION INFO -->
+            <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,12,0">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="CÓDIGO QR DE EMPAREJAMIENTO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,12" />
+
+                    <!-- QR Frame -->
+                    <Border Background="#FFFFFF" CornerRadius="12" Padding="14" HorizontalAlignment="Center" VerticalAlignment="Center" Width="260" Height="260" SnapsToDevicePixels="True">
+                        <Image x:Name="ImgQrCode" Width="232" Height="232" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                    </Border>
+
+                    <TextBlock Text="Apunta la cámara de tu móvil a este código para abrir el dashboard al instante." 
+                               TextWrapping="Wrap" TextAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,14,0,12" MaxWidth="280" />
+
+                    <!-- URL Box -->
+                    <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtPairingUrl" Text="http://192.168.x.x:8766/?token=..." FontSize="11" FontFamily="Consolas" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="📋 Copiar" Click="BtnCopyUrl_Click" Style="{DynamicResource SecondaryButton}" Padding="6,2" FontSize="10" Margin="6,0,0,0" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Server Status Indicators -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+                        <Ellipse x:Name="DotStatus" Width="8" Height="8" Fill="#10B981" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock x:Name="TxtServerStatus" Text="Servidor Activo en Puerto 8766" FontSize="11.5" FontWeight="SemiBold" Foreground="#10B981" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- RIGHT: DASHBOARD PREVIEW & REMOTE CAPABILITIES -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="4,0,0,0">
+                    <!-- Feature Card 1: Telemetría en Vivo -->
+                    <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="📊" FontSize="26" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="Telemetría en Vivo Sin Latencia (WebSockets)" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Transmisión a 1000ms de carga de CPU, frecuencia, uso de RAM (usada/total), consumo GPU y tasa de descarga y subida de red en tiempo real a tu móvil."
+                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Feature Card 2: Control Remoto Instantáneo -->
+                    <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="⚡" FontSize="26" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="Acciones Rápidas con 1 Toque en Pantalla Táctil" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Purga de memoria RAM en caliente, activación/desactivación del modo Cafeína (Anti-Sleep) y control del HUD flotante en juegos directamente desde la tablet o móvil mientras juegas a pantalla completa."
+                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Feature Card 3: Seguridad & Arquitectura -->
+                    <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="🔒" FontSize="26" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="Seguridad Local y Cero Nube" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="La conexión ocurre 100% dentro de tu red Wi-Fi doméstica. No requiere cuentas externas ni servidores cloud. Las peticiones están protegidas por token criptográfico de 16 caracteres hexadecimales generado en cada sesión."
+                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Feature Card 4: Clientes Conectados y Estado -->
+                    <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="ESTADO DE LA SESIÓN COMPANION" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8" />
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Text="DISPOSITIVOS ACTIVOS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                        <TextBlock x:Name="TxtConnectedClients" Text="0 conectados" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                                    <StackPanel>
+                                        <TextBlock Text="DIRECCIÓN IP LOCAL" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                        <TextBlock x:Name="TxtLocalIp" Text="Detectando..." FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="PUERTO HTTP/WS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                        <TextBlock x:Name="TxtPort" Text="8766" FontSize="16" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- FOOTER -->
+        <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
+            <TextBlock x:Name="TxtFooter" Text="OmniCompanion listo para recibir conexiones en la red de área local." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+        </Border>
+    </Grid>
+</UserControl>

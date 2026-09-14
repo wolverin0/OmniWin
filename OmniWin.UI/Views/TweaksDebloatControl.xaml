@@ -1,0 +1,297 @@
+<UserControl x:Class="OmniWin.UI.Views.TweaksDebloatControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="680" d:DesignWidth="1050"
+             Background="Transparent"
+             Foreground="{StaticResource TextPrimary}"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+
+    <Grid>
+        <!-- Two Primary Tabs: 50+ Tweaks & UWP Debloater -->
+        <TabControl x:Name="InnerTabControl">
+
+            <!-- ==================================================== -->
+            <!-- PESTAÑA 1: CATÁLOGO DE 50+ TWEAKS                    -->
+            <!-- ==================================================== -->
+            <TabItem Header="🛠️ Catálogo de 50+ Tweaks">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <!-- Top Header & Gaming Profile Button -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Filter and Search Toolbar -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Tweaks List -->
+                        <RowDefinition Height="*" />
+                        <!-- Status Bar / Log -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Header -->
+                    <Border Grid.Row="0" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Mega Suite de Optimizaciones de Windows" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                                    <Border Background="#1E293B" CornerRadius="4" Margin="10,2,0,2" Padding="8,2">
+                                        <TextBlock x:Name="TxtTweaksStats" Text="55 Tweaks • Cargando..." FontSize="11" FontWeight="Bold" Foreground="{StaticResource Accent}" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Ajustes de bajo nivel en Registro, Red y Kernel inspirados en Optimizer y SophiApp para máxima fluidez y privacidad." 
+                                           FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Gaming Profile & Report Buttons -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnExportSnapshot" Content="📦 Exportar .omniwin" 
+                                        Click="BtnExportSnapshot_Click"
+                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
+                                        ToolTip="Exportar estado de optimizaciones y configuración a un paquete portable .omniwin para clonar en otra máquina" />
+                                <Button x:Name="BtnImportSnapshot" Content="📥 Importar .omniwin" 
+                                        Click="BtnImportSnapshot_Click"
+                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,8,0"
+                                        ToolTip="Restaurar y aplicar un paquete de configuración .omniwin en esta máquina" />
+                                <Button x:Name="BtnExportTweaksReport" Content="📄 Reporte HTML" 
+                                        Click="BtnExportTweaksReport_Click"
+                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,8,0"
+                                        ToolTip="Generar informe HTML interactivo con el estado de todas las optimizaciones" />
+                                <Button x:Name="BtnApplyGamingProfile" Content="⚡ Perfil Gaming" 
+                                        Click="BtnApplyGamingProfile_Click"
+                                        Background="{StaticResource Accent}" Foreground="White" Padding="12,8" FontSize="11.5" FontWeight="Bold" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Filter and Search Toolbar -->
+                    <Border Grid.Row="1" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="280" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Category Filter Buttons -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnFilterAll" Content="🌟 Todos" Click="BtnFilterCategory_Click" Tag="Todos" Margin="0,0,6,0" Padding="10,5" FontSize="11" Background="#0284C7" Foreground="White" />
+                                <Button x:Name="BtnFilterGaming" Content="🎮 Gaming &amp; Latencia" Click="BtnFilterCategory_Click" Tag="Gaming &amp; Latencia" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                                <Button x:Name="BtnFilterPrivacy" Content="🛡️ Privacidad Radical" Click="BtnFilterCategory_Click" Tag="Privacidad Radical" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                                <Button x:Name="BtnFilterWin11" Content="🪟 Windows 11 UI" Click="BtnFilterCategory_Click" Tag="Windows 11 UI &amp; Explorer" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                                <Button x:Name="BtnFilterSystem" Content="⚙️ Rendimiento Sistema" Click="BtnFilterCategory_Click" Tag="Rendimiento de Sistema" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
+                            </StackPanel>
+
+                            <!-- Search Box -->
+                            <Grid Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="TxtSearchTweaks" TextChanged="TxtSearchTweaks_TextChanged" 
+                                         Background="#090D16" Foreground="{StaticResource TextPrimary}" BorderBrush="{StaticResource CardBorder}" 
+                                         Padding="8,5" FontSize="12" />
+                                <TextBlock x:Name="TxtSearchPlaceholder" Text="🔍 Buscar tweak por nombre..." 
+                                           IsHitTestVisible="False" Foreground="{StaticResource TextMuted}" 
+                                           FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=TxtSearchTweaks}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tweaks Cards Scrollable List -->
+                    <Border Grid.Row="2" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl x:Name="IcTweaksList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#090D16" CornerRadius="6" Padding="12,10" Margin="0,0,0,8" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Left info -->
+                                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimary}" />
+                                                        
+                                                        <!-- Category Badge -->
+                                                        <Border Background="{Binding CategoryBadgeBg}" BorderBrush="{Binding CategoryBadgeBorder}" BorderThickness="1" CornerRadius="4" Margin="8,0,0,0" Padding="6,1">
+                                                            <TextBlock Text="{Binding Category}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding CategoryBadgeFg}" />
+                                                        </Border>
+
+                                                        <!-- Status Badge -->
+                                                        <Border Background="{Binding StatusBadgeBg}" CornerRadius="4" Margin="6,0,0,0" Padding="6,1">
+                                                            <TextBlock Text="{Binding StatusBadgeText}" FontSize="10" FontWeight="Bold" Foreground="{Binding StatusBadgeFg}" />
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <!-- Description -->
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <!-- Action Button: Aplicar / Revertir -->
+                                                <Button Grid.Column="1" Content="{Binding ActionButtonText}" 
+                                                        CommandParameter="{Binding Id}" Click="BtnToggleTweak_Click"
+                                                        Background="{Binding ActionButtonBrush}" Width="90" Height="30" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Status Bar / Feedback -->
+                    <Border Grid.Row="3" Background="#090D16" CornerRadius="6" Padding="10" Margin="0,8,0,0" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                        <Grid>
+                            <TextBlock x:Name="TxtTweaksFeedback" Text="Listo. Haz clic en 'Aplicar' o 'Revertir' en cualquier tweak." FontSize="12" Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="TxtTweaksCount" Text="55 tweaks listados" HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource TextSecondary}" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ==================================================== -->
+            <!-- PESTAÑA 2: DESINSTALADOR DE BLOATWARE UWP           -->
+            <!-- ==================================================== -->
+            <TabItem Header="🗑️ Desinstalador de Bloatware UWP">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <!-- Header -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Action Toolbar -->
+                        <RowDefinition Height="Auto" />
+                        <!-- App List -->
+                        <RowDefinition Height="*" />
+                        <!-- Progress & Console Log -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Desinstalador de Bloatware &amp; Apps UWP Preinstaladas" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                                    <Border Background="#064E3B" CornerRadius="4" Margin="10,2,0,2" Padding="8,2">
+                                        <TextBlock x:Name="TxtDebloatStats" Text="SophiApp Engine" FontSize="11" FontWeight="Bold" Foreground="#34D399" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Detecta y desinstala limpiamente paquetes universales de fábrica (Xbox, Bing Weather, Solitaire, Cortana, Feedback Hub) liberando memoria y telemetría." 
+                                           FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Uninstall Button -->
+                            <Button Grid.Column="1" x:Name="BtnUninstallSelected" Content="🗑️ Desinstalar Seleccionadas" 
+                                    Click="BtnUninstallSelected_Click"
+                                    Background="#EF4444" Padding="14,8" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Action Toolbar -->
+                    <Border Grid.Row="1" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnScanUwpApps" Content="🔄 Escanear Apps Instaladas" Click="BtnScanUwpApps_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Padding="10,5" FontSize="11" />
+                                <Button x:Name="BtnSelectAllSafe" Content="🛡️ Seleccionar Todas las Seguras" Click="BtnSelectAllSafe_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Padding="10,5" FontSize="11" />
+                                <Button x:Name="BtnDeselectAll" Content="✖ Deseleccionar Todas" Click="BtnDeselectAll_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Padding="10,5" FontSize="11" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtSelectedAppsCount" Text="0 apps seleccionadas" FontSize="12" Foreground="{StaticResource Accent}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- App List DataGrid / ItemsControl -->
+                    <Border Grid.Row="2" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl x:Name="IcUwpApps">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#090D16" CornerRadius="6" Padding="12,10" Margin="0,0,0,8" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <!-- CheckBox -->
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <!-- Icon -->
+                                                    <ColumnDefinition Width="36" />
+                                                    <!-- Details -->
+                                                    <ColumnDefinition Width="*" />
+                                                    <!-- Category & Badges -->
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- CheckBox -->
+                                                <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0" Checked="AppCheckBox_Changed" Unchecked="AppCheckBox_Changed" />
+
+                                                <!-- Icon Emoji -->
+                                                <TextBlock Grid.Column="1" Text="{Binding IconEmoji}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                                <!-- Details -->
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="8,0,12,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimary}" />
+                                                        <TextBlock Text="{Binding Version, StringFormat=' (v{0})'}" FontSize="11" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding PackagePattern, StringFormat='ID: {0}'}" FontSize="10" Foreground="#64748B" Margin="0,1,0,0" FontFamily="Consolas" />
+                                                </StackPanel>
+
+                                                <!-- Recommendation & Status Badges -->
+                                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Recommendation Badge -->
+                                                    <Border Background="{Binding SafeBadgeBg}" CornerRadius="4" Padding="8,3" Margin="0,0,8,0">
+                                                        <TextBlock Text="{Binding SafeBadgeText}" FontSize="10" FontWeight="Bold" Foreground="{Binding SafeBadgeFg}" />
+                                                    </Border>
+
+                                                    <!-- Status Badge -->
+                                                    <Border Background="#1E293B" CornerRadius="4" Padding="8,3">
+                                                        <TextBlock Text="{Binding StatusText}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding StatusFg}" />
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Progress & Live Console Log -->
+                    <Border Grid.Row="3" Background="#090D16" CornerRadius="6" Padding="12" Margin="0,8,0,0" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <ProgressBar x:Name="PbDebloatProgress" Value="0" Maximum="100" Height="4" Margin="0,0,0,8" Visibility="Collapsed" Foreground="#0284C7" />
+                            <TextBlock Grid.Row="1" x:Name="TxtDebloatConsoleLog" 
+                                       Text="Listo para escanear y desinstalar paquetes UWP de fábrica." 
+                                       FontFamily="Consolas" FontSize="11" Foreground="#34D399" TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

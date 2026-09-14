@@ -1,0 +1,229 @@
+<UserControl x:Class="OmniWin.UI.Views.AudioMixerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="850"
+             Loaded="UserControl_Loaded"
+             Unloaded="UserControl_Unloaded">
+
+    <UserControl.Resources>
+        <!-- Fluent Modern Slider Style -->
+        <Style x:Key="FluentSlider" TargetType="Slider">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="AutoToolTipPlacement" Value="None" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Border Height="6" Background="#1E293B" CornerRadius="3" VerticalAlignment="Center" />
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="6" Background="#0284C7" CornerRadius="3,0,0,3" VerticalAlignment="Center" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Grid Width="18" Height="18" Cursor="Hand">
+                                                    <Ellipse Fill="{StaticResource Accent}" Width="16" Height="16" />
+                                                    <Ellipse Fill="White" Width="6" Height="6" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="6" Background="Transparent" VerticalAlignment="Center" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Mute Button Style -->
+        <Style x:Key="MuteButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Background" Value="#1E293B" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#334155" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <!-- Top bar with count and refresh -->
+            <RowDefinition Height="Auto" />
+            <!-- Master volume card -->
+            <RowDefinition Height="Auto" />
+            <!-- App sessions list -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Header Controls -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,5" Margin="0,0,10,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎧" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock x:Name="TxtSessionCount" Text="0 Aplicaciones con Audio" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Accent}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="Mezclador independiente estilo EarTrumpet con Windows CoreAudio nativo" FontSize="12" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnRefresh" Content="🔄 Actualizar Sesiones" Click="BtnRefresh_Click" Style="{StaticResource SecondaryButton}" Padding="12,6" FontSize="12" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Master Volume Global Card -->
+        <Border Grid.Row="1" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,16" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="VOLUMEN MAESTRO" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock Text="Dispositivo de Salida Predeterminado" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,2,0,0" />
+                </StackPanel>
+
+                <Grid Grid.Column="1" Margin="20,0,24,0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="50" />
+                    </Grid.ColumnDefinitions>
+
+                    <Slider x:Name="MasterSlider" Grid.Column="0" Style="{StaticResource FluentSlider}" Minimum="0" Maximum="100"
+                            ValueChanged="MasterSlider_ValueChanged" VerticalAlignment="Center" />
+
+                    <TextBlock x:Name="TxtMasterVolumePercent" Grid.Column="1" Text="100%" FontSize="13" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
+
+                <Button x:Name="BtnMasterMute" Grid.Column="2" Style="{StaticResource MuteButtonStyle}"
+                        Content="🔊" ToolTip="Silenciar / Activar volumen maestro"
+                        Click="BtnMasterMute_Click" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Applications Audio Sessions List -->
+        <Grid Grid.Row="2">
+            <!-- Scrollable List of Apps -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="ItemsAudioSessions" Margin="0,0,0,10">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Process details & Icon -->
+                                        <ColumnDefinition Width="260" />
+                                        <!-- Slider & Live % -->
+                                        <ColumnDefinition Width="*" />
+                                        <!-- Mute Button -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Process Info -->
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Width="38" Height="38" CornerRadius="8" Background="#1E293B" Margin="0,0,12,0" VerticalAlignment="Center">
+                                            <Grid>
+                                                <!-- Process Executable Icon -->
+                                                <Image Source="{Binding Icon}" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IconVisibility}" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <!-- Fallback Emoji / Glyph -->
+                                                <TextBlock Text="🎵" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           Visibility="{Binding FallbackVisibility}" />
+                                            </Grid>
+                                        </Border>
+
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ProcessName}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimary}" TextTrimming="CharacterEllipsis" MaxWidth="190" />
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="11" Foreground="{StaticResource TextSecondary}" TextTrimming="CharacterEllipsis" MaxWidth="190" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Slider and Percentage -->
+                                    <Grid Grid.Column="1" Margin="24,0,24,0" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="55" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Slider Grid.Column="0" Style="{StaticResource FluentSlider}" Minimum="0" Maximum="100"
+                                                Value="{Binding SliderValue, Mode=TwoWay}" VerticalAlignment="Center" />
+
+                                        <TextBlock Grid.Column="1" Text="{Binding VolumePercentText}" FontSize="13" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- Mute Button -->
+                                    <Button Grid.Column="2" Style="{StaticResource MuteButtonStyle}"
+                                            Content="{Binding MuteIcon}" ToolTip="Silenciar / Activar audio"
+                                            Click="BtnMuteItem_Click" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Empty State Display -->
+            <Border x:Name="BorderEmptyState" Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="36" VerticalAlignment="Top" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="🎵" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="No se detectaron aplicaciones con audio activo" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" />
+                    <TextBlock Text="Abre Spotify, YouTube en el navegador, Discord, juegos o cualquier reproductor multimedia y pulsa 'Actualizar Sesiones'."
+                               FontSize="12" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,6,0,16" TextAlignment="Center" MaxWidth="460" TextWrapping="Wrap" />
+                    <Button Content="🔄 Actualizar Sesiones Ahora" Click="BtnRefresh_Click" HorizontalAlignment="Center" Padding="16,8" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

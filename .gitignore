@@ -1,0 +1,27 @@
+## Visual Studio / .NET
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+publish/
+TestResults/
+
+## Logs and diagnostics
+*.log
+*.tmp
+*.bak
+scripts/*.log
+scripts/*.txt
+scripts/reports/*.log
+scripts/reports/*.txt
+scripts/lab-archive/
+*.bmp
+
+## OS generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

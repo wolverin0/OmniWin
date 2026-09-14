@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.locale.1.6.0.schema.json
+
+PackageIdentifier: pauol.OmniWin
+PackageVersion: 1.2.0
+PackageLocale: es-ES
+Publisher: pauol
+PublisherUrl: https://github.com/pauol
+PublisherSupportUrl: https://github.com/pauol/OmniWin/issues
+Author: pauol
+PackageName: OmniWin
+PackageUrl: https://github.com/pauol/OmniWin
+License: MIT
+LicenseUrl: https://github.com/pauol/OmniWin/blob/main/LICENSE
+Copyright: Copyright (c) 2026 pauol
+ShortDescription: Panel de Control, Optimizador de Windows, Tweaker de Registro y Agente IA (Servidor MCP)
+Description: |
+  OmniWin es una suite integral de control y optimización para Windows 10 y Windows 11:
+  - Telemetría en vivo y monitor de latencia de kernel DPC
+  - Explorador forense de procesos, módulos DLL y sockets de red
+  - Purga de memoria RAM (Standby List) mediante llamadas nativas NT
+  - Limpiador de disco y analizador de espacio estilo TreeSize
+  - 55+ optimizaciones reales del registro y debloat UWP con respaldo VSS
+  - Gestor de paquetes WinGet y respaldo de controladores OEM
+  - Mantenimiento DISM WinSxS y consola de reparación automatizada en 6 pasos
+  - Gestión de 16 reglas Microsoft Defender Attack Surface Reduction (ASR)
+  - Administrador de planes de energía, CPU Core Parking y scheduler de P/E-cores
+  - Gaming HUD Overlay (Ctrl+Shift+O) y Widget de red flotante (Ctrl+Shift+W)
+  - Servidor de 28 herramientas MCP para agentes Claude, Cursor y Antigravity
+Tags:
+  - optimizador
+  - tweaks
+  - debloat
+  - windows
+  - rendimiento
+  - latencia
+  - gaming
+  - mcp
+ReleaseNotesUrl: https://github.com/pauol/OmniWin/releases/tag/v1.2.0
+ManifestType: locale
+ManifestVersion: 1.6.0

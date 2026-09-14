@@ -1,0 +1,537 @@
+<UserControl x:Class="OmniWin.UI.Views.OnboardingWizardControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
+             Foreground="{StaticResource TextPrimary}">
+
+    <Border Background="#0C101B" BorderBrush="#1C273C" BorderThickness="1" CornerRadius="12" MaxWidth="840" MaxHeight="640" Padding="24">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="48" Color="#000000" Opacity="0.85" ShadowDepth="12" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- 0: Header -->
+                <RowDefinition Height="Auto" />
+                <!-- 1: 7-Step Stepper Progress Bar -->
+                <RowDefinition Height="Auto" />
+                <!-- 2: Dynamic Step Content Pages (Scrollable) -->
+                <RowDefinition Height="*" />
+                <!-- 3: Footer Navigation -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 0. Header with Logo and Close -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#0C243C" BorderBrush="#16395F" BorderThickness="1" CornerRadius="8" Width="36" Height="36" Margin="0,0,12,0">
+                        <TextBlock Text="⚡" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Accent}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Asistente de Optimización de Windows" FontSize="17" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                            <Border Background="#101B2E" BorderBrush="#1A2D4C" BorderThickness="1" CornerRadius="4" Margin="10,2,0,2" Padding="6,1">
+                                <TextBlock x:Name="TxtStepBadge" Text="Paso 1 de 7" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Accent}" VerticalAlignment="Center" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Ajustes reales de kernel, sistema de archivos, red y telemetría organizados paso a paso." FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="✕" Click="BtnClose_Click" Background="Transparent" Foreground="{StaticResource TextMuted}" FontSize="15" Width="28" Height="28" Padding="0" Cursor="Hand" ToolTip="Cerrar Asistente" />
+            </Grid>
+
+            <!-- 1. 7-Step Stepper Header -->
+            <Border Grid.Row="1" Background="#07090E" CornerRadius="8" Padding="3" Margin="0,0,0,14" BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="TabStep1" Grid.Column="0" Background="#111B2E" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="1">
+                        <TextBlock x:Name="TxtStep1" Text="1. Sistema" FontWeight="Bold" FontSize="10.5" Foreground="White" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep2" Grid.Column="1" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="2">
+                        <TextBlock x:Name="TxtStep2" Text="2. Kernel" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep3" Grid.Column="2" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="3">
+                        <TextBlock x:Name="TxtStep3" Text="3. Inicio" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep4" Grid.Column="3" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="4">
+                        <TextBlock x:Name="TxtStep4" Text="4. Red" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep5" Grid.Column="4" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="5">
+                        <TextBlock x:Name="TxtStep5" Text="5. Visual" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep6" Grid.Column="5" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="6">
+                        <TextBlock x:Name="TxtStep6" Text="6. Servicios" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+
+                    <Border x:Name="TabStep7" Grid.Column="6" Background="Transparent" CornerRadius="6" Padding="4,4" Margin="1" Cursor="Hand" MouseDown="TabStep_MouseDown" Tag="7">
+                        <TextBlock x:Name="TxtStep7" Text="7. Aplicar" FontSize="10.5" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- 2. Dynamic Content Area -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,14">
+                <Grid>
+                    <!-- STEP 1: EVALUACIÓN Y PERFIL DE HARDWARE -->
+                    <StackPanel x:Name="PanelStep1" Visibility="Visible">
+                        <TextBlock Text="Evaluación de Hardware y Rol del Equipo" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="OmniWin analizó la arquitectura de tu máquina. Elige el rol para preconfigurar los ajustes recomendados:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,12" />
+
+                        <!-- Hardware Info Box -->
+                        <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock x:Name="TxtHardwareOs" Text="Sistema: Windows 11 / 10" FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
+                                    <TextBlock x:Name="TxtHardwareCpu" Text="Procesador: Detectando CPU..." FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock x:Name="TxtHardwareRam" Text="Memoria RAM: Detectando..." FontSize="11.5" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" />
+                                    <TextBlock x:Name="TxtHardwareDisk" Text="Disco C: SSD / NVMe (TRIM Habilitado)" FontSize="11" Foreground="{StaticResource Emerald}" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Role Selector Cards -->
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Role 1: Desktop / Gaming -->
+                            <Border x:Name="CardRoleDesktop" Grid.Column="0" Background="#111B2E" BorderBrush="{StaticResource Accent}" BorderThickness="1.5" CornerRadius="8" Padding="12" Margin="0,0,5,0" Cursor="Hand" MouseDown="CardRoleDesktop_MouseDown">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="🖥️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="PC Escritorio" FontWeight="Bold" FontSize="12.5" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="Máximo rendimiento. Prioridad de CPU al 100% sin estados de letargo ni suspensión agresiva." FontSize="11" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Role 2: Laptop -->
+                            <Border x:Name="CardRoleLaptop" Grid.Column="1" Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="3,0,3,0" Cursor="Hand" MouseDown="CardRoleLaptop_MouseDown">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="💻" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Portátil / Batería" FontWeight="Bold" FontSize="12.5" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="Equilibrio de energía. Conserva frecuencias dinámicas y tiempos de suspensión para extender la batería." FontSize="11" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Role 3: Workstation / Server -->
+                            <Border x:Name="CardRoleWorkstation" Grid.Column="2" Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="5,0,0,0" Cursor="Hand" MouseDown="CardRoleWorkstation_MouseDown">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="🚀" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Estación / Servidor" FontWeight="Bold" FontSize="12.5" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Text="Throughput de datos continuo. LargeSystemCache activo y aislamiento de procesos para multitarea pesada." FontSize="11" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- STEP 2: KERNEL & SISTEMA DE ARCHIVOS -->
+                    <StackPanel x:Name="PanelStep2" Visibility="Collapsed">
+                        <TextBlock Text="Kernel, Memoria y Sistema de Archivos" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Ajustes internos de cómo Windows NT gestiona la memoria RAM y el sistema de archivos NTFS:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+
+                        <StackPanel>
+                            <!-- Tweak 1: NtfsMemoryUsage -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakNtfsMemory" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Aumentar Búfer de Paginado NTFS (NtfsMemoryUsage = 2)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Asigna mayor memoria RAM a la tabla MFT y operaciones de archivos, acelerando lectura y listado en SSD/NVMe." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 2: NtfsDisable8dot3 -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakNtfs8dot3" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Nombres Cortos DOS 8.3 (NtfsDisable8dot3NameCreation = 1)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina la creación obsoleta de nombres estilo MS-DOS (FILENA~1.TXT), acelerando carpetas con miles de archivos." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 3: NtfsDisableLastAccess -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakNtfsLastAccess" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Marca de Último Acceso en NTFS" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Evita que Windows escriba metadatos de timestamp en cada archivo consultado, alargando la vida útil del SSD." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 4: Win32Priority -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakWin32Priority" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Prioridad de CPU Máxima a la Ventana Activa (Win32Priority = 0x26)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Configura los quantums del kernel NT para que la app en primer plano tenga fluidez absoluta y 0 micro-stuttering." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 5: LargeSystemCache -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <CheckBox x:Name="ChkTweakLargeCache" IsChecked="False" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Activar Large System Cache en Memoria RAM (LargeSystemCache = 1)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Mantiene un búfer de archivos extendido en RAM. Ideal para equipos con 16GB+ de memoria." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- STEP 3: ARRANQUE Y APAGADO VELOZ -->
+                    <StackPanel x:Name="PanelStep3" Visibility="Collapsed">
+                        <TextBlock Text="Arranque y Apagado Acelerado" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Elimina tiempos muertos artificiales introducidos por Windows al encender y apagar el equipo:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+
+                        <StackPanel>
+                            <!-- Tweak 1: StartupDelay -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakStartupDelay" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Eliminar Retardo Artificial de Inicio (StartupDelayInMSec = 0)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Windows introduce una pausa de 10s para dejar asentar el escritorio; este ajuste arranca tus apps al instante." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 2: WaitToKillService -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakWaitToKill" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Acelerar Apagado de Servicios (WaitToKillServiceTimeout = 2000ms)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Corta la espera de 5000ms a 2000ms para cerrar servicios al reiniciar o apagar el equipo." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 3: AutoEndTasks -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakAutoEndTasks" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Cierre Rápido de Apps Bloqueadas (AutoEndTasks = 1 &amp; HungAppTimeout = 1000ms)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Cierra automáticamente ventanas colgadas en vez de detener el apagado con la pantalla de advertencia." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 4: AutoChkTimeOut -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakAutoChk" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Reducir Pausa de Comprobación de Disco (AutoChkTimeOut = 2s)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Reduce la cuenta atrás de 8 a 2 segundos si Windows detecta una comprobación de volumen al arrancar." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 5: ClearPageFileShutdown -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <CheckBox x:Name="ChkTweakClearPageFile" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Sobrescritura de Paginación al Apagar" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Impide que Windows sobreescriba gigabytes de pagefile.sys al cerrar sesión, recortando hasta 20s de apagado." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- STEP 4: RED Y BAJA LATENCIA -->
+                    <StackPanel x:Name="PanelStep4" Visibility="Collapsed">
+                        <TextBlock Text="Red, Latencia y Rendimiento Web" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Optimizaciones de sockets TCP/IP y resolución DNS para menor ping en juegos y mayor velocidad de carga:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+
+                        <StackPanel>
+                            <!-- Tweak 1: Nagle -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakNagle" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Algoritmo de Nagle (TcpAckFrequency = 1, TCPNoDelay = 1)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Envía paquetes de red al instante sin esperar agrupar búferes. Clave para reducir el ping y jitter en juegos online." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 2: NetworkThrottling -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakNetThrottling" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Estrangulamiento Multimedia de Red (NetworkThrottlingIndex = 0xFFFFFFFF)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina la limitación de procesamiento de paquetes de red que Windows impone al reproducir audio o video." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 3: SystemResponsiveness -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakSysResponsiveness" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Dedicación de Red y CPU al 100% (SystemResponsiveness = 0)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina la reserva del 20% que Windows aparta para tareas del sistema en segundo plano." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 4: MaxConnections -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakMaxConnections" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Aumentar Conexiones Concurrentes por Servidor (MaxConnections = 16)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Eleva de 6 a 16 el límite de sockets simultáneos por host web, acelerando descargas paralelas y APIs." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 5: DnsCacheTtl -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <CheckBox x:Name="ChkTweakDnsTtl" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Optimizar Caché DNS (MaxCacheTtl = 86400s, Errores = 5s)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Mantiene dominios en caché por 24h y descarta fallos en 5s, reduciendo consultas repetitivas al router/DNS." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- STEP 5: FLUIDEZ VISUAL Y EXPLORADOR -->
+                    <StackPanel x:Name="PanelStep5" Visibility="Collapsed">
+                        <TextBlock Text="Fluidez Visual, Explorador y DWM" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Ajustes de latencia de menús y productividad visual del escritorio de Windows:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+
+                        <StackPanel>
+                            <!-- Tweak 1: MenuShowDelay -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakMenuDelay" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Apertura Instantánea de Menús (MenuShowDelay = 10ms)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Reduce la demora de 400ms a 10ms; los submenús y menús contextuales aparecen de inmediato." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 2: ClassicContextMenu -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakClassicMenu" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Restaurar Menú Contextual Clásico Completo en Windows 11" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Muestra todas las opciones directamente al hacer clic derecho sin pulsar 'Mostrar más opciones'." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 3: ShowExtensions -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakShowExtensions" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Mostrar Siempre Extensiones de Archivos (.exe, .zip, .pdf)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Evita engaños visuales con malware que se camufla con extensiones dobles o falsas." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 4: CompactView -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakCompactView" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Activar Vista Compacta en el Explorador de Archivos" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina el espacio muerto vertical entre carpetas y archivos en Windows 11 para ver más elementos." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 5: HideWidgets -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <CheckBox x:Name="ChkTweakHideWidgets" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Ocultar Widgets y Noticias en la Barra de Tareas (Ahorro de RAM)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina procesos WebView2 y descargas de noticias en segundo plano de Windows 11." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- STEP 6: SERVICIOS Y PRIVACIDAD -->
+                    <StackPanel x:Name="PanelStep6" Visibility="Collapsed">
+                        <TextBlock Text="Servicios en Segundo Plano y Telemetría" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Detén servicios innecesarios y bloquea la transmisión periódica de diagnósticos a Microsoft:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+
+                        <StackPanel>
+                            <!-- Tweak 1: DiagTrack -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakDiagTrack" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Servicio DiagTrack (Telemetría y Experiencias)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Detiene y deshabilita el servicio de recolección continua de datos del sistema." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 2: HostsTelemetry -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakHosts" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Bloquear Dominios de Telemetría a Nivel de Archivo HOSTS" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Redirige a 0.0.0.0 los servidores de telemetría de Microsoft (vortex, telemetry, watson, sqm)." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 3: AdvertisingId -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakAdvertisingId" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar ID de Publicidad y Perfil de Seguimiento" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Impide que aplicaciones y Windows construyan un perfil publicitario basado en tus intereses." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 4: WER -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,6">
+                                <CheckBox x:Name="ChkTweakWer" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Informes de Error de Windows (Windows Error Reporting)" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Elimina congelamientos de programas al colgarse mientras Windows recopila volcados." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+
+                            <!-- Tweak 5: TypingPersonalization -->
+                            <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <CheckBox x:Name="ChkTweakTyping" IsChecked="True" Checked="OnTweakCheckboxChanged" Unchecked="OnTweakCheckboxChanged">
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Desactivar Telemetría de Mecanografía y Patrones de Entrada" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimary}" />
+                                        <TextBlock Text="Previene el envío de pulsaciones de teclado y patrones de texto a los servidores de Microsoft." FontSize="10.5" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- STEP 7: REVISIÓN Y APLICAR -->
+                    <StackPanel x:Name="PanelStep7" Visibility="Collapsed">
+                        <TextBlock Text="Revisión Final y Aplicación en 1-Click" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4" />
+                        <TextBlock Text="Revisa el resumen de los ajustes que se aplicarán de forma permanente en Windows:" FontSize="11.5" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,12" />
+
+                        <!-- Summary Cards Box -->
+                        <Border Background="#090E18" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="⚡" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TxtSummarySelectedCount" Text="Optimizaciones seleccionadas: 23 de 25" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <Grid Margin="0,2,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock x:Name="TxtSummaryKernel" Text="• Kernel &amp; Archivos: 4 activos" FontSize="11" Foreground="{StaticResource TextSecondary}" />
+                                        <TextBlock x:Name="TxtSummaryBoot" Text="• Arranque y Apagado: 5 activos" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0" />
+                                        <TextBlock x:Name="TxtSummaryNet" Text="• Red y Baja Latencia: 5 activos" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock x:Name="TxtSummaryVisual" Text="• Fluidez Visual y DWM: 5 activos" FontSize="11" Foreground="{StaticResource TextSecondary}" />
+                                        <TextBlock x:Name="TxtSummaryServices" Text="• Servicios y Privacidad: 4 activos" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,3,0,0" />
+                                        <TextBlock x:Name="TxtSummaryRole" Text="• Rol: PC de Escritorio" FontSize="11" Foreground="{StaticResource Accent}" FontWeight="SemiBold" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Extra Options: Restore Point & RAM Purge -->
+                        <StackPanel Margin="0,0,0,10">
+                            <CheckBox x:Name="ChkCreateRestorePoint" AutomationProperties.AutomationId="ChkCreateRestorePoint" IsChecked="True" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🛡️ Crear Punto de Restauración del Sistema antes de aplicar (Recomendado)" FontWeight="Bold" FontSize="11.5" Foreground="{StaticResource TextPrimary}" />
+                                </StackPanel>
+                            </CheckBox>
+
+                            <CheckBox x:Name="ChkPurgeRamAfter" IsChecked="True" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⚡ Purgar Memoria RAM en Standby List al finalizar" FontWeight="Normal" FontSize="11.5" Foreground="{StaticResource TextSecondary}" />
+                                </StackPanel>
+                            </CheckBox>
+
+                            <CheckBox x:Name="ChkEnableCaffeine" IsChecked="False">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="☕ Activar Modo Cafeína Inteligente (Evitar suspensión durante trabajo activo)" FontWeight="Normal" FontSize="11.5" Foreground="{StaticResource TextSecondary}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </StackPanel>
+
+                        <!-- Status & Progress -->
+                        <Border x:Name="BorderApplyStatus" Background="#0C1B2E" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,4,0,0" Visibility="Collapsed">
+                            <StackPanel>
+                                <ProgressBar x:Name="PbApplyProgress" Height="6" Value="0" Maximum="100" Margin="0,0,0,6" Foreground="{StaticResource Accent}" Background="#090E18" BorderThickness="0" />
+                                <TextBlock x:Name="TxtApplyLog" Text="Aplicando optimizaciones..." FontSize="11" Foreground="{StaticResource TextPrimary}" TextAlignment="Center" />
+                                <Button x:Name="BtnExportReport" Content="📄 Abrir / Exportar Reporte HTML Completo" Click="BtnExportReport_Click" Style="{StaticResource SecondaryButton}" Padding="12,6" FontSize="11.5" Margin="0,8,0,0" HorizontalAlignment="Center" Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- 3. Footer Navigation Bar -->
+            <Grid Grid.Row="3" Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Don't show again checkbox -->
+                <CheckBox x:Name="ChkDontShowAgain" Grid.Column="0" Content="No volver a mostrar al iniciar" IsChecked="True" FontSize="11" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" />
+
+                <!-- Right: Navigation Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnSkip" AutomationProperties.AutomationId="BtnSkip" Content="Omitir" Click="BtnSkip_Click" Background="Transparent" Foreground="{StaticResource TextMuted}" BorderThickness="0" Margin="0,0,8,0" Padding="10,6" Cursor="Hand" FontSize="12" />
+                    <Button x:Name="BtnBack" AutomationProperties.AutomationId="BtnBack" Content="← Anterior" Click="BtnBack_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Padding="14,6" FontSize="12" Visibility="Collapsed" />
+                    <Button x:Name="BtnNext" AutomationProperties.AutomationId="BtnNext" Content="Siguiente →" Click="BtnNext_Click" Style="{StaticResource PrimaryButton}" Padding="16,6" FontSize="12" />
+                    <Button x:Name="BtnFinish" AutomationProperties.AutomationId="BtnFinish" Content="🚀 Aplicar y Finalizar" Click="BtnFinish_Click" Style="{StaticResource PrimaryButton}" Background="{StaticResource Emerald}" Padding="16,6" FontSize="12" FontWeight="Bold" Visibility="Collapsed" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
