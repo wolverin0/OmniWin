@@ -10,6 +10,7 @@ public class EmergencyThermalGuard
     private const string POWER_SAVER_GUID = "a1841308-3541-4fab-bc81-f71556f20b4a";
     private readonly PowerService _powerService = new();
     private string? _originalPowerSchemeGuid = null;
+    private bool _clampedCpuThrottle = false;
 
     public bool IsEmergencyMitigationActive { get; private set; } = false;
     public bool AutoPowerMitigationEnabled { get; set; } = false;
@@ -77,7 +78,7 @@ public class EmergencyThermalGuard
             ThermalSensorService.Instance.SetAllFansPercent(100.0f);
         }
 
-        // 2. Temporarily switch Windows Power Scheme to Power Saver to drop clocks and heat
+        // 2. Temporarily switch Windows Power Scheme or clamp CPU clocks to drop heat
         if (AutoPowerMitigationEnabled)
         {
             try
@@ -89,12 +90,25 @@ public class EmergencyThermalGuard
                     _originalPowerSchemeGuid = active.Guid;
                 }
 
-                await _powerService.SetActiveSchemeAsync(POWER_SAVER_GUID);
+                var powerSaver = schemes.Find(s => s.Guid.Equals(POWER_SAVER_GUID, StringComparison.OrdinalIgnoreCase) ||
+                                                   s.Name.Contains("Saver", StringComparison.OrdinalIgnoreCase) ||
+                                                   s.Name.Contains("Ahorro", StringComparison.OrdinalIgnoreCase));
+                if (powerSaver != null)
+                {
+                    await _powerService.SetActiveSchemeAsync(powerSaver.Guid);
+                }
+                else
+                {
+                    // Fallback for custom gaming plans (e.g. Azurite) or S0ix laptops: clamp CPU max throttle to 70%
+                    CpuOptimizationService.RunPowerCfg("/setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 70");
+                    CpuOptimizationService.RunPowerCfg("/setactive SCHEME_CURRENT");
+                    _clampedCpuThrottle = true;
+                }
             }
             catch { }
         }
 
-        string msg = $"🚨 Mitigación Térmica de Emergencia activada: CPU={cpuTemp:F0}°C, GPU={gpuTemp:F0}°C. Ventiladores al 100% y ahorro de energía temporal activado.";
+        string msg = $"🚨 Mitigación Térmica de Emergencia activada: CPU={cpuTemp:F0}°C, GPU={gpuTemp:F0}°C. Ventiladores al 100% y límite térmico de energía aplicado.";
         OnEmergencyTriggered?.Invoke(msg);
     }
 
@@ -105,12 +119,22 @@ public class EmergencyThermalGuard
         // 1. Restore Fans to automatic / current curve
         ThermalSensorService.Instance.RestoreAllFansAuto();
 
-        // 2. Restore original Power Scheme
-        if (AutoPowerMitigationEnabled && !string.IsNullOrWhiteSpace(_originalPowerSchemeGuid))
+        // 2. Restore original Power Scheme / Unclamp CPU throttle
+        if (AutoPowerMitigationEnabled)
         {
             try
             {
-                await _powerService.SetActiveSchemeAsync(_originalPowerSchemeGuid);
+                if (_clampedCpuThrottle)
+                {
+                    CpuOptimizationService.RunPowerCfg("/setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100");
+                    CpuOptimizationService.RunPowerCfg("/setactive SCHEME_CURRENT");
+                    _clampedCpuThrottle = false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(_originalPowerSchemeGuid))
+                {
+                    await _powerService.SetActiveSchemeAsync(_originalPowerSchemeGuid);
+                }
             }
             catch { }
         }

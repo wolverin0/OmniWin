@@ -91,8 +91,15 @@ public class DiskService
 
         try
         {
+            var options = new EnumerationOptions
+            {
+                IgnoreInaccessible = true,
+                RecurseSubdirectories = true,
+                AttributesToSkip = FileAttributes.ReparsePoint
+            };
+
             var dirInfo = new DirectoryInfo(dirPath);
-            foreach (var file in dirInfo.EnumerateFiles(searchPattern, SearchOption.AllDirectories))
+            foreach (var file in dirInfo.EnumerateFiles(searchPattern, options))
             {
                 try
                 {
@@ -226,8 +233,15 @@ public class DiskService
 
                 try
                 {
+                    var options = new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = true,
+                        AttributesToSkip = FileAttributes.ReparsePoint
+                    };
+
                     var dir = new DirectoryInfo(targetDir);
-                    foreach (var file in dir.EnumerateFiles("*.*", SearchOption.AllDirectories))
+                    foreach (var file in dir.EnumerateFiles("*.*", options))
                     {
                         try
                         {

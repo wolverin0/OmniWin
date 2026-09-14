@@ -75,60 +75,68 @@ public class KernelLatencyService
         }
     }
 
-    public Task<LatencyBenchmarkResult> RunJitterBenchmarkAsync(int samples = 5000)
+    [DllImport("ntdll.dll", SetLastError = true)]
+    private static extern int NtDelayExecution(bool alertable, ref long delayInterval);
+
+    public Task<LatencyBenchmarkResult> RunJitterBenchmarkAsync(int samples = 50)
     {
         return Task.Run(() =>
         {
             long freq = Stopwatch.Frequency;
             double freqMhz = freq / 1_000_000.0;
 
-            double totalDeltaUs = 0;
-            double maxDeltaUs = 0;
+            double totalJitterUs = 0;
+            double maxJitterUs = 0;
 
-            long lastTimestamp = Stopwatch.GetTimestamp();
+            // Request 1 ms relative delay (-10,000 in 100-nanosecond units)
+            long interval = -10000;
+
+            // Warmup
+            NtDelayExecution(false, ref interval);
 
             for (int i = 0; i < samples; i++)
             {
-                // Measure loop execution timing variance
-                long now = Stopwatch.GetTimestamp();
-                long ticks = now - lastTimestamp;
-                double deltaUs = (ticks * 1_000_000.0) / freq;
+                long start = Stopwatch.GetTimestamp();
+                NtDelayExecution(false, ref interval);
+                long end = Stopwatch.GetTimestamp();
 
-                if (deltaUs > maxDeltaUs) maxDeltaUs = deltaUs;
-                totalDeltaUs += deltaUs;
+                double actualUs = ((end - start) * 1_000_000.0) / freq;
+                // Target is 1,000 µs (1 ms). Jitter is the variance above the target.
+                double jitter = actualUs > 1000.0 ? (actualUs - 1000.0) : 0.0;
 
-                lastTimestamp = now;
+                if (jitter > maxJitterUs) maxJitterUs = jitter;
+                totalJitterUs += jitter;
             }
 
-            double avgJitter = totalDeltaUs / samples;
+            double avgJitter = totalJitterUs / samples;
 
             string verdict;
             string color;
             string rec;
 
-            if (maxDeltaUs < 100.0)
+            if (maxJitterUs < 600.0)
             {
-                verdict = "Excelente: Rendimiento en tiempo real óptimo para eSports, streaming y audio ASIO.";
+                verdict = "Excelente: Temporizador de kernel responsivo, óptimo para eSports y audio en tiempo real.";
                 color = "#10B981"; // Emerald
-                rec = "El sistema responde de inmediato a interrupciones sin cuellos de botella DPC detectados.";
+                rec = "El despachador de interrupciones del kernel responde con precisión sub-milisegundo sin contención DPC.";
             }
-            else if (maxDeltaUs < 500.0)
+            else if (maxJitterUs < 1800.0)
             {
-                verdict = "Bueno: Estabilidad normal para trabajo de escritorio y gaming estándar.";
+                verdict = "Bueno: Estabilidad estándar de Windows para trabajo y gaming.";
                 color = "#38BDF8"; // Sky Blue
-                rec = "La resolución de reloj es adecuada, sin microtirones críticos perceptibles.";
+                rec = "La resolución de reloj es adecuada. Activar el Timer 0.5ms reducirá la latencia residual a la mitad.";
             }
             else
             {
-                verdict = "Alerta: Picos de jitter e interrupción detectados (> 500 µs).";
+                verdict = "Alerta: Retardo de interrupción o DPC elevado detectado (> 1.8 ms).";
                 color = "#F59E0B"; // Amber
-                rec = "Posibles drivers de audio o red generando interrupciones DPC prolongadas. Considera activar el Timer de 0.5ms y actualizar drivers.";
+                rec = "Un controlador (generalmente GPU, WiFi o audio) o el reloj estándar de 15.6ms retrasan la cola DPC. Considera activar el Timer 0.5ms.";
             }
 
             return new LatencyBenchmarkResult
             {
                 AverageJitterMicroseconds = avgJitter,
-                MaxJitterMicroseconds = maxDeltaUs,
+                MaxJitterMicroseconds = maxJitterUs,
                 HighResolutionFrequencyMhz = freqMhz,
                 Verdict = verdict,
                 VerdictColor = color,

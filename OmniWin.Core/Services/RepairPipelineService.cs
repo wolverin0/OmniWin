@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -96,9 +96,9 @@ public class RepairPipelineService
             new()
             {
                 StepNumber = 4,
-                Name = "Limpieza de Base de WinSxS",
-                CommandDescription = "dism /online /cleanup-image /startcomponentcleanup /resetbase",
-                Description = "Elimina versiones superseded de componentes y purga la base para liberar espacio.",
+                Name = "Limpieza Segura de WinSxS",
+                CommandDescription = "dism /online /cleanup-image /startcomponentcleanup",
+                Description = "Purga componentes obsoletos de WinSxS de forma segura sin bloquear la desinstalación de parches de Windows.",
                 Status = RepairStepStatus.Pending,
                 StatusText = "Pendiente ⏳"
             },
@@ -199,17 +199,17 @@ public class RepairPipelineService
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Paso 4: Limpieza de Base de WinSxS (/StartComponentCleanup /ResetBase)
+            // Paso 4: Limpieza Segura de WinSxS (/StartComponentCleanup)
             overallSuccess &= await ExecuteStepAsync(steps[3], 3 * stepWeight, stepWeight, cancellationToken, async (baseProg, weight) =>
             {
-                EmitOutput("[Paso 4/6] Ejecutando: dism /online /cleanup-image /startcomponentcleanup /resetbase", baseProg);
-                var (exitCode, output) = await ExecuteProcessStreamedAsync("dism.exe", "/online /cleanup-image /startcomponentcleanup /resetbase", baseProg, weight, cancellationToken);
+                EmitOutput("[Paso 4/6] Ejecutando: dism /online /cleanup-image /startcomponentcleanup", baseProg);
+                var (exitCode, output) = await ExecuteProcessStreamedAsync("dism.exe", "/online /cleanup-image /startcomponentcleanup", baseProg, weight, cancellationToken);
                 
                 if (exitCode == 0)
                 {
-                    return (true, "Base de WinSxS purgada y restablecida correctamente.");
+                    return (true, "Base de componentes WinSxS optimizada y limpiada correctamente sin bloquear desinstalación de parches.");
                 }
-                return (false, $"DISM /ResetBase finalizó con código {exitCode}.");
+                return (false, $"DISM /StartComponentCleanup finalizó con código {exitCode}.");
             });
 
             cancellationToken.ThrowIfCancellationRequested();

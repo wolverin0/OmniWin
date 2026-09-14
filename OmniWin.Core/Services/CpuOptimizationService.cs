@@ -207,7 +207,7 @@ public class CpuOptimizationService
         }
     }
 
-    private static (string output, int exitCode) RunPowerCfg(string arguments)
+    public static (string output, int exitCode) RunPowerCfg(string arguments)
     {
         try
         {

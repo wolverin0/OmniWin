@@ -216,7 +216,7 @@ public class CoreServicesTests
         Assert.Contains("scanhealth", steps[0].CommandDescription, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("restorehealth", steps[1].CommandDescription, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("sfc", steps[2].CommandDescription, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("resetbase", steps[3].CommandDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("startcomponentcleanup", steps[3].CommandDescription, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("SoftwareDistribution", steps[4].CommandDescription, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("winsock", steps[5].CommandDescription, StringComparison.OrdinalIgnoreCase);
     }

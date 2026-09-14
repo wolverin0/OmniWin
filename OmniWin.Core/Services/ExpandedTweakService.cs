@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Microsoft.Win32;
 
 namespace OmniWin.Core.Services;
@@ -2042,27 +2044,55 @@ public class ExpandedTweakService
 
     private static void ApplyNagle(bool disable)
     {
-        int val = disable ? 1 : 0;
-        using var baseKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces", true);
-        if (baseKey == null) return;
-
-        foreach (var subName in baseKey.GetSubKeyNames())
+        try
         {
-            using var sub = baseKey.OpenSubKey(subName, true);
-            if (sub != null)
+            using var baseKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces", true);
+            if (baseKey == null) return;
+
+            // Target only active physical network interfaces with gateway to avoid breaking VPNs, Hyper-V, or local loopbacks
+            var activeGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
             {
-                if (disable)
+                var ifaces = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(n => n.OperationalStatus == OperationalStatus.Up &&
+                                (n.NetworkInterfaceType == NetworkInterfaceType.Ethernet || 
+                                 n.NetworkInterfaceType == NetworkInterfaceType.Wireless80211) &&
+                                !n.Description.Contains("Virtual", StringComparison.OrdinalIgnoreCase) &&
+                                !n.Description.Contains("vEthernet", StringComparison.OrdinalIgnoreCase) &&
+                                !n.Description.Contains("VPN", StringComparison.OrdinalIgnoreCase) &&
+                                n.GetIPProperties().GatewayAddresses.Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork));
+
+                foreach (var iface in ifaces)
                 {
-                    sub.SetValue("TcpAckFrequency", 1, RegistryValueKind.DWord);
-                    sub.SetValue("TCPNoDelay", 1, RegistryValueKind.DWord);
+                    activeGuids.Add(iface.Id);
                 }
-                else
+            }
+            catch { }
+
+            var subNames = baseKey.GetSubKeyNames();
+            var targets = activeGuids.Count > 0 
+                ? subNames.Where(s => activeGuids.Contains(s)).ToList()
+                : subNames.ToList();
+
+            foreach (var subName in targets)
+            {
+                using var sub = baseKey.OpenSubKey(subName, true);
+                if (sub != null)
                 {
-                    sub.DeleteValue("TcpAckFrequency", false);
-                    sub.DeleteValue("TCPNoDelay", false);
+                    if (disable)
+                    {
+                        sub.SetValue("TcpAckFrequency", 1, RegistryValueKind.DWord);
+                        sub.SetValue("TCPNoDelay", 1, RegistryValueKind.DWord);
+                    }
+                    else
+                    {
+                        sub.DeleteValue("TcpAckFrequency", false);
+                        sub.DeleteValue("TCPNoDelay", false);
+                    }
                 }
             }
         }
+        catch { }
     }
 
     private static void ApplyHostsBlock(bool block)
@@ -2070,39 +2100,49 @@ public class ExpandedTweakService
         string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers", "etc", "hosts");
         if (!File.Exists(hostsPath)) return;
 
-        var lines = File.ReadAllLines(hostsPath).ToList();
-        var newLines = new List<string>();
-        bool insideBlock = false;
-
-        foreach (var line in lines)
+        try
         {
-            if (line.Trim() == HostsBeginMarker)
-            {
-                insideBlock = true;
-                continue;
-            }
-            if (line.Trim() == HostsEndMarker)
-            {
-                insideBlock = false;
-                continue;
-            }
-            if (!insideBlock)
-            {
-                newLines.Add(line);
-            }
-        }
+            var lines = File.ReadAllLines(hostsPath).ToList();
+            var newLines = new List<string>();
+            bool insideBlock = false;
 
-        if (block)
-        {
-            newLines.Add(HostsBeginMarker);
-            foreach (var dom in TelemetryDomains)
+            foreach (var line in lines)
             {
-                newLines.Add($"0.0.0.0 {dom}");
+                if (line.Trim() == HostsBeginMarker)
+                {
+                    insideBlock = true;
+                    continue;
+                }
+                if (line.Trim() == HostsEndMarker)
+                {
+                    insideBlock = false;
+                    continue;
+                }
+                if (!insideBlock)
+                {
+                    newLines.Add(line);
+                }
             }
-            newLines.Add(HostsEndMarker);
-        }
 
-        File.WriteAllLines(hostsPath, newLines);
+            if (block)
+            {
+                newLines.Add(HostsBeginMarker);
+                foreach (var dom in TelemetryDomains)
+                {
+                    newLines.Add($"0.0.0.0 {dom}");
+                }
+                newLines.Add(HostsEndMarker);
+            }
+
+            var attr = File.GetAttributes(hostsPath);
+            if ((attr & FileAttributes.ReadOnly) != 0)
+            {
+                File.SetAttributes(hostsPath, attr & ~FileAttributes.ReadOnly);
+            }
+
+            File.WriteAllLines(hostsPath, newLines);
+        }
+        catch { }
     }
 
     private static void RunCmd(string command)
