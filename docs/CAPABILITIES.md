@@ -1,9 +1,9 @@
 # OmniWin — Catálogo Maestro de Capacidades, Módulos y Arquitectura
 
-> **Versión**: 1.3.0 Pro  
+> **Versión**: 1.4.0 Pro (Evidence & Ground-Truth Performance Engine)  
 > **Arquitectura**: 64-bit Native (.NET 9 Self-Contained)  
 > **Aceleración Gráfica**: WPF / Direct3D (Sin Electron, consumo < 40 MB RAM)  
-> **Servidor IA**: Protocolo MCP (Model Context Protocol) JSON-RPC sobre stdio (34 Herramientas)  
+> **Servidor IA**: Protocolo MCP (Model Context Protocol) JSON-RPC sobre stdio (35 Herramientas)  
 > **Entorno de Pruebas**: Laboratorio Dual Hyper-V (Windows 10 Pro 22H2 & Windows 11 Pro 23H2)
 
 ---
@@ -12,7 +12,7 @@
 
 OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herramientas de terceros (CCleaner, HWMonitor, Autoruns, Process Hacker, WinUtil, EarTrumpet, IObit Unlocker, Simplewall) en una aplicación de alto rendimiento con tres interfaces complementarias:
 1. **Interfaz Gráfica (GUI)**: 24 módulos y paneles especializados con navegación por píldoras segmentadas en Fluent Dark Mode.
-2. **Servidor MCP para IA**: 34 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
+2. **Servidor MCP para IA**: 35 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
 3. **Consola CLI (`omni`)**: 18 comandos para automatización y administración remota o por scripts.
 
 ---
@@ -125,6 +125,7 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigra
 32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling EcoQoS.
 33. `win_msi_doctor`: Diagnóstico, auditoría y conmutación de dispositivos PCIe (GPU, NICs) de IRQ compartido a MSI/MSI-X con prioridad alta para erradicar DPC latency spikes.
 34. `win_launcher_hibernator`: Suspensión / EcoQoS y trim de RAM de Discord, SteamWebHelper, Epic y navegadores durante gaming competitivo.
+35. `win_experiment_engine`: Micro-benchmarking empírico A/B de tweaks con medición de jitter de kernel, 1% Low / P99 y auto-reversión transaccional determinista.
 
 ---
 
@@ -158,4 +159,4 @@ Para garantizar cero regresiones y validación fidedigna de cambios:
 * **Conexión Directa**: PowerShell Direct sobre VMBus (`-VMId`) sin dependencia de red.
 * **UI Automation**: Conducción programática mediante `InvokePattern` y `AutomationId`.
 * **Ground-Truth Matrix**: Verificación directa de claves de registro reales en el sistema operativo para confirmar que cada tweak aplicado persiste en Windows.
-* **Suite de Pruebas Automatizadas**: 129 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).
+* **Suite de Pruebas Automatizadas**: 140 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).

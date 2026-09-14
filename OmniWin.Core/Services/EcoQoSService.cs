@@ -42,6 +42,7 @@ public class EcoQoSService
     private static extern bool CloseHandle(IntPtr hObject);
 
     private readonly HashSet<int> _throttledPids = new();
+    private readonly Dictionary<int, ProcessPriorityClass> _originalPriorities = new();
     private readonly object _lock = new();
 
     // Known background workers safe to throttle to EcoQoS during competitive gaming
@@ -60,6 +61,33 @@ public class EcoQoSService
 
     public bool SetProcessEcoQoS(int pid, bool enable)
     {
+        // 1. Modulate PriorityClass
+        try
+        {
+            using var proc = Process.GetProcessById(pid);
+            lock (_lock)
+            {
+                if (enable)
+                {
+                    if (!_originalPriorities.ContainsKey(pid))
+                    {
+                        _originalPriorities[pid] = proc.PriorityClass;
+                    }
+                    proc.PriorityClass = ProcessPriorityClass.Idle;
+                }
+                else
+                {
+                    if (_originalPriorities.TryGetValue(pid, out var origPriority))
+                    {
+                        proc.PriorityClass = origPriority;
+                        _originalPriorities.Remove(pid);
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 2. Set Win32 ProcessPowerThrottling state
         IntPtr hProc = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
         if (hProc == IntPtr.Zero) return false;
 

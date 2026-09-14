@@ -366,5 +366,36 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - 129 pruebas unitarias y de integración pasando sin errores en .NET 9 (`OmniWin.Tests`).
   - Verificación estricta de las 34 herramientas MCP (`McpServerTests`), reportes del MSI Doctor y ciclo de vida de hibernación de launchers.
 
+---
+
+### Fase 26: Motor de Evidencia Empírica, Transaccionalidad de Tweaks & Telemetría Unificada (100% Completada)
+- [x] **26.1 Concentrador Central de Telemetría (`TelemetryHub`)**:
+  - Telemetría de alta resolución (1s) unificada desacoplada de interfaces y clientes.
+  - Recolección sin contención de métricas reales de CPU (via kernel32 `GetSystemTimes`), GPU (carga de núcleo, temperatura, VRAM en MB), potencia de paquete de CPU (Watts), memoria física y jitter de despachador de hilos.
+  - Alimenta continuamente el ring buffer de `StutterInvestigatorService` con datos reales de CPU y GPU en vez de valores ciegos a 0.0.
+  - Enriquecimiento del stream WebSocket de `CompanionServerService` y métricas Prometheus de `MetricsExporterService`.
+- [x] **26.2 Motor de Transaccionalidad y Reversión Exacta (`TransactionService`, `TweakTransaction`)**:
+  - Journaling persistente en JSON (`AppData/Local/OmniWin/transactions/journal.json`) que captura el estado exacto pre-existente antes de aplicar cualquier tweak (valor de registro, tipo exacto `DWord`/`QWord`/`String`/`Binary`/`MultiString`, o estado de servicio).
+  - Rollback determinista: si el valor no existía antes, se elimina de forma limpia; si existía, se restaura a su valor exacto previo en lugar de suponer valores por defecto genéricos de Windows.
+  - Integrado de forma transparente en `ExpandedTweakService.ApplyTweak` y `RollbackTweak`.
+- [x] **26.3 Motor de Auto-Experimentación A/B (`OmniExperimentEngine`, `win_experiment_engine`)**:
+  - Plataforma de micro-benchmarking empírico inspirada en metodologías de investigación automatizada (`autoresearch`) adaptada a la optimización de Windows.
+  - Fases de medición comparativa rigurosa: Muestreo de Línea de Base (Baseline) vs Muestreo con Tweak (Treatment).
+  - Análisis estadístico avanzado: Media, Desviación Estándar, P95, P99 (equivalente 1% Low), P99.9 (equivalente 0.1% Low) y estimación de significancia / confianza estadística.
+  - Veredicto determinista (`Beneficial`, `Neutral`, `Harmful`, `Inconclusive`).
+  - Auto-rollback transaccional inmediato si el tweak es neutral o perjudicial (conservando solo lo que demuestra mejoras empíricas medibles).
+  - Registrado como la Herramienta MCP 35: `win_experiment_engine`.
+- [x] **26.4 Saneamiento de Interrupciones MSI-X en Adaptadores de Red (`MsiInterruptService`)**:
+  - Eliminación de la imposición de `MessageNumberLimit = 1` en adaptadores de red (`DeviceClass == "Net"`), preservando la cola múltiple Receive Side Scaling (RSS) de NICs modernas (hasta 2048 mensajes) y evitando cuellos de botella en un único núcleo de CPU.
+  - Saneamiento de afirmaciones de latencia en la UI a lenguaje técnico fundamentado.
+- [x] **26.5 Smart Background QoS & Preservación de Prioridades (`EcoQoSService`)**:
+  - Modulación combinada de `PROCESS_POWER_THROTTLING_EXECUTION_SPEED` junto con reducción de `ProcessPriorityClass.Idle` para procesos en background no críticos.
+  - Registro de la prioridad original previa del proceso y restauración exacta al salir de juego o revertir la optimización.
+- [x] **26.6 Purga Segura Remota de Memoria (`CompanionServerService`)**:
+  - Configuración de purga segura en OmniCompanion (`PurgeMemory(true, false)`), vaciando listas de espera sin purgar agresivamente el working set de aplicaciones en primer plano.
+- [x] **26.7 Suite Completa de Pruebas Automatizadas 100% Verde (140/140 Tests)**:
+  - 140 pruebas unitarias y de integración pasando con éxito en .NET 9 (`OmniWin.Tests`).
+  - Cobertura completa de `TelemetryHub`, `TransactionService`, `OmniExperimentEngine`, `McpServer` con 35 herramientas, métricas de Prometheus y telemetría móvil.
+
 
 

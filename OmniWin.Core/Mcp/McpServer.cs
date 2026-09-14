@@ -68,12 +68,12 @@ public class McpServer
         }
     }
 
-    private async Task HandleJsonRpcMessageAsync(JsonObject req)
+    public async Task<JsonObject?> HandleRequestAsync(JsonObject req)
     {
         var id = req["id"];
         var method = req["method"]?.GetValue<string>();
 
-        if (string.IsNullOrEmpty(method)) return;
+        if (string.IsNullOrEmpty(method)) return null;
 
         if (id == null)
         {
@@ -81,7 +81,7 @@ public class McpServer
             {
                 Console.Error.WriteLine("[OmniWin MCP] Cliente inicializado.");
             }
-            return;
+            return null;
         }
 
         JsonObject response = new JsonObject
@@ -148,8 +148,16 @@ public class McpServer
             };
         }
 
-        string jsonResponse = response.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
-        Console.WriteLine(jsonResponse);
+        return response;
+    }
+
+    private async Task HandleJsonRpcMessageAsync(JsonObject req)
+    {
+        var response = await HandleRequestAsync(req);
+        if (response != null)
+        {
+            Console.WriteLine(response.ToJsonString(new JsonSerializerOptions { WriteIndented = false }));
+        }
     }
 
     public static JsonArray GetToolsList()
@@ -586,6 +594,25 @@ public class McpServer
             }
         });
 
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_experiment_engine",
+            ["description"] = "Ejecuta micro-benchmarks A/B empíricos sobre tweaks del sistema. Mide jitter de kernel (P99, P99.9/0.1% low) en fase base vs tratamiento. Conserva el tweak solo si demuestra beneficio estadístico real; si es neutral o perjudicial, ejecuta auto-rollback transaccional exacto.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "run_experiment", "get_history", "rollback_transaction" }, ["description"] = "Acción: 'run_experiment', 'get_history', o 'rollback_transaction'" },
+                    ["tweak_id"] = new JsonObject { ["type"] = "string", ["description"] = "Identificador del tweak para el experimento (ej. 'gaming_win32_priority', 'gaming_network_throttling')" },
+                    ["baseline_seconds"] = new JsonObject { ["type"] = "integer", ["description"] = "Duración en segundos de la fase de línea de base (mínimo 2, por defecto 5)" },
+                    ["treatment_seconds"] = new JsonObject { ["type"] = "integer", ["description"] = "Duración en segundos de la fase de prueba con el tweak (mínimo 2, por defecto 5)" },
+                    ["auto_revert"] = new JsonObject { ["type"] = "boolean", ["description"] = "Si es true, revierte automáticamente el tweak si no muestra beneficio estadístico claro (por defecto true)" }
+                },
+                ["required"] = new JsonArray { "action" }
+            }
+        });
+
         return tools;
     }
 
@@ -866,6 +893,31 @@ public class McpServer
                         _ => LauncherHibernatorService.Instance.GetStatus()
                     };
                     content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(hibResult, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_experiment_engine":
+                    string expAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "run_experiment";
+                    if (expAction == "get_history")
+                    {
+                        var history = OmniExperimentEngine.Instance.GetHistory();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(history, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (expAction == "rollback_transaction")
+                    {
+                        string targetTweak = args["tweak_id"]?.GetValue<string>() ?? "";
+                        bool rbSuccess = TransactionService.Instance.RollbackTransaction(targetTweak, out string rbMsg);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(new { success = rbSuccess, message = rbMsg }) });
+                    }
+                    else
+                    {
+                        string targetTweak = args["tweak_id"]?.GetValue<string>() ?? "gaming_win32_priority";
+                        int baseSec = args["baseline_seconds"]?.GetValue<int>() ?? 5;
+                        int treatSec = args["treatment_seconds"]?.GetValue<int>() ?? 5;
+                        bool autoRev = args["auto_revert"]?.GetValue<bool>() ?? true;
+
+                        var report = await OmniExperimentEngine.Instance.RunExperimentAsync(targetTweak, baseSec, treatSec, autoRev);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
                     break;
 
                 default:

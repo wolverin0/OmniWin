@@ -104,6 +104,9 @@ public class ThermalSnapshot
     public List<ThermalAlertEvent> ActiveAlerts { get; set; } = new();
     public double? CpuPackageTemp { get; set; }
     public double? GpuCoreTemp { get; set; }
+    public double? GpuCoreLoad { get; set; }
+    public double? CpuPowerWatts { get; set; }
+    public double? GpuMemoryUsedMb { get; set; }
     public double? MaxStorageTemp { get; set; }
     public ThermalSeverity GlobalSeverity { get; set; } = ThermalSeverity.Normal;
 }
@@ -345,6 +348,37 @@ public class ThermalSensorService : IDisposable
                 });
             }
         }
+
+        // 3. Process Power, Load and Memory
+        if (normalizedType == "Cpu")
+        {
+            var powerSensors = hardware.Sensors.Where(s => s.SensorType == SensorType.Power).ToList();
+            var pkgPower = powerSensors.FirstOrDefault(s => s.Name.Contains("Package", StringComparison.OrdinalIgnoreCase))
+                        ?? powerSensors.FirstOrDefault(s => s.Name.Contains("Total", StringComparison.OrdinalIgnoreCase))
+                        ?? powerSensors.FirstOrDefault();
+            if (pkgPower?.Value.HasValue == true)
+            {
+                snapshot.CpuPowerWatts = Math.Round(pkgPower.Value.Value, 1);
+            }
+        }
+        else if (normalizedType == "Gpu")
+        {
+            var loadSensors = hardware.Sensors.Where(s => s.SensorType == SensorType.Load).ToList();
+            var coreLoad = loadSensors.FirstOrDefault(s => s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase) || s.Name.Contains("GPU", StringComparison.OrdinalIgnoreCase))
+                        ?? loadSensors.FirstOrDefault();
+            if (coreLoad?.Value.HasValue == true)
+            {
+                snapshot.GpuCoreLoad = Math.Round(coreLoad.Value.Value, 1);
+            }
+
+            var memSensors = hardware.Sensors.Where(s => s.SensorType == SensorType.SmallData || s.SensorType == SensorType.Data).ToList();
+            var memUsed = memSensors.FirstOrDefault(s => s.Name.Contains("Memory Used", StringComparison.OrdinalIgnoreCase))
+                       ?? memSensors.FirstOrDefault(s => s.Name.Contains("Used", StringComparison.OrdinalIgnoreCase));
+            if (memUsed?.Value.HasValue == true)
+            {
+                snapshot.GpuMemoryUsedMb = Math.Round(memUsed.Value.Value, 0);
+            }
+        }
     }
 
     private void TryFallbackNvidiaGpu(ThermalSnapshot snapshot)
@@ -355,7 +389,7 @@ public class ThermalSensorService : IDisposable
             proc.StartInfo = new ProcessStartInfo
             {
                 FileName = "nvidia-smi",
-                Arguments = "--query-gpu=name,temperature.gpu,fan.speed --format=csv,noheader,nounits",
+                Arguments = "--query-gpu=name,temperature.gpu,fan.speed,utilization.gpu,memory.used --format=csv,noheader,nounits",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
@@ -367,7 +401,7 @@ public class ThermalSensorService : IDisposable
             if (!string.IsNullOrWhiteSpace(output))
             {
                 var parts = output.Split(',');
-                if (parts.Length >= 2 && double.TryParse(parts[1].Trim(), out double temp))
+                if (parts.Length >= 2 && double.TryParse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture, out double temp))
                 {
                     snapshot.GpuCoreTemp = temp;
                     snapshot.Temperatures.Add(new ThermalSensorReading
@@ -380,7 +414,7 @@ public class ThermalSensorService : IDisposable
                         MaxCelsius = temp
                     });
 
-                    if (parts.Length >= 3 && double.TryParse(parts[2].Trim(), out double fanPercent))
+                    if (parts.Length >= 3 && double.TryParse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture, out double fanPercent))
                     {
                         snapshot.Fans.Add(new FanSensorReading
                         {
@@ -393,6 +427,16 @@ public class ThermalSensorService : IDisposable
                             CanControl = false,
                             IsManual = false
                         });
+                    }
+
+                    if (parts.Length >= 4 && double.TryParse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture, out double gpuLoad))
+                    {
+                        snapshot.GpuCoreLoad = gpuLoad;
+                    }
+
+                    if (parts.Length >= 5 && double.TryParse(parts[4].Trim(), System.Globalization.CultureInfo.InvariantCulture, out double memUsedMb))
+                    {
+                        snapshot.GpuMemoryUsedMb = memUsedMb;
                     }
                 }
             }

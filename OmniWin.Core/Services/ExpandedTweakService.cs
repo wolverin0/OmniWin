@@ -701,6 +701,7 @@ public class ExpandedTweakService
     {
         try
         {
+            TransactionService.Instance.BeginTransaction(id);
             switch (id)
             {
                 // --- GAMING & LATENCIA ---
@@ -1025,6 +1026,14 @@ public class ExpandedTweakService
     {
         try
         {
+            if (TransactionService.Instance.HasActiveTransaction(id))
+            {
+                if (TransactionService.Instance.RollbackTransaction(id, out var msg))
+                {
+                    return new TweakExecutionResult { Success = true, TweakId = id, Message = msg };
+                }
+            }
+
             switch (id)
             {
                 // --- GAMING & LATENCIA ROLLBACK ---
@@ -2038,6 +2047,12 @@ public class ExpandedTweakService
     // ==========================================
     private static void SetRegDword(RegistryKey root, string subPath, string valueName, int value)
     {
+        try
+        {
+            TransactionService.Instance.CaptureRegistryPreState(root, subPath, valueName);
+        }
+        catch { }
+
         using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
         key?.SetValue(valueName, value, RegistryValueKind.DWord);
     }
@@ -2182,8 +2197,15 @@ public class ExpandedTweakService
         catch { return string.Empty; }
     }
 
-    private static TweakExecutionResult Ok(string id, string message) =>
-        new() { Success = true, TweakId = id, Message = message };
+    private static TweakExecutionResult Ok(string id, string message)
+    {
+        try
+        {
+            TransactionService.Instance.CommitTransaction(id);
+        }
+        catch { }
+        return new() { Success = true, TweakId = id, Message = message };
+    }
 
     private static TweakExecutionResult Fail(string id, string message) =>
         new() { Success = false, TweakId = id, Message = message };

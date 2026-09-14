@@ -178,7 +178,7 @@ public class MsiInterruptService
         }
         else
         {
-            report.Summary = $"⚠ Se detectaron {report.RecommendedToOptimizeCount} dispositivo(s) críticos operando en IRQ clásico compartido. Habilitar MSI Mode puede reducir picos de latencia DPC hasta 300 µs.";
+            report.Summary = $"⚠ Se detectaron {report.RecommendedToOptimizeCount} dispositivo(s) críticos operando en IRQ clásico compartido. Habilitar MSI Mode puede eliminar contención y picos de latencia DPC.";
         }
 
         return report;
@@ -197,11 +197,16 @@ public class MsiInterruptService
             using var devKey = Registry.LocalMachine.OpenSubKey(deviceKeyPath, writable: true);
             if (devKey == null) return false;
 
+            string devClass = devKey.GetValue("Class") as string ?? string.Empty;
+            bool isNet = devClass.Equals("Net", StringComparison.OrdinalIgnoreCase);
+
             // 1. Configure MessageSignaledInterruptProperties
             using (var msiKey = devKey.CreateSubKey(@"Device Parameters\Interrupt Management\MessageSignaledInterruptProperties", writable: true))
             {
                 msiKey.SetValue("MSISupported", enable ? 1 : 0, RegistryValueKind.DWord);
-                if (enable && msiKey.GetValue("MessageNumberLimit") == null)
+                
+                // Do NOT force MessageNumberLimit=1 on Network adapters: MSI-X requires multiple messages for RSS (Receive Side Scaling)
+                if (enable && !isNet && msiKey.GetValue("MessageNumberLimit") == null)
                 {
                     msiKey.SetValue("MessageNumberLimit", 1, RegistryValueKind.DWord);
                 }

@@ -331,6 +331,48 @@ public class MetricsExporterService : IDisposable
         sb.AppendLine($"windows_system_threads_count {threads.ToString(inv)}");
         sb.AppendLine();
 
+        // 6. Thermal, GPU and Latency Telemetry
+        var hub = TelemetryHub.Instance.CurrentSnapshot;
+        if (hub.CpuTemperatureCelsius.HasValue)
+        {
+            sb.AppendLine("# HELP windows_cpu_temperature_celsius CPU package temperature in Celsius.");
+            sb.AppendLine("# TYPE windows_cpu_temperature_celsius gauge");
+            sb.AppendLine($"windows_cpu_temperature_celsius {hub.CpuTemperatureCelsius.Value.ToString("F1", inv)}");
+            sb.AppendLine();
+        }
+
+        if (hub.CpuPowerWatts.HasValue)
+        {
+            sb.AppendLine("# HELP windows_cpu_power_watts CPU package power draw in Watts.");
+            sb.AppendLine("# TYPE windows_cpu_power_watts gauge");
+            sb.AppendLine($"windows_cpu_power_watts {hub.CpuPowerWatts.Value.ToString("F1", inv)}");
+            sb.AppendLine();
+        }
+
+        if (hub.GpuTemperatureCelsius.HasValue)
+        {
+            sb.AppendLine("# HELP windows_gpu_temperature_celsius GPU core temperature in Celsius.");
+            sb.AppendLine("# TYPE windows_gpu_temperature_celsius gauge");
+            sb.AppendLine($"windows_gpu_temperature_celsius {hub.GpuTemperatureCelsius.Value.ToString("F1", inv)}");
+            sb.AppendLine();
+        }
+
+        if (hub.GpuLoadPercent.HasValue)
+        {
+            sb.AppendLine("# HELP windows_gpu_usage_percent GPU core utilization percentage.");
+            sb.AppendLine("# TYPE windows_gpu_usage_percent gauge");
+            sb.AppendLine($"windows_gpu_usage_percent {hub.GpuLoadPercent.Value.ToString("F1", inv)}");
+            sb.AppendLine();
+        }
+
+        if (hub.KernelJitterUs > 0)
+        {
+            sb.AppendLine("# HELP windows_kernel_scheduler_jitter_microseconds Kernel thread scheduler wake jitter in microseconds.");
+            sb.AppendLine("# TYPE windows_kernel_scheduler_jitter_microseconds gauge");
+            sb.AppendLine($"windows_kernel_scheduler_jitter_microseconds {hub.KernelJitterUs.ToString("F1", inv)}");
+            sb.AppendLine();
+        }
+
         return sb.ToString();
     }
 

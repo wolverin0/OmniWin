@@ -3,13 +3,13 @@
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0--windows-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![C# Native](https://img.shields.io/badge/Language-C%23%2013-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
-[![MCP Protocol](https://img.shields.io/badge/MCP-34%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-129%2F129%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
+[![MCP Protocol](https://img.shields.io/badge/MCP-35%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
+[![Tests](https://img.shields.io/badge/Tests-140%2F140%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
 [![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **OmniWin** is a native, ultra-high-performance Windows 10 and Windows 11 (24H2 / 25H2 / 26H1) engineering, gaming optimization, and observability control plane written in compiled C# (.NET 9) with direct Win32 & NT Kernel API integrations.
-> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 34-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
+> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 35-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
 
 ---
 
@@ -75,9 +75,14 @@
 * Automatically detects when competitive games launch and applies `EcoQoS` throttling (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`), idle priority, and working set trimming to background Chromium/CEF launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, browsers).
 * Frees 1.2 GB – 2.8 GB of physical RAM without disconnecting Discord voice or terminating Steam downloads, and seamlessly restores full performance when games exit.
 
-### 12. 🤖 34-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
+### 12. 🔬 Empirical A/B Experiment Engine & Transactional Rollbacks (`OmniExperimentEngine`, `TransactionService`)
+* **Scientific Optimization (autoresearch for Windows)**: Automated A/B micro-benchmarking of system tweaks against kernel thread scheduler wake jitter, computing Mean, P99 (1% Low equivalent), and P99.9 (0.1% Low equivalent) statistical deltas.
+* **Deterministic Rollbacks**: Captures the exact pre-existing state of registry keys and service states into a persistent journal (`journal.json`). Auto-reverts neutral or harmful tweaks and restores exact prior configurations instead of guessing default values.
+* **Unified Telemetry Hub (`TelemetryHub`)**: Decoupled, non-blocking telemetry aggregator feeding live CPU, GPU load/thermals/VRAM, and kernel jitter to Stutter Investigator, Companion, and Prometheus.
+
+### 13. 🤖 35-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
 * Native JSON-RPC stdio Model Context Protocol (MCP) server compatible with Claude Desktop, Antigravity, Cursor, and Ollama.
-* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, audit kernel jitter, optimize MSI interrupts, and manage launcher hibernation autonomously.
+* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, audit kernel jitter, optimize MSI interrupts, manage launcher hibernation, and run A/B tweak micro-benchmarks autonomously.
 
 ---
 
@@ -102,14 +107,14 @@
 ```text
 OmniWin/
 ├── OmniWin.Core/              # Core domain services (NT Memory, Hardware, WFP, Disk, Network, Dism, etc.)
-│   ├── Services/              # MsiInterruptService, LauncherHibernatorService, RtssService, MemoryService, etc.
+│   ├── Services/              # TelemetryHub, TransactionService, OmniExperimentEngine, MsiInterruptService, etc.
 │   └── Models/                # Strongly-typed data models and system telemetry snapshots
 ├── OmniWin.UI/                # Hardware-accelerated WPF Desktop Application (.NET 9)
 │   ├── Views/                 # Specialized panels (GamingOverlay, HardwareTelemetry, GameProfiler, etc.)
 │   └── Assets/                # Application icons and vector graphics
 ├── OmniWin.Cli/               # Standalone headless command-line interface ('omni')
-├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (34 tools)
-├── OmniWin.Tests/             # 129 automated unit and STA visual tests (RenderTargetBitmap)
+├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (35 tools)
+├── OmniWin.Tests/             # 140 automated unit, integration and STA visual tests
 ├── distribution/              # Packaging configurations, manifests and WinGet definitions
 ├── docs/                      # Technical documentation, E2E VM lab guides, ROADMAP.md, and assets
 └── scripts/                   # PowerShell distribution build and packaging automation

@@ -135,6 +135,9 @@ public class HardwareService : IDisposable
             var thermalSnap = ThermalSensorService.Instance.GetSnapshot();
             snapshot.CpuTemperatureCelsius = thermalSnap.CpuPackageTemp;
             snapshot.GpuTemperatureCelsius = thermalSnap.GpuCoreTemp;
+            snapshot.CpuPowerWatts = thermalSnap.CpuPowerWatts;
+            snapshot.GpuLoadPercent = thermalSnap.GpuCoreLoad;
+            snapshot.GpuMemoryUsedMB = thermalSnap.GpuMemoryUsedMb;
             if (thermalSnap.Temperatures.Any(t => t.HardwareType == "Gpu"))
             {
                 var gpuTemp = thermalSnap.Temperatures.First(t => t.HardwareType == "Gpu");

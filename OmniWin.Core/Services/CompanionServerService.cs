@@ -331,7 +331,7 @@ public class CompanionServerService : IDisposable
             {
                 case "purge_ram":
                     var mem = new MemoryService();
-                    mem.PurgeMemory(true, true);
+                    mem.PurgeMemory(true, false);
                     break;
 
                 case "toggle_awake":
@@ -384,21 +384,8 @@ public class CompanionServerService : IDisposable
             {
                 await Task.Delay(1000, ct);
 
-                // Record rolling telemetry for Stutter Investigator
-                var memStats = new MemoryService().GetMemoryStats();
-                var thermalStats = ThermalSensorService.Instance.GetSnapshot();
-                StutterInvestigatorService.Instance.RecordSnapshot(new TelemetrySnapshot
-                {
-                    Timestamp = DateTime.UtcNow,
-                    CpuLoadPercent = 0.0,
-                    GpuLoadPercent = 0.0,
-                    CpuTempC = thermalStats.CpuPackageTemp ?? 0.0,
-                    GpuTempC = thermalStats.GpuCoreTemp ?? 0.0,
-                    AvailableRamMb = memStats.AvailablePhysicalBytes / (1024 * 1024),
-                    FrameTimeMs = 0.0,
-                    Fps = 0.0,
-                    ThermalThrottling = (thermalStats.CpuPackageTemp >= 90.0 || thermalStats.GpuCoreTemp >= 86.0)
-                });
+                // Sample live system telemetry via unified TelemetryHub (feeds StutterInvestigatorService with real CPU/GPU metrics)
+                var hubSnap = TelemetryHub.Instance.SampleNow();
 
                 if (_activeSockets.IsEmpty) continue;
 
@@ -431,9 +418,8 @@ public class CompanionServerService : IDisposable
     {
         try
         {
-            var mem = new MemoryService().GetMemoryStats();
+            var hub = TelemetryHub.Instance.CurrentSnapshot;
             var net = new NetworkService().GetNetworkThroughput();
-            var thermal = ThermalSensorService.Instance.GetSnapshot();
             var awake = AwakeService.Instance.CurrentState;
             var hibStatus = LauncherHibernatorService.Instance.GetStatus();
             var settings = AppSettingsService.Instance.Settings;
@@ -441,13 +427,18 @@ public class CompanionServerService : IDisposable
             var payload = new
             {
                 hostname = Environment.MachineName,
-                ramUsagePercent = mem.UsagePercentage,
-                ramUsedGb = mem.UsedPhysicalBytes / (1024.0 * 1024.0 * 1024.0),
-                ramTotalGb = mem.TotalPhysicalBytes / (1024.0 * 1024.0 * 1024.0),
+                cpuLoad = hub.CpuLoadPercent,
+                cpuTemp = hub.CpuTemperatureCelsius,
+                cpuPower = hub.CpuPowerWatts,
+                gpuLoad = hub.GpuLoadPercent,
+                gpuTemp = hub.GpuTemperatureCelsius,
+                gpuMemoryMb = hub.GpuMemoryUsedMb,
+                ramUsagePercent = hub.RamUsagePercent,
+                ramUsedGb = hub.RamUsedBytes / (1024.0 * 1024.0 * 1024.0),
+                ramTotalGb = hub.RamTotalBytes / (1024.0 * 1024.0 * 1024.0),
                 netDownloadSpeed = net.downloadBytesPerSec,
                 netUploadSpeed = net.uploadBytesPerSec,
-                cpuTemp = thermal.CpuPackageTemp,
-                gpuTemp = thermal.GpuCoreTemp,
+                kernelJitterUs = hub.KernelJitterUs,
                 isAwakeActive = awake.IsActive,
                 isHibernating = hibStatus.IsHibernating,
                 hibernatedCount = hibStatus.HibernatedProcessCount,

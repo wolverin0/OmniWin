@@ -28,11 +28,41 @@ public class LatencyBenchmarkResult
 
 public class KernelLatencyService
 {
+    private static readonly Lazy<KernelLatencyService> _instance = new(() => new KernelLatencyService());
+    public static KernelLatencyService Instance => _instance.Value;
+
+    private double _lastJitterUs = 0;
+    public double CurrentJitterUs => _lastJitterUs;
+
     [DllImport("ntdll.dll", SetLastError = true)]
     private static extern int NtQueryTimerResolution(out uint minResolution, out uint maxResolution, out uint currentResolution);
 
     [DllImport("ntdll.dll", SetLastError = true)]
     private static extern int NtSetTimerResolution(uint desiredResolution, bool setResolution, out uint currentResolution);
+
+    [DllImport("ntdll.dll", SetLastError = true)]
+    private static extern int NtDelayExecution(bool alertable, ref long delayInterval);
+
+    public double MeasureTimerJitterUs()
+    {
+        try
+        {
+            long freq = Stopwatch.Frequency;
+            long interval = -10000; // 1ms in 100-ns units
+            long start = Stopwatch.GetTimestamp();
+            NtDelayExecution(false, ref interval);
+            long end = Stopwatch.GetTimestamp();
+
+            double actualUs = ((end - start) * 1_000_000.0) / freq;
+            double jitter = actualUs > 1000.0 ? (actualUs - 1000.0) : 0.0;
+            _lastJitterUs = Math.Round(jitter, 1);
+            return _lastJitterUs;
+        }
+        catch
+        {
+            return 0.0;
+        }
+    }
 
     public TimerResolutionInfo GetTimerResolution()
     {
@@ -75,9 +105,6 @@ public class KernelLatencyService
         }
     }
 
-    [DllImport("ntdll.dll", SetLastError = true)]
-    private static extern int NtDelayExecution(bool alertable, ref long delayInterval);
-
     public Task<LatencyBenchmarkResult> RunJitterBenchmarkAsync(int samples = 50)
     {
         return Task.Run(() =>
@@ -118,19 +145,19 @@ public class KernelLatencyService
             {
                 verdict = "Excelente: Temporizador de kernel responsivo, óptimo para eSports y audio en tiempo real.";
                 color = "#10B981"; // Emerald
-                rec = "El despachador de interrupciones del kernel responde con precisión sub-milisegundo sin contención DPC.";
+                rec = "El despachador del planificador responde con precisión sub-milisegundo (jitter de despertar mínimo).";
             }
             else if (maxJitterUs < 1800.0)
             {
                 verdict = "Bueno: Estabilidad estándar de Windows para trabajo y gaming.";
                 color = "#38BDF8"; // Sky Blue
-                rec = "La resolución de reloj es adecuada. Activar el Timer 0.5ms reducirá la latencia residual a la mitad.";
+                rec = "La resolución de reloj es adecuada. Activar el Timer 0.5ms reducirá la latencia residual de despertar a la mitad.";
             }
             else
             {
-                verdict = "Alerta: Retardo de interrupción o DPC elevado detectado (> 1.8 ms).";
+                verdict = "Alerta: Jitter de despertar del planificador elevado (> 1.8 ms).";
                 color = "#F59E0B"; // Amber
-                rec = "Un controlador (generalmente GPU, WiFi o audio) o el reloj estándar de 15.6ms retrasan la cola DPC. Considera activar el Timer 0.5ms.";
+                rec = "El reloj estándar de 15.6ms o la carga de interrupciones retrasan los hilos al despertar. Considera activar el Timer 0.5ms.";
             }
 
             return new LatencyBenchmarkResult
