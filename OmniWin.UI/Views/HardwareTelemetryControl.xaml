@@ -474,7 +474,76 @@
                 </Grid>
             </Border>
 
-            <!-- SECTION 5: HARDWARE SENSORS, FANS & THERMAL ALARMS -->
+            <!-- SECTION 5: MSI MODE & IRQ INTERRUPT DOCTOR -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,16,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border Background="#1E1B4B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" Fill="#818CF8" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="IRQ / DPC DOCTOR" FontSize="10.5" FontWeight="Bold" Foreground="#A5B4FC" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Modo MSI (Message Signaled Interrupts) &amp; Prioridad IRQ" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="Audita y conmuta dispositivos PCIe de interrupciones de línea compartidas (Legacy Line-Based IRQ) a vectores directos de memoria (MSI/MSI-X) para eliminar micro-stutterings y DPC latency spikes." FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnOptimizeMsi" Content="⚡ Optimizar GPU &amp; Red (MSI High)" Click="BtnOptimizeMsi_Click" Background="#10B981" Foreground="White" Margin="0,0,8,0" Padding="14,6" FontSize="11.5" ToolTip="Configura GPU y adaptadores de red a MSI Mode con DevicePriority=High (2) automáticamente" />
+                            <Button x:Name="BtnRefreshMsi" Content="🔄 Re-auditar PCIe" Click="BtnRefreshMsi_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11.5" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Status Summary Row -->
+                    <Border Grid.Row="1" Background="#090D16" CornerRadius="6" Padding="14,10" Margin="0,14,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <Grid>
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Total PCIe Auditados: " FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtMsiTotalDevices" Text="-- " FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,20,0" />
+
+                                <TextBlock Text="En Modo MSI: " FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtMsiEnabledDevices" Text="-- " FontSize="11.5" FontWeight="Bold" Foreground="#10B981" Margin="0,0,20,0" />
+
+                                <TextBlock Text="Legacy Line-Based (IRQ): " FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtMsiLegacyDevices" Text="-- " FontSize="11.5" FontWeight="Bold" Foreground="#F59E0B" Margin="0,0,20,0" />
+
+                                <TextBlock Text="Recomendados sin Optimizar: " FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtMsiUnoptimizedCount" Text="-- " FontSize="11.5" FontWeight="Bold" Foreground="#EF4444" Margin="0,0,20,0" />
+                            </WrapPanel>
+                            <TextBlock x:Name="TxtMsiFeedback" Text="" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Devices List -->
+                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="DISPOSITIVOS PCIE CRÍTICOS (GPU, RED, AUDIO, ALMACENAMIENTO)" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="2,2,0,8" />
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="PanelMsiDevices">
+                                    <TextBlock Text="Cargando dispositivos PCIe..." FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="4" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- SECTION 6: HARDWARE SENSORS, FANS & THERMAL ALARMS -->
             <views:ThermalCoolerControl Margin="0,16,0,0" />
         </StackPanel>
     </ScrollViewer>

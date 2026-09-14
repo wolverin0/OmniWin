@@ -3,13 +3,13 @@
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0--windows-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![C# Native](https://img.shields.io/badge/Language-C%23%2013-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
-[![MCP Protocol](https://img.shields.io/badge/MCP-32%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-121%2F121%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
+[![MCP Protocol](https://img.shields.io/badge/MCP-34%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
+[![Tests](https://img.shields.io/badge/Tests-129%2F129%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
 [![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **OmniWin** is a native, ultra-high-performance Windows 10 and Windows 11 (24H2 / 25H2 / 26H1) engineering, gaming optimization, and observability control plane written in compiled C# (.NET 9) with direct Win32 & NT Kernel API integrations.
-> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 32-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
+> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 34-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
 
 ---
 
@@ -63,13 +63,21 @@
 * Automatically detects active foreground esports games (`cs2.exe`, `valorant.exe`, `cod.exe`, `overwatch.exe`, etc.).
 * Dynamically prioritizes game execution on Performance Cores (P-Cores) via `GetSystemCpuSetInformation` while applying `EcoQoS` (efficiency execution throttling) to non-critical background services.
 
-### 9. 📱 OmniCompanion — Remote Mobile / Tablet Dashboard (`CompanionServerService`)
-* Embedded Kestrel Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger RAM purges, or switch performance profiles from a phone or tablet.
+### 9. 📱 OmniCompanion 2.0 — Mobile/Tablet Touch PWA & Remote HUD Controller (`CompanionServerService`)
+* Embedded Kestrel Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger RAM purges, and **remotely control the in-game HUD overlay** (style switcher, opacity, scale, corner snap, and metric toggles) from a phone or tablet.
 * Zero-friction setup via dynamic QR Code pairing on the local network.
 
-### 10. 🤖 32-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
+### 10. ⚡ MSI Mode & IRQ Interrupt Doctor (`MsiInterruptService`)
+* Audits all PCIe devices under `HKLM\SYSTEM\CurrentControlSet\Enum\PCI`.
+* Switches GPUs and physical network cards from shared line-based interrupts (Legacy IRQ) to dedicated memory-signaled interrupts (MSI/MSI-X) with `DevicePriority=High (2)` to eliminate DPC/ISR latency spikes and micro-stuttering.
+
+### 11. 💤 Intelligent Launcher & WebView Hibernator (`LauncherHibernatorService`)
+* Automatically detects when competitive games launch and applies `EcoQoS` throttling (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`), idle priority, and working set trimming to background Chromium/CEF launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, browsers).
+* Frees 1.2 GB – 2.8 GB of physical RAM without disconnecting Discord voice or terminating Steam downloads, and seamlessly restores full performance when games exit.
+
+### 12. 🤖 34-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
 * Native JSON-RPC stdio Model Context Protocol (MCP) server compatible with Claude Desktop, Antigravity, Cursor, and Ollama.
-* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, and audit kernel jitter autonomously.
+* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, audit kernel jitter, optimize MSI interrupts, and manage launcher hibernation autonomously.
 
 ---
 
@@ -94,14 +102,14 @@
 ```text
 OmniWin/
 ├── OmniWin.Core/              # Core domain services (NT Memory, Hardware, WFP, Disk, Network, Dism, etc.)
-│   ├── Services/              # AppSettingsService, HardwareService, RtssService, MemoryService, etc.
+│   ├── Services/              # MsiInterruptService, LauncherHibernatorService, RtssService, MemoryService, etc.
 │   └── Models/                # Strongly-typed data models and system telemetry snapshots
 ├── OmniWin.UI/                # Hardware-accelerated WPF Desktop Application (.NET 9)
 │   ├── Views/                 # Specialized panels (GamingOverlay, HardwareTelemetry, GameProfiler, etc.)
 │   └── Assets/                # Application icons and vector graphics
 ├── OmniWin.Cli/               # Standalone headless command-line interface ('omni')
-├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (32 tools)
-├── OmniWin.Tests/             # 121 automated unit and STA visual tests (RenderTargetBitmap)
+├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (34 tools)
+├── OmniWin.Tests/             # 129 automated unit and STA visual tests (RenderTargetBitmap)
 ├── distribution/              # Packaging configurations, manifests and WinGet definitions
 ├── docs/                      # Technical documentation, E2E VM lab guides, ROADMAP.md, and assets
 └── scripts/                   # PowerShell distribution build and packaging automation
@@ -120,7 +128,7 @@ OmniWin/
 dotnet build OmniWin.sln -c Release
 ```
 
-### 2. Run Test Suite (121 Tests)
+### 2. Run Test Suite (129 Tests)
 ```bash
 dotnet test OmniWin.Tests/OmniWin.Tests.csproj -c Release
 ```

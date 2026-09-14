@@ -1,9 +1,9 @@
 # OmniWin — Catálogo Maestro de Capacidades, Módulos y Arquitectura
 
-> **Versión**: 1.2.0 Pro  
+> **Versión**: 1.3.0 Pro  
 > **Arquitectura**: 64-bit Native (.NET 9 Self-Contained)  
 > **Aceleración Gráfica**: WPF / Direct3D (Sin Electron, consumo < 40 MB RAM)  
-> **Servidor IA**: Protocolo MCP (Model Context Protocol) JSON-RPC sobre stdio  
+> **Servidor IA**: Protocolo MCP (Model Context Protocol) JSON-RPC sobre stdio (34 Herramientas)  
 > **Entorno de Pruebas**: Laboratorio Dual Hyper-V (Windows 10 Pro 22H2 & Windows 11 Pro 23H2)
 
 ---
@@ -12,7 +12,7 @@
 
 OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herramientas de terceros (CCleaner, HWMonitor, Autoruns, Process Hacker, WinUtil, EarTrumpet, IObit Unlocker, Simplewall) en una aplicación de alto rendimiento con tres interfaces complementarias:
 1. **Interfaz Gráfica (GUI)**: 24 módulos y paneles especializados con navegación por píldoras segmentadas en Fluent Dark Mode.
-2. **Servidor MCP para IA**: 32 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
+2. **Servidor MCP para IA**: 34 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
 3. **Consola CLI (`omni`)**: 18 comandos para automatización y administración remota o por scripts.
 
 ---
@@ -22,11 +22,11 @@ OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herr
 | Pestaña | Nombre | Función Principal | Tecnologías y Mecanismos |
 | :---: | :--- | :--- | :--- |
 | **1** | **Dashboard Central** | Métricas en tiempo real de CPU, RAM, GPU, 7 unidades de disco y procesos principales. | LibreHardwareMonitor, WMI, DriveInfo, NtQuerySystemInformation |
-| **2** | **Telemetría & Hardware** | Sparklines en vivo (60s), métricas Prometheus en `:9182/metrics`, voltajes y ventiladores. | MetricsExporterService, HTTP Listener nativo, Canvas WPF |
-| **3** | **OmniCompanion Móvil** | Dashboard web PWA para móvil/tablet emparejado en pantalla mediante código QR sin contraseñas. | CompanionServerService (HTTP+WebSocket :8766), QRCoder, PngByteQRCode |
+| **2** | **Telemetría & Hardware** | Sparklines en vivo (60s), métricas Prometheus en `:9182/metrics`, MSI Doctor y ventiladores. | MetricsExporterService, MsiInterruptService, HTTP Listener nativo, Canvas WPF |
+| **3** | **OmniCompanion 2.0 Móvil** | Dashboard web PWA táctil + Control Remoto del HUD en juego (estilos, opacidad, escala, anclaje) vía QR sin contraseñas. | CompanionServerService (HTTP+WebSocket :8766), QRCoder, PngByteQRCode |
 | **4** | **Forense de Procesos** | Árbol jerárquico padre-hijo, módulos DLL cargados, hilos y sockets TCP en vivo por proceso. | GetExtendedTcpTable, Toolhelp32Snapshot, ProcessDeepDiagService |
 | **5** | **Memoria RAM & Purga** | Mapa de bloques de memoria, purga atómica de Standby List y Working Sets en 1 clic. | NtSetSystemInformation (MemoryPurgeStandbyList, EmptyWorkingSets) |
-| **6** | **Game & App Profiler** | Detección automática de juegos, afinidad P-Cores (`GetSystemCpuSetInformation`), EcoQoS de fondo, timer 0.5ms. | GameProfilerService, CpuTopologyService, NtSetTimerResolution |
+| **6** | **Game & App Profiler** | Detección automática de juegos, afinidad P-Cores, EcoQoS, hibernador de launchers y timer 0.5ms. | GameProfilerService, LauncherHibernatorService, CpuTopologyService, NtSetTimerResolution |
 | **7** | **Energía & CPU Cores** | Gestión de planes, modo Ultimate Performance, Core Parking y scheduler de P/E-Cores. | PowerCfg, NtSetTimerResolution, CpuOptimizationService |
 | **8** | **Limpieza de Disco** | Análisis y purga segura de temporales, WinUpdate, crash dumps, prefetch y papelera. | DiskService con EnumerationOptions seguro (evita junctions/reparse points) |
 | **9** | **Espacio en Disco** | Analizador visual tipo WizTree: carpetas más pesadas, archivos gigantes (>50MB) y tipos. | Recorrido recursivo optimizado, Fast Directory Walker |
@@ -42,9 +42,9 @@ OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herr
 | **19** | **Reglas Defender ASR** | Matriz de las 16 reglas de Attack Surface Reduction con perfiles de 1 clic (Gamer, Máximo). | AsrRulesService, Defender PowerShell provider, WMI |
 | **20** | **Caja Negra & BSOD** | Decodificador de minidumps, códigos BugCheck y registro de eventos críticos Kernel-Power 41. | BsodForensicControl, Minidump reader, Windows EventLog |
 | **21** | **Software, BIOS & RAM** | WinGet, desinstalador profundo, drivers OEM, info BIOS y detección de subfrecuencia RAM JEDEC vs XMP/EXPO. | MotherboardBiosService, Winget CLI, Pnputil, DriverStore |
-| **22** | **Servidor IA / MCP** | Estado de conectividad MCP (32 herramientas), monitor de llamadas JSON-RPC y auto-registro. | OmniWin.Mcp stdio server, claude_desktop_config.json |
+| **22** | **Servidor IA / MCP** | Estado de conectividad MCP (34 herramientas), monitor de llamadas JSON-RPC y auto-registro. | OmniWin.Mcp stdio server, claude_desktop_config.json |
 | **23** | **Gaming HUD Overlay** | OSD Click-Through en 3 estilos (RivaTuner texto flotante puro, Card, Barra), opacidad y escala continua. | GamingOverlayWindow, WS_EX_TRANSPARENT, DropShadowEffect, Hotkeys |
-| **24** | **Doctores de Diagnóstico** | PCIe Link Doctor, DirectStorage BypassIO Doctor, Stutter Investigator y Topología P/E-Core. | PcieHealthService, DirectStorageService, StutterInvestigatorService, CpuTopologyService |
+| **24** | **Doctores de Diagnóstico** | PCIe Link Doctor, MSI Interrupt Doctor, DirectStorage BypassIO Doctor, Stutter Investigator y Topología P/E-Core. | PcieHealthService, MsiInterruptService, DirectStorageService, StutterInvestigatorService |
 
 ---
 
@@ -123,6 +123,8 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigra
 30. `win_bypassio_doctor`: Diagnóstico de DirectStorage 1.2 BypassIO y filtros de pila de almacenamiento en NVMe.
 31. `win_stutter_investigate`: Detección forense de micro-stuttering, jitter de interrupción de kernel vía `NtDelayExecution(-10000)` y DPC/ISR.
 32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling EcoQoS.
+33. `win_msi_doctor`: Diagnóstico, auditoría y conmutación de dispositivos PCIe (GPU, NICs) de IRQ compartido a MSI/MSI-X con prioridad alta para erradicar DPC latency spikes.
+34. `win_launcher_hibernator`: Suspensión / EcoQoS y trim de RAM de Discord, SteamWebHelper, Epic y navegadores durante gaming competitivo.
 
 ---
 
@@ -156,4 +158,4 @@ Para garantizar cero regresiones y validación fidedigna de cambios:
 * **Conexión Directa**: PowerShell Direct sobre VMBus (`-VMId`) sin dependencia de red.
 * **UI Automation**: Conducción programática mediante `InvokePattern` y `AutomationId`.
 * **Ground-Truth Matrix**: Verificación directa de claves de registro reales en el sistema operativo para confirmar que cada tweak aplicado persiste en Windows.
-* **Suite de Pruebas Automatizadas**: 121 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).
+* **Suite de Pruebas Automatizadas**: 129 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).

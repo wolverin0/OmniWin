@@ -58,6 +58,7 @@ public partial class HardwareTelemetryControl : UserControl
         SampleAndRender();
         RefreshGpuDiagnosticsAsync();
         UpdateTimerResolutionUi();
+        RefreshMsiDiagnosticsAsync();
 
         _timer.Start();
     }
@@ -581,6 +582,223 @@ public partial class HardwareTelemetryControl : UserControl
         {
             BtnBenchmarkLatency.IsEnabled = true;
             UpdateTimerResolutionUi();
+        }
+    }
+
+    private async void RefreshMsiDiagnosticsAsync()
+    {
+        try
+        {
+            var report = await System.Threading.Tasks.Task.Run(() => MsiInterruptService.Instance.RunDoctorReport());
+            TxtMsiTotalDevices.Text = report.TotalDevices.ToString();
+            TxtMsiEnabledDevices.Text = report.MsiActiveCount.ToString();
+            TxtMsiLegacyDevices.Text = report.LineBasedCount.ToString();
+            TxtMsiUnoptimizedCount.Text = report.RecommendedToOptimizeCount.ToString();
+            TxtMsiUnoptimizedCount.Foreground = report.RecommendedToOptimizeCount == 0
+                ? new SolidColorBrush(Color.FromRgb(52, 211, 153))
+                : new SolidColorBrush(Color.FromRgb(239, 68, 68));
+
+            PanelMsiDevices.Children.Clear();
+
+            // Filtrar dispositivos relevantes para gaming y baja latencia
+            var criticalDevices = report.Devices
+                .Where(d => d.IsRecommended || 
+                            d.DeviceClass.Equals("Display", StringComparison.OrdinalIgnoreCase) || 
+                            d.DeviceClass.Equals("Net", StringComparison.OrdinalIgnoreCase) || 
+                            d.DeviceClass.Equals("MEDIA", StringComparison.OrdinalIgnoreCase) || 
+                            d.DeviceClass.Equals("SCSIAdapter", StringComparison.OrdinalIgnoreCase) ||
+                            d.DeviceClass.Equals("HDC", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(d => d.IsRecommended)
+                .ThenBy(d => d.DeviceClass)
+                .ToList();
+
+            if (criticalDevices.Count == 0)
+            {
+                PanelMsiDevices.Children.Add(new TextBlock
+                {
+                    Text = "No se detectaron dispositivos PCIe relevantes.",
+                    Foreground = (Brush)FindResource("TextSecondary"),
+                    Margin = new Thickness(6)
+                });
+                return;
+            }
+
+            foreach (var dev in criticalDevices)
+            {
+                var rowBorder = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+                    BorderBrush = (Brush)FindResource("CardBorder"),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(5),
+                    Padding = new Thickness(10, 6, 10, 6),
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Badge tipo
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Nombre
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Modo MSI pill
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Prioridad pill
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Botón acción
+
+                // 1. Badge Categoría
+                string catName = dev.DeviceClass.ToUpperInvariant() switch
+                {
+                    "DISPLAY" => "GPU",
+                    "NET" => "RED",
+                    "MEDIA" => "AUDIO",
+                    "SCSIADAPTER" or "HDC" => "DISCO",
+                    _ => dev.DeviceClass
+                };
+
+                Color catColor = catName switch
+                {
+                    "GPU" => Color.FromRgb(129, 140, 248),
+                    "RED" => Color.FromRgb(56, 189, 248),
+                    "AUDIO" => Color.FromRgb(245, 158, 11),
+                    "DISCO" => Color.FromRgb(16, 185, 129),
+                    _ => Color.FromRgb(148, 163, 184)
+                };
+
+                var catBadge = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromArgb(40, catColor.R, catColor.G, catColor.B)),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(6, 2, 6, 2),
+                    Margin = new Thickness(0, 0, 10, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                catBadge.Child = new TextBlock
+                {
+                    Text = catName,
+                    FontSize = 10,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(catColor)
+                };
+                Grid.SetColumn(catBadge, 0);
+                grid.Children.Add(catBadge);
+
+                // 2. Nombre dispositivo
+                var txtName = new TextBlock
+                {
+                    Text = dev.FriendlyName,
+                    ToolTip = $"Key: {dev.DeviceKeyPath}\nClase: {dev.DeviceClass}",
+                    FontSize = 11.5,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = (Brush)FindResource("TextPrimary"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Margin = new Thickness(0, 0, 10, 0)
+                };
+                Grid.SetColumn(txtName, 1);
+                grid.Children.Add(txtName);
+
+                // 3. Modo MSI Pill
+                bool isMsi = dev.MsiSupported;
+                var modeBadge = new Border
+                {
+                    Background = new SolidColorBrush(isMsi ? Color.FromArgb(35, 16, 185, 129) : Color.FromArgb(35, 245, 158, 11)),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(6, 2, 6, 2),
+                    Margin = new Thickness(0, 0, 8, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                modeBadge.Child = new TextBlock
+                {
+                    Text = isMsi ? "MSI-X" : "Line-IRQ",
+                    FontSize = 10,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(isMsi ? Color.FromRgb(52, 211, 153) : Color.FromRgb(251, 191, 36))
+                };
+                Grid.SetColumn(modeBadge, 2);
+                grid.Children.Add(modeBadge);
+
+                // 4. Prioridad Pill
+                var prioBadge = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromArgb(30, 100, 116, 139)),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(6, 2, 6, 2),
+                    Margin = new Thickness(0, 0, 10, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                prioBadge.Child = new TextBlock
+                {
+                    Text = dev.Priority,
+                    FontSize = 10,
+                    Foreground = string.Equals(dev.Priority, "High", StringComparison.OrdinalIgnoreCase)
+                        ? new SolidColorBrush(Color.FromRgb(52, 211, 153))
+                        : new SolidColorBrush(Color.FromRgb(148, 163, 184))
+                };
+                Grid.SetColumn(prioBadge, 3);
+                grid.Children.Add(prioBadge);
+
+                // 5. Botón Acción rápida
+                bool needsOpt = !dev.MsiSupported || !string.Equals(dev.Priority, "High", StringComparison.OrdinalIgnoreCase);
+                var btnAction = new Button
+                {
+                    Content = needsOpt ? "⚡ MSI High" : "✓ Óptimo",
+                    IsEnabled = needsOpt,
+                    Padding = new Thickness(8, 2, 8, 2),
+                    FontSize = 10.5,
+                    Background = needsOpt ? new SolidColorBrush(Color.FromRgb(2, 132, 199)) : new SolidColorBrush(Color.FromArgb(20, 16, 185, 129)),
+                    Foreground = Brushes.White,
+                    Tag = dev.DeviceKeyPath
+                };
+                btnAction.Click += (s, ev) =>
+                {
+                    try
+                    {
+                        bool ok = MsiInterruptService.Instance.SetMsiMode(dev.DeviceKeyPath, enable: true, priority: "High");
+                        TxtMsiFeedback.Text = ok ? $"Actualizado: {dev.FriendlyName}" : "No se pudo actualizar la clave de registro.";
+                        RefreshMsiDiagnosticsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        TxtMsiFeedback.Text = $"Error: {ex.Message}";
+                    }
+                };
+                Grid.SetColumn(btnAction, 4);
+                grid.Children.Add(btnAction);
+
+                rowBorder.Child = grid;
+                PanelMsiDevices.Children.Add(rowBorder);
+            }
+        }
+        catch (Exception ex)
+        {
+            TxtMsiFeedback.Text = $"Error leyendo MSI: {ex.Message}";
+        }
+    }
+
+    private void BtnRefreshMsi_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshMsiDiagnosticsAsync();
+    }
+
+    private async void BtnOptimizeMsi_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            BtnOptimizeMsi.IsEnabled = false;
+            TxtMsiFeedback.Text = "Aplicando modo MSI y prioridad alta en GPU y adaptadores de red...";
+
+            int count = await System.Threading.Tasks.Task.Run(() => 
+                MsiInterruptService.Instance.OptimizeRecommendedGamingDevices());
+
+            TxtMsiFeedback.Text = count > 0 
+                ? $"Optimización completada: {count} dispositivo(s) configurados en MSI Mode (High Priority)."
+                : "Todos los dispositivos recomendados ya se encuentran configurados en MSI Mode.";
+            RefreshMsiDiagnosticsAsync();
+        }
+        catch (Exception ex)
+        {
+            TxtMsiFeedback.Text = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            BtnOptimizeMsi.IsEnabled = true;
         }
     }
 }

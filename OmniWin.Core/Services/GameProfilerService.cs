@@ -18,6 +18,7 @@ public class GameProfileItem
     public bool AutoPurgeRam { get; set; } = false; // Disabled by default: prevent launch working set flush & hard faults
     public bool AutoHighPriority { get; set; } = true;
     public bool AutoEcoQoSBackground { get; set; } = true; // EcoQoS for secondary apps (Chrome, Discord, Steam helpers)
+    public bool AutoHibernateLaunchers { get; set; } = true; // Suspend & trim bloated launchers/browsers during gaming
     public bool IsActive { get; set; } = false;
     public int ProcessId { get; set; } = 0;
 }
@@ -164,6 +165,7 @@ public class GameProfilerService : IDisposable
                 RevertTimerResolution();
             }
             EcoQoSService.Instance.RevertAllEcoQoS();
+            LauncherHibernatorService.Instance.WakeAllHibernatedProcesses();
         }
     }
 
@@ -228,6 +230,12 @@ public class GameProfilerService : IDisposable
                 EcoQoSService.Instance.ApplyEcoQoSToBackgroundApps(new[] { proc.Id });
             }
 
+            // 6. Intelligent Launcher & WebView Hibernation
+            if (profile.AutoHibernateLaunchers)
+            {
+                LauncherHibernatorService.Instance.HibernateBackgroundProcesses(new[] { proc.Id });
+            }
+
             _boostedProcessIds.Add(proc.Id);
         }
         catch { }
@@ -265,6 +273,7 @@ public class GameProfilerService : IDisposable
         _originalProcessStates.Clear();
         RevertTimerResolution();
         EcoQoSService.Instance.RevertAllEcoQoS();
+        LauncherHibernatorService.Instance.WakeAllHibernatedProcesses();
     }
 
     private void RevertTimerResolution()

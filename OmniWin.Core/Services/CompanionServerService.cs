@@ -52,6 +52,7 @@ public class CompanionServerService : IDisposable
     }
 
     public event Action<string>? OnCommandReceived;
+    public event Action<string, JsonElement>? OnHudRemoteActionReceived;
     public event Action<int>? OnClientsCountChanged;
 
     public CompanionServerService(int port = DEFAULT_PORT)
@@ -347,6 +348,26 @@ public class CompanionServerService : IDisposable
                     OnCommandReceived?.Invoke($"stutter:{stutter.ProbableCause}");
                     break;
 
+                case "hibernate_launchers":
+                    LauncherHibernatorService.Instance.HibernateBackgroundProcesses();
+                    OnCommandReceived?.Invoke("launchers:hibernated");
+                    break;
+
+                case "wake_launchers":
+                    LauncherHibernatorService.Instance.WakeAllHibernatedProcesses();
+                    OnCommandReceived?.Invoke("launchers:woken");
+                    break;
+
+                case "set_hud_style":
+                case "set_hud_opacity":
+                case "set_hud_scale":
+                case "set_hud_metric":
+                case "set_hud_corner":
+                case "toggle_hud_lock":
+                case "toggle_hud_visibility":
+                    OnHudRemoteActionReceived?.Invoke(action.ToLowerInvariant(), doc.RootElement.Clone());
+                    break;
+
                 default:
                     OnCommandReceived?.Invoke(action);
                     break;
@@ -414,6 +435,8 @@ public class CompanionServerService : IDisposable
             var net = new NetworkService().GetNetworkThroughput();
             var thermal = ThermalSensorService.Instance.GetSnapshot();
             var awake = AwakeService.Instance.CurrentState;
+            var hibStatus = LauncherHibernatorService.Instance.GetStatus();
+            var settings = AppSettingsService.Instance.Settings;
 
             var payload = new
             {
@@ -426,6 +449,19 @@ public class CompanionServerService : IDisposable
                 cpuTemp = thermal.CpuPackageTemp,
                 gpuTemp = thermal.GpuCoreTemp,
                 isAwakeActive = awake.IsActive,
+                isHibernating = hibStatus.IsHibernating,
+                hibernatedCount = hibStatus.HibernatedProcessCount,
+                freedMemoryMb = hibStatus.TotalMemoryFreedMb,
+                hudStyle = settings.HudStyleIndex,
+                hudOpacity = settings.HudBackgroundOpacity,
+                hudScale = settings.HudScale,
+                hudShowCpu = settings.HudShowCpu,
+                hudShowCpuTemp = settings.HudShowCpuTemp,
+                hudShowGpu = settings.HudShowGpu,
+                hudShowGpuTemp = settings.HudShowGpuTemp,
+                hudShowRam = settings.HudShowRam,
+                hudShowPing = settings.HudShowPing,
+                hudShowTimer = settings.HudShowSessionTimer,
                 timestamp = DateTime.UtcNow
             };
 
@@ -445,87 +481,208 @@ public class CompanionServerService : IDisposable
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniCompanion — Control Móvil</title>
+  <meta name="theme-color" content="#07090E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>OmniCompanion 2.0 — Control Móvil</title>
   <style>
     :root {
       --bg: #07090E; --card: #0D1322; --border: #162035; --accent: #0284C7;
-      --emerald: #10B981; --crimson: #EF4444; --text: #F8FAFC; --muted: #94A3B8;
+      --emerald: #10B981; --crimson: #EF4444; --indigo: #6366F1; --text: #F8FAFC; --muted: #94A3B8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 20px 16px; min-height: 100vh; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
-    .brand { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 800; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 16px 14px 80px 14px; min-height: 100vh; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
     .badge { background: #0A2644; color: var(--accent); font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 4px; border: 1px solid #144272; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); display: inline-block; margin-right: 5px; box-shadow: 0 0 8px var(--emerald); }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
-    .card-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
-    .card-value { font-size: 24px; font-weight: 800; color: var(--text); }
-    .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .actions-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .btn { background: #111A2E; border: 1px solid var(--border); border-radius: 12px; padding: 16px 12px; color: var(--text); font-size: 13px; font-weight: 700; text-align: center; cursor: pointer; transition: all 0.15s ease; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    
+    /* Tabs Navigation */
+    .tabs-nav { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: #090D18; padding: 4px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .tab-btn { background: transparent; border: none; color: var(--muted); font-size: 11.5px; font-weight: 700; padding: 8px 4px; border-radius: 7px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
+    .tab-btn.active { background: #1E293B; color: #38BDF8; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Telemetry Cards */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
+    .card-value { font-size: 22px; font-weight: 800; color: var(--text); }
+    .card-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+    /* Section Headings */
+    .sec-title { font-size: 11.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; margin: 14px 0 8px 0; letter-spacing: 0.5px; }
+
+    /* Button Grids */
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .btn { background: #111A2E; border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; color: var(--text); font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; transition: all 0.15s ease; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .btn:active { transform: scale(0.96); background: var(--accent); border-color: var(--accent); }
-    .btn-icon { font-size: 22px; }
     .btn-primary { background: #064E3B; border-color: #047857; color: #34D399; }
-    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0F172A; border: 1px solid var(--accent); color: var(--text); padding: 10px 18px; border-radius: 30px; font-size: 12px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; z-index: 100; box-shadow: 0 4px 14px rgba(0,0,0,0.5); }
+    .btn-indigo { background: #1E1B4B; border-color: #4F46E5; color: #A5B4FC; }
+
+    /* Segmented Style Buttons */
+    .style-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+    .style-btn { background: #0B1120; border: 1px solid var(--border); border-radius: 8px; padding: 9px 4px; font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; cursor: pointer; }
+    .style-btn.active { background: #0C2A4D; border-color: var(--accent); color: #38BDF8; }
+
+    /* Sliders */
+    .slider-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .slider-header { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .slider-header span:last-child { color: #38BDF8; }
+    input[type=range] { width: 100%; -webkit-appearance: none; background: #1E293B; height: 6px; border-radius: 3px; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+
+    /* Corner Buttons */
+    .corner-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .corner-btn { background: #111A2E; border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; font-size: 11px; font-weight: 800; color: var(--muted); text-align: center; cursor: pointer; }
+    .corner-btn:active { background: var(--accent); color: #FFF; }
+
+    /* Metrics Chips */
+    .chips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .chip { background: #0F172A; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+    .chip.active { border-color: var(--emerald); color: #34D399; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0F172A; border: 1px solid var(--accent); color: var(--text); padding: 9px 16px; border-radius: 30px; font-size: 11.5px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; z-index: 100; box-shadow: 0 4px 14px rgba(0,0,0,0.6); }
     .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="brand">⚡ OmniWin <span class="badge">COMPANION</span></div>
-    <div style="font-size: 12px; color: var(--muted);"><span class="status-dot"></span><span id="txtHost">Conectando...</span></div>
+    <div class="brand">⚡ OmniWin <span class="badge">PWA 2.0</span></div>
+    <div style="font-size: 11.5px; color: var(--muted);"><span class="status-dot"></span><span id="txtHost">Conectando...</span></div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">Memoria RAM</div>
-      <div class="card-value" id="valRam">--%</div>
-      <div class="card-sub" id="subRam">-- / -- GB</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Temperatura CPU</div>
-      <div class="card-value" id="valCpuTemp">--°C</div>
-      <div class="card-sub">Sensor Paquete</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Descarga Red</div>
-      <div class="card-value" id="valNetDown">--</div>
-      <div class="card-sub">Throughput vivo</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Subida Red</div>
-      <div class="card-value" id="valNetUp">--</div>
-      <div class="card-sub">Throughput vivo</div>
-    </div>
+  <!-- TABS NAV -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('telemetry')">📊 Telemetría</button>
+    <button class="tab-btn" onclick="switchTab('hud')">🎮 Control HUD</button>
+    <button class="tab-btn" onclick="switchTab('boost')">⚡ Boost PC</button>
   </div>
 
-  <div class="actions-title">Controles Remotos Rápidos</div>
-  <div class="btn-grid">
-    <div class="btn btn-primary" onclick="sendCmd('purge_ram')">
-      <span class="btn-icon">⚡</span>
-      <span>Liberar RAM</span>
+  <!-- ================= TAB 1: TELEMETRY ================= -->
+  <div id="tab-telemetry" class="tab-content active">
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Memoria RAM</div>
+        <div class="card-value" id="valRam">--%</div>
+        <div class="card-sub" id="subRam">-- / -- GB</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Temp CPU</div>
+        <div class="card-value" id="valCpuTemp">--°C</div>
+        <div class="card-sub">Sensor Paquete</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Descarga Red</div>
+        <div class="card-value" id="valNetDown">--</div>
+        <div class="card-sub">Throughput vivo</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Subida Red</div>
+        <div class="card-value" id="valNetUp">--</div>
+        <div class="card-sub">Throughput vivo</div>
+      </div>
     </div>
-    <div class="btn" onclick="sendCmd('toggle_awake')">
-      <span class="btn-icon">☕</span>
-      <span id="lblAwake">Modo Cafeína</span>
-    </div>
-  </div>
 
-  <div style="margin-top: 14px;">
-    <div class="btn" style="background: linear-gradient(135deg, #1E1B4B, #312E81); border: 1px solid #6366F1; display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding: 14px 18px; border-radius: 12px; cursor: pointer;" onclick="triggerStutter()">
-      <span style="font-size: 22px;">⚠</span>
-      <div style="text-align: left;">
-        <div style="font-weight: 800; font-size: 14px; color: #E0E7FF;">¡Sentí un Stutter!</div>
-        <div style="font-size: 11px; color: #A5B4FC;">Diagnosticar tirones de los últimos 15s</div>
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="card-title">Estado de Optimización</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+        <span style="font-size: 12.5px; font-weight: 700;" id="txtHibStatus">Hibernador: Inactivo</span>
+        <span style="font-size: 11px; color: var(--emerald);" id="txtHibFreed">0 MB Libres</span>
       </div>
     </div>
   </div>
 
-  <div id="stutterBox" style="display: none; margin-top: 12px; background: #0F172A; border: 1px solid #6366F1; border-radius: 12px; padding: 14px;">
-    <div style="font-size: 13px; font-weight: 800; color: #F59E0B; margin-bottom: 6px;" id="stutterCause">Diagnóstico</div>
-    <div style="font-size: 12px; color: var(--text); line-height: 1.4;" id="stutterDetails">...</div>
+  <!-- ================= TAB 2: HUD REMOTE ================= -->
+  <div id="tab-hud" class="tab-content">
+    <div class="sec-title">Estilo Visual del HUD</div>
+    <div class="style-selector">
+      <div id="btnStyle0" class="style-btn active" onclick="setHudStyle(0)">Riva OSD<br><span style="font-size: 9px; color: var(--muted);">(Solo Texto)</span></div>
+      <div id="btnStyle1" class="style-btn" onclick="setHudStyle(1)">Card<br><span style="font-size: 9px; color: var(--muted);">(Glassmorphism)</span></div>
+      <div id="btnStyle2" class="style-btn" onclick="setHudStyle(2)">Barra<br><span style="font-size: 9px; color: var(--muted);">(Compacta)</span></div>
+    </div>
+
+    <div class="sec-title">Transparencia y Escala en Monitor</div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span>Transparencia de Fondo</span>
+        <span id="lblOpacity">0% (Puro)</span>
+      </div>
+      <input type="range" id="rngOpacity" min="0" max="1" step="0.05" value="0" oninput="changeOpacity(this.value)" />
+    </div>
+
+    <div class="slider-box">
+      <div class="slider-header">
+        <span>Tamaño / Escala</span>
+        <span id="lblScale">100%</span>
+      </div>
+      <input type="range" id="rngScale" min="0.8" max="1.6" step="0.05" value="1.0" oninput="changeScale(this.value)" />
+    </div>
+
+    <div class="sec-title">Anclaje a Esquinas</div>
+    <div class="corner-grid">
+      <button class="corner-btn" onclick="setCorner('TL')">↖ Sup. Izq</button>
+      <button class="corner-btn" onclick="setCorner('TR')">↗ Sup. Der</button>
+      <button class="corner-btn" onclick="setCorner('BL')">↙ Inf. Izq</button>
+      <button class="corner-btn" onclick="setCorner('BR')">↘ Inf. Der</button>
+    </div>
+
+    <div class="sec-title">Acciones de Overlay</div>
+    <div class="btn-grid">
+      <div class="btn" onclick="sendCmd('toggle_hud_lock')">
+        <span style="font-size: 18px;">🔒</span>
+        <span>Alternar Bloqueo</span>
+      </div>
+      <div class="btn" onclick="sendCmd('toggle_hud_visibility')">
+        <span style="font-size: 18px;">👁️</span>
+        <span>Mostrar/Ocultar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 3: GAMING BOOST ================= -->
+  <div id="tab-boost" class="tab-content">
+    <div class="sec-title">Optimizaciones In-Game de 1 Toque</div>
+    <div class="btn-grid">
+      <div class="btn btn-primary" onclick="sendCmd('purge_ram')">
+        <span style="font-size: 20px;">⚡</span>
+        <span>Liberar Memoria</span>
+      </div>
+      <div class="btn btn-indigo" onclick="sendCmd('hibernate_launchers')">
+        <span style="font-size: 20px;">🧊</span>
+        <span>Hibernar Launchers</span>
+      </div>
+    </div>
+
+    <div class="btn-grid">
+      <div class="btn" onclick="sendCmd('wake_launchers')">
+        <span style="font-size: 20px;">☀️</span>
+        <span>Restaurar Apps</span>
+      </div>
+      <div class="btn" onclick="sendCmd('toggle_awake')">
+        <span style="font-size: 20px;">☕</span>
+        <span id="lblAwake">Modo Cafeína</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 14px;">
+      <div class="btn" style="background: linear-gradient(135deg, #1E1B4B, #312E81); border: 1px solid #6366F1; display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding: 14px 18px; border-radius: 12px; cursor: pointer;" onclick="triggerStutter()">
+        <span style="font-size: 22px;">⚠️</span>
+        <div style="text-align: left;">
+          <div style="font-weight: 800; font-size: 14px; color: #E0E7FF;">¡Sentí un Stutter!</div>
+          <div style="font-size: 11px; color: #A5B4FC;">Diagnosticar tirones de los últimos 15s</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="stutterBox" style="display: none; margin-top: 12px; background: #0F172A; border: 1px solid #6366F1; border-radius: 12px; padding: 14px;">
+      <div style="font-size: 13px; font-weight: 800; color: #F59E0B; margin-bottom: 6px;" id="stutterCause">Diagnóstico</div>
+      <div style="font-size: 12px; color: var(--text); line-height: 1.4;" id="stutterDetails">...</div>
+    </div>
   </div>
 
   <div id="toast" class="toast">Comando enviado</div>
@@ -536,6 +693,13 @@ public class CompanionServerService : IDisposable
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${proto}//${window.location.host}/ws?token=${token}`;
     let socket;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
 
     function formatSpeed(bytes) {
       if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB/s';
@@ -548,6 +712,30 @@ public class CompanionServerService : IDisposable
       t.innerText = msg;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 1600);
+    }
+
+    function setHudStyle(styleIdx) {
+      [0, 1, 2].forEach(i => {
+        const el = document.getElementById('btnStyle' + i);
+        if (el) el.classList.toggle('active', i === styleIdx);
+      });
+      sendCmdAction('set_hud_style', { style: styleIdx });
+    }
+
+    function changeOpacity(val) {
+      const pct = Math.round(val * 100);
+      document.getElementById('lblOpacity').innerText = pct <= 2 ? '0% (Puro)' : pct + '%';
+      sendCmdAction('set_hud_opacity', { opacity: parseFloat(val) });
+    }
+
+    function changeScale(val) {
+      const pct = Math.round(val * 100);
+      document.getElementById('lblScale').innerText = pct + '%';
+      sendCmdAction('set_hud_scale', { scale: parseFloat(val) });
+    }
+
+    function setCorner(corner) {
+      sendCmdAction('set_hud_corner', { corner: corner });
     }
 
     function triggerStutter() {
@@ -588,6 +776,10 @@ public class CompanionServerService : IDisposable
           if (d.isAwakeActive !== undefined) {
             document.getElementById('lblAwake').innerText = d.isAwakeActive ? '☕ Cafeína: ON' : '☕ Cafeína: Off';
           }
+          if (d.isHibernating !== undefined) {
+            document.getElementById('txtHibStatus').innerText = d.isHibernating ? `Hibernando ${d.hibernatedCount} apps` : 'Hibernador: Inactivo';
+            document.getElementById('txtHibFreed').innerText = d.freedMemoryMb ? `~${Math.round(d.freedMemoryMb)} MB Libres` : '0 MB Libres';
+          }
         } catch {}
       };
       socket.onclose = () => {
@@ -597,14 +789,19 @@ public class CompanionServerService : IDisposable
     }
 
     function sendCmd(act) {
+      sendCmdAction(act, {});
+    }
+
+    function sendCmdAction(act, extra) {
+      const payload = Object.assign({ action: act }, extra);
       if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ action: act }));
-        showToast('✔ ' + act.replace('_', ' ').toUpperCase());
+        socket.send(JSON.stringify(payload));
+        showToast('✔ ' + act.replace(/_/g, ' ').toUpperCase());
       } else {
         fetch('/api/command?token=' + token, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: act })
+          body: JSON.stringify(payload)
         }).then(() => showToast('✔ ' + act));
       }
     }

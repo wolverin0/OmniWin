@@ -105,6 +105,9 @@ public partial class GamingOverlayWindow : Window
         // Apply toolwindow style so it doesn't clutter Alt+Tab
         ApplyWindowStyles();
 
+        // Subscribe to remote companion commands from mobile/tablet PWA
+        CompanionServerService.Instance.OnHudRemoteActionReceived += OnCompanionHudActionReceived;
+
         _telemetryTimer.Start();
         UpdateMetrics();
     }
@@ -113,6 +116,8 @@ public partial class GamingOverlayWindow : Window
     {
         _telemetryTimer.Stop();
         _sessionStopwatch.Stop();
+
+        CompanionServerService.Instance.OnHudRemoteActionReceived -= OnCompanionHudActionReceived;
 
         if (_hwnd != IntPtr.Zero)
         {
@@ -294,37 +299,98 @@ public partial class GamingOverlayWindow : Window
         ApplyHudConfiguration();
     }
 
+    public void SnapToCorner(string corner)
+    {
+        UpdateLayout();
+        double w = ActualWidth > 0 ? ActualWidth : 220;
+        double h = ActualHeight > 0 ? ActualHeight : 150;
+        double margin = 24;
+
+        switch (corner.ToUpperInvariant())
+        {
+            case "TL":
+                Left = margin;
+                Top = margin;
+                break;
+            case "TR":
+                Left = Math.Max(margin, SystemParameters.WorkArea.Width - w - margin);
+                Top = margin;
+                break;
+            case "BL":
+                Left = margin;
+                Top = Math.Max(margin, SystemParameters.WorkArea.Height - h - margin);
+                break;
+            case "BR":
+                Left = Math.Max(margin, SystemParameters.WorkArea.Width - w - margin);
+                Top = Math.Max(margin, SystemParameters.WorkArea.Height - h - margin);
+                break;
+        }
+
+        SavePosition();
+    }
+
     private void BtnCorner_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is string corner)
         {
-            UpdateLayout();
-            double w = ActualWidth > 0 ? ActualWidth : 220;
-            double h = ActualHeight > 0 ? ActualHeight : 150;
-            double margin = 24;
-
-            switch (corner)
-            {
-                case "TL":
-                    Left = margin;
-                    Top = margin;
-                    break;
-                case "TR":
-                    Left = SystemParameters.WorkArea.Width - w - margin;
-                    Top = margin;
-                    break;
-                case "BL":
-                    Left = margin;
-                    Top = SystemParameters.WorkArea.Height - h - margin;
-                    break;
-                case "BR":
-                    Left = SystemParameters.WorkArea.Width - w - margin;
-                    Top = SystemParameters.WorkArea.Height - h - margin;
-                    break;
-            }
-
-            SavePosition();
+            SnapToCorner(corner);
         }
+    }
+
+    private void OnCompanionHudActionReceived(string action, System.Text.Json.JsonElement payload)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                switch (action)
+                {
+                    case "set_hud_style":
+                        if (payload.TryGetProperty("style", out var stEl) && stEl.TryGetInt32(out int style))
+                        {
+                            AppSettingsService.Instance.SaveSettings(s => s.HudStyleIndex = style);
+                            ApplyHudConfiguration();
+                        }
+                        break;
+
+                    case "set_hud_opacity":
+                        if (payload.TryGetProperty("opacity", out var opEl) && opEl.TryGetDouble(out double opacity))
+                        {
+                            double clampedOp = Math.Clamp(opacity, 0.0, 1.0);
+                            SliderBgOpacity.Value = clampedOp;
+                            AppSettingsService.Instance.SaveSettings(s => s.HudBackgroundOpacity = clampedOp);
+                            ApplyBackgroundAndBorder();
+                        }
+                        break;
+
+                    case "set_hud_scale":
+                        if (payload.TryGetProperty("scale", out var scEl) && scEl.TryGetDouble(out double scale))
+                        {
+                            double clampedSc = Math.Clamp(scale, 0.8, 1.6);
+                            SliderScale.Value = clampedSc;
+                            AppSettingsService.Instance.SaveSettings(s => s.HudScale = clampedSc);
+                            RootBorder.LayoutTransform = new ScaleTransform(clampedSc, clampedSc);
+                        }
+                        break;
+
+                    case "set_hud_corner":
+                        if (payload.TryGetProperty("corner", out var coEl))
+                        {
+                            SnapToCorner(coEl.GetString() ?? "TR");
+                        }
+                        break;
+
+                    case "toggle_hud_lock":
+                        SetClickThrough(!_isClickThrough);
+                        break;
+
+                    case "toggle_hud_visibility":
+                        ToggleOverlayVisibility();
+                        break;
+                }
+            }
+            catch { }
+        });
     }
 
     public void ApplyHudConfiguration()

@@ -553,6 +553,39 @@ public class McpServer
             ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() }
         });
 
+        // 33. win_msi_doctor
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_msi_doctor",
+            ["description"] = "Audita y optimiza el modo de interrupciones MSI (Message Signaled Interrupts) en GPU y adaptadores de red, erradicando contención de IRQs y reduciendo picos de latencia DPC.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "audit", "optimize_recommended", "set_device" }, ["description"] = "Acción a ejecutar: 'audit', 'optimize_recommended', o 'set_device'" },
+                    ["device_key"] = new JsonObject { ["type"] = "string", ["description"] = "Ruta de clave de registro del dispositivo (requerido para set_device)" },
+                    ["enable"] = new JsonObject { ["type"] = "boolean", ["description"] = "Activar o desactivar MSI (para set_device)" },
+                    ["priority"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "High", "Normal", "Low", "Undefined" }, ["description"] = "Prioridad de interrupción de dispositivo" }
+                }
+            }
+        });
+
+        // 34. win_launcher_hibernator
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_launcher_hibernator",
+            ["description"] = "Audita, suspende y aplica EcoQoS + recorte de memoria RAM inactiva a launchers (Discord, Steam, Epic Games, Battle.net) y navegadores durante sesiones de juego, o los restaura.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "status", "hibernate", "wake" }, ["description"] = "Acción: 'status', 'hibernate' o 'wake'" }
+                }
+            }
+        });
+
         return tools;
     }
 
@@ -799,6 +832,40 @@ public class McpServer
                 case "win_cpu_topology":
                     var topo = CpuTopologyService.Instance.GetTopology();
                     content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(topo, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_msi_doctor":
+                    string msiAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "audit";
+                    object msiResult;
+                    if (msiAction == "optimize_recommended")
+                    {
+                        int optCount = MsiInterruptService.Instance.OptimizeRecommendedGamingDevices();
+                        msiResult = new { action = "optimize_recommended", optimized_count = optCount, report = MsiInterruptService.Instance.RunDoctorReport() };
+                    }
+                    else if (msiAction == "set_device")
+                    {
+                        string dKey = args["device_key"]?.GetValue<string>() ?? "";
+                        bool dEnable = args["enable"]?.GetValue<bool>() ?? true;
+                        string dPrio = args["priority"]?.GetValue<string>() ?? "High";
+                        bool setSuccess = MsiInterruptService.Instance.SetMsiMode(dKey, dEnable, dPrio);
+                        msiResult = new { action = "set_device", device = dKey, enabled = dEnable, priority = dPrio, success = setSuccess };
+                    }
+                    else
+                    {
+                        msiResult = MsiInterruptService.Instance.RunDoctorReport();
+                    }
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(msiResult, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_launcher_hibernator":
+                    string hibAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "status";
+                    object hibResult = hibAction switch
+                    {
+                        "hibernate" => LauncherHibernatorService.Instance.HibernateBackgroundProcesses(),
+                        "wake" => new { action = "wake", restored_processes_count = LauncherHibernatorService.Instance.WakeAllHibernatedProcesses(), status = LauncherHibernatorService.Instance.GetStatus() },
+                        _ => LauncherHibernatorService.Instance.GetStatus()
+                    };
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(hibResult, new JsonSerializerOptions { WriteIndented = true }) });
                     break;
 
                 default:

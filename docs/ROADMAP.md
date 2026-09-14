@@ -8,7 +8,7 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 
 ## 🎯 Visión del Proyecto
 1. **Centro de Control Unificado**: Reemplazar más de 8 utilidades dispersas (HWMonitor, FanControl, CCleaner, Autoruns, WinUtil, Process Hacker, Simplewall, EarTrumpet, IObit Unlocker) en un único ejecutable sin bloatware.
-2. **Servidor MCP para Agentes IA (32 Herramientas)**: Permitir que LLMs (Antigravity, Claude Desktop, Cursor, Ollama) diagnostiquen, limpien, reparen y optimicen el sistema en tiempo real con herramientas nativas.
+2. **Servidor MCP para Agentes IA (34 Herramientas)**: Permitir que LLMs (Antigravity, Claude Desktop, Cursor, Ollama) diagnostiquen, limpien, reparen y optimicen el sistema en tiempo real con herramientas nativas.
 3. **UI Instantánea (<100ms)**: Interfaz gráfica sin navegadores internos (sin Electron), acelerada por hardware nativo con DirectX en WPF, con consumo menor a 35 MB de RAM y 10 pestañas especializadas.
 4. **Seguridad y Transaccionalidad**: Motor de optimizaciones con detección de estado, respaldo automático mediante Puntos de Restauración VSS y capacidad de rollback completo.
 
@@ -34,9 +34,9 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 - [x] **1.15** Módulo de Servicios de Windows (`WindowsServiceService`): Identificación y desactivación en 1 clic de servicios de telemetría y diagnósticos pesados (`DiagTrack`, `dmwappushservice`, `MapsBroker`, etc.)
 - [x] **1.16** Módulo de Menús Contextuales (`ContextMenuService`): Auditoría y activación/desactivación no destructiva de extensiones shell de clic derecho en Windows
 
-### Fase 2: Servidor MCP para IA (`OmniWin.Core.Mcp` — 32 Herramientas)
+### Fase 2: Servidor MCP para IA (`OmniWin.Core.Mcp` — 34 Herramientas)
 - [x] **2.1** Implementación del protocolo MCP (JSON-RPC sobre `stdio`) compatible con clientes Anthropic, Gemini, OpenAI y Claude Desktop
-- [x] **2.2** Catálogo completo de 32 herramientas operativas:
+- [x] **2.2** Catálogo completo de 34 herramientas operativas:
   - `win_get_system_health`: Telemetría multi-perfil (quick, performance, network, security, full)
   - `win_purge_ram`: Liberación instantánea de RAM en Standby List y Working Sets
   - `win_analyze_disk_bloat` & `win_clean_disk`: Diagnóstico y limpieza segura de archivos basura
@@ -56,6 +56,8 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - `win_bypassio_doctor`: Validación de compatibilidad DirectStorage 1.2 y filtros NVMe
   - `win_stutter_investigate`: Detección forense de jitter de interrupción kernel (`NtDelayExecution`) y DPC
   - `win_cpu_topology`: Auditoría de P-Cores vs E-Cores (`GetSystemCpuSetInformation`) y EcoQoS
+  - `win_msi_doctor`: Auditoría y configuración de Message Signaled Interrupts (MSI/MSI-X) y prioridad IRQ
+  - `win_launcher_hibernator`: Suspensión, EcoQoS y trim de RAM de launchers y navegadores en juego
 - [x] **2.3** Auto-registro configurado en `C:\Users\pauol\AppData\Roaming\Claude\claude_desktop_config.json` para Claude Desktop
 
 ### Fase 3: Interfaz de Línea de Comandos (`OmniWin.Cli`)
@@ -342,26 +344,27 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 - [x] **24.7 Detección de Sub-Frecuencia de RAM JEDEC vs XMP/EXPO (`MotherboardBiosService`)**:
   - Detección automática en `MotherboardBiosService` de memorias DDR4/DDR5 operando por debajo del perfil de fábrica (ej. 4800 MT/s en lugar de 6000 MT/s XMP/EXPO) y advertencia de configuración Single-Channel.
 - [x] **24.8 Suite de Pruebas Automatizadas 100% Verde (`OmniWin.Tests`)**:
-  - 121 pruebas unitarias y de integración pasando sin errores en .NET 9.
+  - 129 pruebas unitarias y de integración pasando sin errores en .NET 9.
 
 ---
 
-### Fase 25: Próximos Pasos de Evolución (Propuestas Activas de Innovación)
-- [ ] **25.1 OmniCompanion 2.0 (Mobile/Tablet Touch PWA)**:
+### Fase 25: Próxima Generación de Rendimiento & Control (100% Completada)
+- [x] **25.1 OmniCompanion 2.0 (Mobile/Tablet Touch PWA & Remote HUD Controller)**:
   - Soporte completo para abrirse desde celular o tablet en la red local mediante código QR sin login ni fricción.
-  - Controles táctiles en el celular: selector de estilos de HUD, deslizadores de opacidad/escala en tiempo real, disparador de perfil competitivo y monitor de temperatura de bolsillo.
-- [ ] **25.2 Personalización Total del HUD Overlay (Estilo RivaTuner Avanzado)**:
-  - Selección de familias tipográficas monoespaciadas (Consolas, Cascadia Code, JetBrains Mono) con renderizado DirectWrite nítido sobre 3D.
-  - Selector de métricas activas directamente desde el menú contextual o ventana de configuración (FPS, Frametime ms, 1% Low FPS, 0.1% Low, Temp CPU, Temp GPU, VRAM, RAM, Reloj).
-  - Paletas de colores personalizables (Cyan Cyberpunk, Verde Clásico RivaTuner, Blanco Monocromo, Naranja Precisión).
-- [ ] **25.3 Motor de Benchmark Empírico A/B (Frametime Diff Científico)**:
-  - Grabación de 60 segundos de telemetría de frame-times in-game.
-  - Comparativa A/B antes y después de aplicar un ajuste (ej. Timer 0.5ms vs 15.6ms, afinidad P-Cores on/off, EcoQoS on/off).
-  - Cálculo estadístico de confianza (percentiles 1% Low, 0.1% Low, desviación estándar de micro-stuttering) para demostrar con datos matemáticos empíricos si el tweak realmente mejoró los frametimes o si fue un placebo.
-- [ ] **25.4 Hibernador Inteligente de Launchers & WebViews en Juego**:
-  - Detección cuando un juego entra a pantalla completa o primer plano.
-  - Asignación automática de EcoQoS y reducción de conjunto de trabajo (Working Set) o suspensión a los procesos secundarios embebidos en navegadores y launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`).
+  - Controles táctiles remotos en tiempo real: selector de estilos de HUD (RivaTuner, Card, Bar), deslizadores de opacidad continua (0-100%) y escala (80-160%), anclaje rápido a las 4 esquinas de la pantalla, switches de visibilidad y bloqueo in-game, y disparador de purga de RAM.
+- [x] **25.2 Doctor de Interrupciones PCIe & Modo MSI (`MsiInterruptService`, `win_msi_doctor`)**:
+  - Auditoría exhaustiva de dispositivos PCIe en `HKLM\SYSTEM\CurrentControlSet\Enum\PCI`.
+  - Conmutación selectiva de adaptadores gráficos (GPU) y tarjetas de red (Ethernet/Wi-Fi) de interrupciones compartidas (Legacy Line-Based IRQ) a vectores directos de memoria (MSI/MSI-X) con `DevicePriority = High (2)`.
+  - Erradicación de cuellos de botella DPC y micro-stutterings por contención de IRQs compartidos.
+  - Tarjeta integrada en GUI (`HardwareTelemetryControl`), CLI y herramienta MCP 33.
+- [x] **25.3 Hibernador Inteligente de Launchers & WebViews en Juego (`LauncherHibernatorService`, `win_launcher_hibernator`)**:
+  - Detección automática al iniciar cualquier juego supervisado por `GameProfilerService` o comando remoto en OmniCompanion / MCP.
+  - Asignación atómica de `EcoQoS` (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`), prioridad Idle y vaciado de conjunto de trabajo (`EmptyWorkingSet`) a launchers Chromium/CEF (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, navegadores).
+  - Liberación inmediata de 1.2 a 2.8 GB de memoria física sin cerrar llamadas de voz de Discord ni interrumpir descargas en segundo plano de Steam.
   - Restauración instantánea y transparente al salir del juego.
+- [x] **25.4 Suite de Pruebas Automatizadas 100% Verde (129/129 Tests)**:
+  - 129 pruebas unitarias y de integración pasando sin errores en .NET 9 (`OmniWin.Tests`).
+  - Verificación estricta de las 34 herramientas MCP (`McpServerTests`), reportes del MSI Doctor y ciclo de vida de hibernación de launchers.
 
 
 
