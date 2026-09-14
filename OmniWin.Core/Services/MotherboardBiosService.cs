@@ -46,6 +46,22 @@ public class MotherboardBiosInfo
     public List<RamModuleInfo> RamModules { get; set; } = new();
     public double TotalRamGb => RamModules.Sum(m => m.CapacityGb);
     public string ChannelMode => RamModules.Count >= 2 ? "Dual / Multi-Channel" : "Single Channel";
+    public bool IsXmpOrExpoUnderclocked => RamModules.Any(m => m.SpeedMtS > 0 && m.ConfiguredSpeedMtS > 0 && m.ConfiguredSpeedMtS < m.SpeedMtS);
+    public string MemoryOptimizationVerdict
+    {
+        get
+        {
+            if (RamModules.Count == 0) return "No se detectaron módulos de RAM";
+            if (RamModules.Count == 1) return "⚠ Single Channel: Instalar un segundo módulo de memoria puede aumentar el rendimiento en juegos hasta un 25%.";
+            if (IsXmpOrExpoUnderclocked)
+            {
+                var underclocked = RamModules.First(m => m.ConfiguredSpeedMtS < m.SpeedMtS);
+                return $"⚠ Perfil XMP/EXPO Desactivado: La RAM opera a velocidad base JEDEC ({underclocked.ConfiguredSpeedMtS} MT/s) en vez de su perfil nominal ({underclocked.SpeedMtS} MT/s). Activa XMP/EXPO en la BIOS.";
+            }
+            uint maxSpeed = RamModules.Any() ? RamModules.Max(m => m.ConfiguredSpeedMtS) : 0;
+            return $"✔ Memoria Optimizada: {ChannelMode} operando a {maxSpeed} MT/s.";
+        }
+    }
 }
 
 public class MotherboardBiosService
