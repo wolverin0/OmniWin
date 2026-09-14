@@ -3,13 +3,13 @@
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0--windows-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![C# Native](https://img.shields.io/badge/Language-C%23%2013-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
-[![MCP Protocol](https://img.shields.io/badge/MCP-28%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-109%2F109%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
+[![MCP Protocol](https://img.shields.io/badge/MCP-32%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
+[![Tests](https://img.shields.io/badge/Tests-121%2F121%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
 [![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > **OmniWin** is a native, ultra-high-performance Windows 10 and Windows 11 (24H2 / 25H2 / 26H1) engineering, gaming optimization, and observability control plane written in compiled C# (.NET 9) with direct Win32 & NT Kernel API integrations.
-> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 28-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
+> It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 32-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
 
 ---
 
@@ -26,9 +26,10 @@
 * Direct integration with `rstrtmgr.dll` (`RmStartSession`, `RmRegisterResources`, `RmGetList`).
 * Pinpoints the exact Process IDs (PIDs), application names, and window titles locking any file or directory on NTFS, with 1-click safe unlock and termination.
 
-### 3. ⏱️ 0.50 ms Esports Multimedia Timer (`PowerService`)
+### 3. ⏱️ 0.50 ms Esports Multimedia Timer & Kernel Latency Jitter (`PowerService`, `KernelLatencyService`)
 * Sets system interrupt clock resolution down to **0.50 ms** via `NtSetTimerResolution`, with symmetric unsetting to cleanly restore standard Windows clock resolution on game exit.
 * Drastically reduces input lag, frame-time variance, and mouse jitter in competitive gaming titles.
+* Measures genuine DPC/interrupt dispatch latency through `NtDelayExecution(-10000)` kernel wake jitter measurement.
 
 ### 4. 🎮 Customizable Gaming HUD Overlay (`GamingOverlayWindow`)
 * **Safe-by-Design Overlay**: Uses a layered transparent Click-Through window (`WS_EX_TRANSPARENT | WS_EX_NOACTIVATE`) with global Windows hotkeys. Never hooks DirectX/Vulkan game pipelines or injects DLLs into game memory.
@@ -42,31 +43,33 @@
   * <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd>: Toggle Locked In-Game Mode (mouse passes through directly to the game) vs Unlocked Configuration Mode.
 * **RTSS Shared Memory Sync**: Bi-directional shared memory pipe with RivaTuner Statistics Server when running.
 
-### 5. 🔬 Deep Silicon & PCIe Lane Negotiation Inspector (`HardwareTelemetryControl`)
+### 5. 🔬 Deep Silicon, PCIe Doctor & XMP/EXPO Diagnostics (`PcieHealthService`, `MotherboardBiosService`)
 * GPU-Z style diagnostic engine interrogating NVIDIA / AMD / Intel drivers via SetupAPI, DXGI, and WMI.
 * Verifies physical vs negotiated PCIe link width (e.g. alerts if a GPU is running degraded at `x1 Gen 4` instead of `x16 Gen 4`).
 * Inspects VBIOS version, Resizable BAR (BAR1 aperture) support, and memory bus widths.
+* **XMP / EXPO Doctor**: Detects if high-speed RAM is inadvertently stuck running at standard JEDEC baseline frequencies (e.g., 4800 MT/s instead of 6000 MT/s) and flags single-channel configurations.
 
 ### 6. 📊 Built-in Prometheus Metrics Exporter (`MetricsExporterService`)
 * Lightweight embedded HTTP listener on port `9182` (`/metrics`).
 * Exposes 8 real-time Prometheus gauges (CPU usage %, RAM used/available, disk queue, system uptime, thread/handle counts) ready for Grafana dashboards.
 
-### 7. 🛡️ Network Stack Healing & Live WFP Firewall Monitor
+### 7. 🛡️ Network Stack Healing & Dual-Stack DNS Defense (`NetworkService`, `DnsSecurityService`)
 * **Atomic TCP/IP Stack Reset**: Executes `/flushdns`, `netsh winsock reset`, IPv4/IPv6 stack repair, and ARP cache clearing in a single atomic pipeline.
 * **Windows Filtering Platform (WFP) Monitor**: Real-time inspection of active outbound connections, remote IP addresses, PIDs, and Windows Defender Firewall rule states.
-* **Encrypted DNS (DoH / DoT) Benchmark**: Latency benchmarks across Cloudflare (1.1.1.1), Google (8.8.8.8), Quad9 (9.9.9.9), and NextDNS with 1-click system configuration.
+* **Encrypted Dual-Stack DNS**: Latency benchmarks across Cloudflare, Google, Quad9, and AdGuard with dual IPv4 and IPv6 configuration to eliminate IPv6 DNS leakage.
+* **Safe HOSTS Protection**: Caps telemetry blocklist at 2,000 domains to shield the Windows `Dnscache` (`svchost.exe`) service from 100% CPU lockups.
 
-### 8. 🎯 Intelligent Game Profiler (`GameProfilerControl`)
+### 8. 🎯 Intelligent Game Profiler & Hybrid Core Scheduler (`GameProfilerService`, `CpuTopologyService`)
 * Automatically detects active foreground esports games (`cs2.exe`, `valorant.exe`, `cod.exe`, `overwatch.exe`, etc.).
-* Dynamically elevates process CPU priority to `High` and assigns High I/O priority, while constraining secondary background processes to `EcoQoS` (efficiency cores).
+* Dynamically prioritizes game execution on Performance Cores (P-Cores) via `GetSystemCpuSetInformation` while applying `EcoQoS` (efficiency execution throttling) to non-critical background services.
 
-### 9. 📱 OmniCompanion — Remote Mobile / Tablet Dashboard
+### 9. 📱 OmniCompanion — Remote Mobile / Tablet Dashboard (`CompanionServerService`)
 * Embedded Kestrel Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger RAM purges, or switch performance profiles from a phone or tablet.
 * Zero-friction setup via dynamic QR Code pairing on the local network.
 
-### 10. 🤖 28-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
+### 10. 🤖 32-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
 * Native JSON-RPC stdio Model Context Protocol (MCP) server compatible with Claude Desktop, Antigravity, Cursor, and Ollama.
-* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, and audit security events autonomously.
+* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, and audit kernel jitter autonomously.
 
 ---
 
@@ -97,8 +100,8 @@ OmniWin/
 │   ├── Views/                 # Specialized panels (GamingOverlay, HardwareTelemetry, GameProfiler, etc.)
 │   └── Assets/                # Application icons and vector graphics
 ├── OmniWin.Cli/               # Standalone headless command-line interface ('omni')
-├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (28 tools)
-├── OmniWin.Tests/             # 109 automated unit and STA visual tests (RenderTargetBitmap)
+├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (32 tools)
+├── OmniWin.Tests/             # 121 automated unit and STA visual tests (RenderTargetBitmap)
 ├── distribution/              # Packaging configurations, manifests and WinGet definitions
 ├── docs/                      # Technical documentation, E2E VM lab guides, ROADMAP.md, and assets
 └── scripts/                   # PowerShell distribution build and packaging automation
@@ -117,7 +120,7 @@ OmniWin/
 dotnet build OmniWin.sln -c Release
 ```
 
-### 2. Run Test Suite (109 Tests)
+### 2. Run Test Suite (121 Tests)
 ```bash
 dotnet test OmniWin.Tests/OmniWin.Tests.csproj -c Release
 ```

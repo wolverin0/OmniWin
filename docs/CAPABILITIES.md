@@ -11,13 +11,13 @@
 ## 1. Resumen Ejecutivo
 
 OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herramientas de terceros (CCleaner, HWMonitor, Autoruns, Process Hacker, WinUtil, EarTrumpet, IObit Unlocker, Simplewall) en una aplicación de alto rendimiento con tres interfaces complementarias:
-1. **Interfaz Gráfica (GUI)**: 22 módulos organizados con navegación por píldoras segmentadas en Fluent Dark Mode.
-2. **Servidor MCP para IA**: 28 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
+1. **Interfaz Gráfica (GUI)**: 24 módulos y paneles especializados con navegación por píldoras segmentadas en Fluent Dark Mode.
+2. **Servidor MCP para IA**: 32 herramientas expuestas a modelos de lenguaje (Claude Desktop, Cursor, Antigravity, Gemini).
 3. **Consola CLI (`omni`)**: 18 comandos para automatización y administración remota o por scripts.
 
 ---
 
-## 2. Los 22 Módulos de la Interfaz Gráfica (GUI)
+## 2. Los Módulos de la Interfaz Gráfica (GUI) & Motores de Diagnóstico
 
 | Pestaña | Nombre | Función Principal | Tecnologías y Mecanismos |
 | :---: | :--- | :--- | :--- |
@@ -26,23 +26,25 @@ OmniWin es el plano de control definitivo para Windows. Reemplaza más de 8 herr
 | **3** | **OmniCompanion Móvil** | Dashboard web PWA para móvil/tablet emparejado en pantalla mediante código QR sin contraseñas. | CompanionServerService (HTTP+WebSocket :8766), QRCoder, PngByteQRCode |
 | **4** | **Forense de Procesos** | Árbol jerárquico padre-hijo, módulos DLL cargados, hilos y sockets TCP en vivo por proceso. | GetExtendedTcpTable, Toolhelp32Snapshot, ProcessDeepDiagService |
 | **5** | **Memoria RAM & Purga** | Mapa de bloques de memoria, purga atómica de Standby List y Working Sets en 1 clic. | NtSetSystemInformation (MemoryPurgeStandbyList, EmptyWorkingSets) |
-| **6** | **Game & App Profiler** | Detección automática de juegos, enforce de P-Cores (Intel 12ª-14ª/AMD X3D), timer 0.5ms y purga de RAM. | GameProfilerService, NtSetTimerResolution, ProcessorAffinity Mask |
+| **6** | **Game & App Profiler** | Detección automática de juegos, afinidad P-Cores (`GetSystemCpuSetInformation`), EcoQoS de fondo, timer 0.5ms. | GameProfilerService, CpuTopologyService, NtSetTimerResolution |
 | **7** | **Energía & CPU Cores** | Gestión de planes, modo Ultimate Performance, Core Parking y scheduler de P/E-Cores. | PowerCfg, NtSetTimerResolution, CpuOptimizationService |
-| **8** | **Limpieza de Disco** | Análisis y purga segura de temporales, WinUpdate, crash dumps, prefetch y papelera. | DiskService, Shell32, Win32 I/O seguro |
+| **8** | **Limpieza de Disco** | Análisis y purga segura de temporales, WinUpdate, crash dumps, prefetch y papelera. | DiskService con EnumerationOptions seguro (evita junctions/reparse points) |
 | **9** | **Espacio en Disco** | Analizador visual tipo WizTree: carpetas más pesadas, archivos gigantes (>50MB) y tipos. | Recorrido recursivo optimizado, Fast Directory Walker |
-| **10** | **Tweaks & Debloat** | 55 optimizaciones de Registro/Red/Kernel, exportador/importador `.omniwin` y desinstalador UWP. | ExpandedTweakService, SystemSnapshotMigrationService, VSS Restore Points |
-| **11** | **Mantenimiento** | Limpieza de almacén WinSxS con DISM (`/ResetBase`) y escaneo SFC sin salir de la app. | DismService, WinSxS, Sfc.exe |
-| **12** | **Consola de Reparación** | Pipeline secuencial automatizado de 6 pasos de recuperación y reparación de Windows. | RepairPipelineService, Output streaming en vivo |
+| **10** | **Tweaks & Debloat** | 55 optimizaciones de Registro/Red/Kernel, exportador/importador `.omniwin` y desinstalador UWP. | ExpandedTweakService (Nagle sólo en NICs físicas), VSS Restore Points |
+| **11** | **Mantenimiento** | Limpieza de almacén WinSxS con DISM (`/StartComponentCleanup` seguro) y escaneo SFC sin salir de la app. | DismService, WinSxS, Sfc.exe |
+| **12** | **Consola de Reparación** | Pipeline secuencial automatizado de 6 pasos de recuperación y reparación no destructiva de Windows. | RepairPipelineService, Output streaming en vivo |
 | **13** | **Red & Sockets** | Diagnóstico de ping, resolución DNS, interfaces y reparación de red (Flush DNS, Winsock). | HealNetworkAsync, Netsh, Iphlpapi |
 | **14** | **Cortafuegos Visual** | Inspección en tiempo real de sockets TCP activos y bloqueo en 1 clic en Windows Firewall. | FirewallMonitorService, GetExtendedTcpTable (iphlpapi.dll), Netsh advfirewall |
-| **15** | **DNS Seguro & HOSTS** | Benchmark de latencia DNS (Cloudflare, Quad9, Google, AdGuard) y bloqueo masivo StevenBlack (60k+). | DnsSecurityService, TcpClient latency probing, StevenBlack unified blocklist |
+| **15** | **DNS Seguro & HOSTS** | Benchmark Dual-Stack IPv4/IPv6 (Cloudflare, Quad9, Google, AdGuard) y bloqueo seguro HOSTS (límite 2.000). | DnsSecurityService (protege Dnscache de CPU lock), TcpClient latency probing |
 | **16** | **Desbloqueo de Archivos** | File Locksmith: identifica procesos bloqueadores y los termina para liberar archivos. | Restart Manager nativo de Windows (rstrtmgr.dll) |
 | **17** | **Programas de Inicio** | Enumeración y alternancia de programas en HKCU/HKLM Run, Startup y Tareas Programadas. | StartupService, RegistryKey, TaskScheduler |
 | **18** | **Mezclador de Audio** | Control de volumen individual (0-100%) y mute por aplicación activa. | Windows CoreAudio API (IAudioSessionManager2, ISimpleAudioVolume) |
 | **19** | **Reglas Defender ASR** | Matriz de las 16 reglas de Attack Surface Reduction con perfiles de 1 clic (Gamer, Máximo). | AsrRulesService, Defender PowerShell provider, WMI |
 | **20** | **Caja Negra & BSOD** | Decodificador de minidumps, códigos BugCheck y registro de eventos críticos Kernel-Power 41. | BsodForensicControl, Minidump reader, Windows EventLog |
-| **21** | **Software & Drivers** | Actualizador masivo WinGet, desinstalador profundo con rastros, drivers OEM e info de BIOS. | Winget CLI, Pnputil, DriverStore, WMI Motherboard |
-| **22** | **Servidor IA / MCP** | Estado de conectividad MCP, monitor de llamadas JSON-RPC y auto-registro en Claude Desktop. | OmniWin.Mcp stdio server, claude_desktop_config.json |
+| **21** | **Software, BIOS & RAM** | WinGet, desinstalador profundo, drivers OEM, info BIOS y detección de subfrecuencia RAM JEDEC vs XMP/EXPO. | MotherboardBiosService, Winget CLI, Pnputil, DriverStore |
+| **22** | **Servidor IA / MCP** | Estado de conectividad MCP (32 herramientas), monitor de llamadas JSON-RPC y auto-registro. | OmniWin.Mcp stdio server, claude_desktop_config.json |
+| **23** | **Gaming HUD Overlay** | OSD Click-Through en 3 estilos (RivaTuner texto flotante puro, Card, Barra), opacidad y escala continua. | GamingOverlayWindow, WS_EX_TRANSPARENT, DropShadowEffect, Hotkeys |
+| **24** | **Doctores de Diagnóstico** | PCIe Link Doctor, DirectStorage BypassIO Doctor, Stutter Investigator y Topología P/E-Core. | PcieHealthService, DirectStorageService, StutterInvestigatorService, CpuTopologyService |
 
 ---
 
@@ -85,12 +87,12 @@ Inspirado en la filosofía de **Yamicsoft Windows Manager**, el asistente guía 
 
 ---
 
-## 4. Servidor MCP para Agentes IA (28 Herramientas JSON-RPC)
+## 4. Servidor MCP para Agentes IA (32 Herramientas JSON-RPC)
 
-El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT) ejecuten diagnósticos y reparaciones directamente:
+El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigravity) ejecuten diagnósticos, reparaciones y optimizaciones directamente:
 
 1. `win_get_system_health`: Telemetría (quick, performance, network, security, full).
-2. `win_purge_ram`: Purga de Standby List y Working Sets.
+2. `win_purge_ram`: Purga atómica de Standby List y Working Sets.
 3. `win_analyze_disk_bloat`: Auditoría de temporales, cachés y crash dumps.
 4. `win_clean_disk`: Limpieza parametrizada con vaciado de papelera.
 5. `win_test_network`: Diagnóstico de red, DNS, ping y sockets TCP.
@@ -98,8 +100,8 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT) ejecute
 7. `win_get_security_audit`: Antivirus, UAC y eventos de error o BSOD.
 8. `win_get_software_updates`: Consulta a WinGet por paquetes desactualizados.
 9. `win_upgrade_all_software`: Actualización silenciosa masiva de apps.
-10. `win_clean_dism_store`: Purga profunda de WinSxS con `/ResetBase`.
-11. `win_run_sfc_scan`: Comprobador de archivos del sistema SFC.
+10. `win_clean_dism_store`: Purga de WinSxS (`/StartComponentCleanup` seguro).
+11. `win_run_sfc_scan`: Comprobador de integridad de archivos SFC.
 12. `win_list_drivers`: Auditoría de paquetes OEM en DriverStore.
 13. `win_delete_driver`: Eliminación de controladores viejos o duplicados.
 14. `win_get_power_schemes`: Planes de energía y timer resolution.
@@ -117,6 +119,10 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT) ejecute
 26. `win_set_service_state`: Configuración de inicio y detención de servicios.
 27. `win_optimize_services`: Desactivación en 1 clic de servicios de telemetría.
 28. `win_list_context_menus` & `win_toggle_context_menu`: Menús contextuales de clic derecho.
+29. `win_pcie_doctor`: Auditoría de velocidad y ancho de enlace PCIe (detección de degradación x1/x4 vs x16), ReBAR y saturación.
+30. `win_bypassio_doctor`: Diagnóstico de DirectStorage 1.2 BypassIO y filtros de pila de almacenamiento en NVMe.
+31. `win_stutter_investigate`: Detección forense de micro-stuttering, jitter de interrupción de kernel vía `NtDelayExecution(-10000)` y DPC/ISR.
+32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling EcoQoS.
 
 ---
 
@@ -150,4 +156,4 @@ Para garantizar cero regresiones y validación fidedigna de cambios:
 * **Conexión Directa**: PowerShell Direct sobre VMBus (`-VMId`) sin dependencia de red.
 * **UI Automation**: Conducción programática mediante `InvokePattern` y `AutomationId`.
 * **Ground-Truth Matrix**: Verificación directa de claves de registro reales en el sistema operativo para confirmar que cada tweak aplicado persiste en Windows.
-* **Suite de Pruebas Automatizadas**: 86 tests unitarios y visuales en xUnit / .NET 9.
+* **Suite de Pruebas Automatizadas**: 121 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).

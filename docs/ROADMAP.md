@@ -8,7 +8,7 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 
 ## 🎯 Visión del Proyecto
 1. **Centro de Control Unificado**: Reemplazar más de 8 utilidades dispersas (HWMonitor, FanControl, CCleaner, Autoruns, WinUtil, Process Hacker, Simplewall, EarTrumpet, IObit Unlocker) en un único ejecutable sin bloatware.
-2. **Servidor MCP para Agentes IA (28 Herramientas)**: Permitir que LLMs (Antigravity, Claude Desktop, Cursor, Ollama) diagnostiquen, limpien, reparen y optimicen el sistema en tiempo real con herramientas nativas.
+2. **Servidor MCP para Agentes IA (32 Herramientas)**: Permitir que LLMs (Antigravity, Claude Desktop, Cursor, Ollama) diagnostiquen, limpien, reparen y optimicen el sistema en tiempo real con herramientas nativas.
 3. **UI Instantánea (<100ms)**: Interfaz gráfica sin navegadores internos (sin Electron), acelerada por hardware nativo con DirectX en WPF, con consumo menor a 35 MB de RAM y 10 pestañas especializadas.
 4. **Seguridad y Transaccionalidad**: Motor de optimizaciones con detección de estado, respaldo automático mediante Puntos de Restauración VSS y capacidad de rollback completo.
 
@@ -27,16 +27,16 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 - [x] **1.8** Módulo de Diagnóstico y Reparación de Red (`NetworkService`): Análisis de adaptadores activos, ping a DNS/Gateways, resolución DNS, sockets TCP y `HealNetworkAsync` (Flush DNS, reset Winsock, ARP)
 - [x] **1.9** Módulo de Auditoría y Eventos (`SecurityAuditService`): Detección de Antivirus, UAC y eventos críticos de Windows (crashes y BSODs ID 41)
 - [x] **1.10** Módulo de Software y Paquetes (`SoftwareService`): Integración desatendida con `winget` para listar apps desactualizadas e instalación/actualización masiva silenciosa
-- [x] **1.11** Módulo de Mantenimiento Profundo (`DismService`): Limpieza profunda de WinSxS (`DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase`), escaneo y reparación SFC (`sfc /scannow`)
+- [x] **1.11** Módulo de Mantenimiento Profundo (`DismService`): Limpieza profunda de WinSxS (`DISM /Online /Cleanup-Image /StartComponentCleanup`), escaneo y reparación SFC (`sfc /scannow`)
 - [x] **1.12** Módulo de Controladores (`DriverService`): Detección y desinstalación de controladores OEM de terceros en el DriverStore mediante `pnputil`
 - [x] **1.13** Módulo de Energía y Latencia (`PowerService`): Gestión de esquemas de energía (`powercfg`), desbloqueo del plan oculto *Ultimate Performance* y forzado de temporizador de 0.5ms (`NtSetTimerResolution`)
 - [x] **1.14** Módulo Desbloqueador de Archivos (`FileLockService`): Detección exacta de procesos que bloquean archivos/carpetas y liberación forzosa usando la API nativa de Windows *Restart Manager* (`rstrtmgr.dll`)
 - [x] **1.15** Módulo de Servicios de Windows (`WindowsServiceService`): Identificación y desactivación en 1 clic de servicios de telemetría y diagnósticos pesados (`DiagTrack`, `dmwappushservice`, `MapsBroker`, etc.)
 - [x] **1.16** Módulo de Menús Contextuales (`ContextMenuService`): Auditoría y activación/desactivación no destructiva de extensiones shell de clic derecho en Windows
 
-### Fase 2: Servidor MCP para IA (`OmniWin.Core.Mcp` — 28 Herramientas)
+### Fase 2: Servidor MCP para IA (`OmniWin.Core.Mcp` — 32 Herramientas)
 - [x] **2.1** Implementación del protocolo MCP (JSON-RPC sobre `stdio`) compatible con clientes Anthropic, Gemini, OpenAI y Claude Desktop
-- [x] **2.2** Catálogo completo de 28 herramientas operativas:
+- [x] **2.2** Catálogo completo de 32 herramientas operativas:
   - `win_get_system_health`: Telemetría multi-perfil (quick, performance, network, security, full)
   - `win_purge_ram`: Liberación instantánea de RAM en Standby List y Working Sets
   - `win_analyze_disk_bloat` & `win_clean_disk`: Diagnóstico y limpieza segura de archivos basura
@@ -52,6 +52,10 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - `win_find_file_locks` & `win_unlock_file`: Identificación y desbloqueo de archivos bloqueados
   - `win_list_windows_services`, `win_set_service_state` & `win_optimize_services`: Gestión y optimización de telemetría
   - `win_list_context_menus` & `win_toggle_context_menu`: Control de menús contextuales de clic derecho
+  - `win_pcie_doctor`: Diagnóstico profundo de velocidad y ancho de enlace PCIe y ReBAR
+  - `win_bypassio_doctor`: Validación de compatibilidad DirectStorage 1.2 y filtros NVMe
+  - `win_stutter_investigate`: Detección forense de jitter de interrupción kernel (`NtDelayExecution`) y DPC
+  - `win_cpu_topology`: Auditoría de P-Cores vs E-Cores (`GetSystemCpuSetInformation`) y EcoQoS
 - [x] **2.3** Auto-registro configurado en `C:\Users\pauol\AppData\Roaming\Claude\claude_desktop_config.json` para Claude Desktop
 
 ### Fase 3: Interfaz de Línea de Comandos (`OmniWin.Cli`)
@@ -285,7 +289,79 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - Exportación e importación de paquetes `.omniwin` para clonar o respaldar el estado de los 55+ tweaks, 16 reglas ASR y configuración general.
   - Creación automática de Punto de Restauración VSS previo a la importación.
   - Botones integrados en el encabezado de `TweaksDebloatControl.xaml`.
-- [x] **21.6 Cobertura Total de Pruebas Unitarias (`OmniWin.Tests`)**:
+- [x] **21.6 Cobertura de Pruebas Unitarias Fase 21 (`OmniWin.Tests`)**:
   - 100 pruebas unitarias pasando con 0 fallos (`NewFeaturesAdvancedTests.cs` con 8 tests específicos de QR, telemetría JSON, perfiles, tabla TCP, benchmark DNS y serialización de snapshots).
+
+### Fase 22: Gaming HUD Avanzado estilo RivaTuner (RTSS) & Overlay Desacoplado (100% Completada)
+- [x] **22.1 Modo OSD RivaTuner (Pure Floating Text)**:
+  - Telemetría flotante limpia sobre render 3D sin tarjetas opacas ni bordes, con sombreado perimetral de alto contraste (`DropShadowEffect`) y legibilidad perfecta en cualquier fondo de juego.
+- [x] **22.2 Estilos Alternativos de HUD**:
+  - Modo Card Glassmorphism con tarjetas translúcidas, indicadores visuales de color y alertas térmicas.
+  - Modo Compact Single-Line Bar para visualización perimetral mínima en el borde superior o inferior de la pantalla.
+- [x] **22.3 Cajón de Personalización Continua (`GamingOverlayWindow`)**:
+  - Deslizador de opacidad continua de 0% (completamente transparente) a 100% (sólido).
+  - Deslizador de escala visual del 80% al 160% para monitores 1080p, 1440p y 4K UHD.
+  - Selección individual de métricas: CPU %, Temp CPU, GPU %, Temp GPU, RAM, Ping, Reloj y Tiempo de Sesión.
+  - Botones de anclaje rápido a las 4 esquinas de la pantalla con fijación magnética.
+- [x] **22.4 Atajos Globales de Teclado In-Game**:
+  - `Ctrl + Shift + O`: Alternar visibilidad del HUD sobre cualquier juego sin minimizar.
+  - `Ctrl + Shift + L`: Alternar entre modo interactivo de arrastre y modo bloqueado Click-Through (`WS_EX_TRANSPARENT | WS_EX_NOACTIVATE`).
+- [x] **22.5 Canal de Memoria Compartida con RTSS (`RtssService`)**:
+  - Integración nativa bidireccional con RivaTuner Statistics Server para sincronización de frametimes y FPS exactos.
+
+### Fase 23: Motores de Diagnóstico de Próxima Generación & MCP 32-Tools (100% Completada)
+- [x] **23.1 PCIe Link Health Doctor (`PcieHealthService`, `win_pcie_doctor`)**:
+  - Diagnóstico profundo de GPU interrogando controladores NVIDIA, AMD e Intel vía SetupAPI, DXGI y WMI.
+  - Detección de degradación del enlace físico (ej. advertencia si una GPU corre a `x1 Gen 4` en vez de `x16 Gen 4`).
+  - Verificación de apertura Resizable BAR (BAR1 aperture) y soporte de bus de memoria.
+- [x] **23.2 DirectStorage 1.2 BypassIO Doctor (`DirectStorageService`, `win_bypassio_doctor`)**:
+  - Validación de compatibilidad con la ruta directa de I/O de Windows 11 para descompresión de texturas por GPU.
+  - Detección de controladores de filtro de almacenamiento anticuados que degradan o inhabilitan BypassIO.
+- [x] **23.3 Investigador de Micro-Stuttering & Latencia DPC (`StutterInvestigatorService`, `win_stutter_investigate`)**:
+  - Detección forense de picos de retardo en interrupciones de sistema, correlación de DPC/ISR y análisis de varianza de frame-times.
+- [x] **23.4 Topología de Núcleos Híbridos P/E-Core (`CpuTopologyService`, `win_cpu_topology`)**:
+  - Detección de núcleos en silicio real mediante `GetSystemCpuSetInformation`.
+  - Diferenciación precisa entre Performance Cores (P-Cores) y Efficiency Cores (E-Cores) y aplicación de `EcoQoS` (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`) a procesos secundarios.
+
+### Fase 24: Auditoría de Red-Team, Saneamiento Forense del Kernel & Detección XMP/EXPO (100% Completada)
+- [x] **24.1 Jitter Forense Real de Kernel (`KernelLatencyService`)**:
+  - Reemplazo de bucles de spin vacíos por retardo real de interrupción mediante `NtDelayExecution(-10000)` (1ms relativo).
+  - Medición fidedigna de micro-retrasos en el despachador de hilos del kernel de Windows sin consumo sintético de CPU.
+- [x] **24.2 Protección de `Dnscache` contra CPU Lock & Dual-Stack DNS (`DnsSecurityService`)**:
+  - Límite de seguridad de 2.000 dominios para el archivo `HOSTS`, previniendo que `svchost.exe` (`Dnscache`) entre en bucles de escaneo síncrono del 100% de CPU.
+  - Manejo seguro de atributos de archivo de solo lectura (`FileAttributes.ReadOnly`).
+  - Soporte completo Dual-Stack IPv4 e IPv6 para servidores DNS (Cloudflare, Quad9, Google, AdGuard) para erradicar fugas de resolución IPv6.
+- [x] **24.3 Saneamiento de Consola de Reparación DISM (`RepairPipelineService`)**:
+  - Eliminación de la directiva destructiva `/resetbase` del pipeline de mantenimiento automatizado, conservando la capacidad del usuario de desinstalar actualizaciones problemáticas de Windows.
+- [x] **24.4 Aislamiento de Tweak de Red Nagle (`ExpandedTweakService`)**:
+  - Restricción del tweak `TcpAckFrequency` / `TCPNoDelay` exclusivamente a adaptadores de red físicos con puerta de enlace predeterminada activa, evitando corromper la latencia en adaptadores virtuales (Hyper-V, WSL, VPNs).
+- [x] **24.5 Emergency Thermal Guard Dinámico (`EmergencyThermalGuard`)**:
+  - Limitación dinámica por software (`PROCTHROTTLEMAX 70`) vía `powercfg` si los planes de energía del sistema no exponen el GUID estándar de Ahorro de Energía.
+- [x] **24.6 Enumeración de Disco a Prueba de Fallos (`DiskService`)**:
+  - Uso de `EnumerationOptions` con `IgnoreInaccessible = true`, `RecurseSubdirectories = true` y omisión de `ReparsePoint` para evitar excepciones no controladas en enlaces simbólicos y carpetas protegidas.
+- [x] **24.7 Detección de Sub-Frecuencia de RAM JEDEC vs XMP/EXPO (`MotherboardBiosService`)**:
+  - Detección automática en `MotherboardBiosService` de memorias DDR4/DDR5 operando por debajo del perfil de fábrica (ej. 4800 MT/s en lugar de 6000 MT/s XMP/EXPO) y advertencia de configuración Single-Channel.
+- [x] **24.8 Suite de Pruebas Automatizadas 100% Verde (`OmniWin.Tests`)**:
+  - 121 pruebas unitarias y de integración pasando sin errores en .NET 9.
+
+---
+
+### Fase 25: Próximos Pasos de Evolución (Propuestas Activas de Innovación)
+- [ ] **25.1 OmniCompanion 2.0 (Mobile/Tablet Touch PWA)**:
+  - Soporte completo para abrirse desde celular o tablet en la red local mediante código QR sin login ni fricción.
+  - Controles táctiles en el celular: selector de estilos de HUD, deslizadores de opacidad/escala en tiempo real, disparador de perfil competitivo y monitor de temperatura de bolsillo.
+- [ ] **25.2 Personalización Total del HUD Overlay (Estilo RivaTuner Avanzado)**:
+  - Selección de familias tipográficas monoespaciadas (Consolas, Cascadia Code, JetBrains Mono) con renderizado DirectWrite nítido sobre 3D.
+  - Selector de métricas activas directamente desde el menú contextual o ventana de configuración (FPS, Frametime ms, 1% Low FPS, 0.1% Low, Temp CPU, Temp GPU, VRAM, RAM, Reloj).
+  - Paletas de colores personalizables (Cyan Cyberpunk, Verde Clásico RivaTuner, Blanco Monocromo, Naranja Precisión).
+- [ ] **25.3 Motor de Benchmark Empírico A/B (Frametime Diff Científico)**:
+  - Grabación de 60 segundos de telemetría de frame-times in-game.
+  - Comparativa A/B antes y después de aplicar un ajuste (ej. Timer 0.5ms vs 15.6ms, afinidad P-Cores on/off, EcoQoS on/off).
+  - Cálculo estadístico de confianza (percentiles 1% Low, 0.1% Low, desviación estándar de micro-stuttering) para demostrar con datos matemáticos empíricos si el tweak realmente mejoró los frametimes o si fue un placebo.
+- [ ] **25.4 Hibernador Inteligente de Launchers & WebViews en Juego**:
+  - Detección cuando un juego entra a pantalla completa o primer plano.
+  - Asignación automática de EcoQoS y reducción de conjunto de trabajo (Working Set) o suspensión a los procesos secundarios embebidos en navegadores y launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`).
+  - Restauración instantánea y transparente al salir del juego.
+
 
 
