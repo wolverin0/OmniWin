@@ -13,10 +13,11 @@ public class GameProfileItem
 {
     public string ExecutableName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public bool AutoEnforcePCores { get; set; } = true;
+    public bool AutoEnforcePCores { get; set; } = false; // Scheduler-managed by default; empirical benchmark required
     public bool AutoSetTimer05ms { get; set; } = true;
-    public bool AutoPurgeRam { get; set; } = true;
+    public bool AutoPurgeRam { get; set; } = false; // Disabled by default: prevent launch working set flush & hard faults
     public bool AutoHighPriority { get; set; } = true;
+    public bool AutoEcoQoSBackground { get; set; } = true; // EcoQoS for secondary apps (Chrome, Discord, Steam helpers)
     public bool IsActive { get; set; } = false;
     public int ProcessId { get; set; } = 0;
 }
@@ -26,6 +27,13 @@ public class GameProfilerService : IDisposable
     private static readonly Lazy<GameProfilerService> _instance = new(() => new GameProfilerService());
     public static GameProfilerService Instance => _instance.Value;
 
+    private class ProcessOriginalState
+    {
+        public ProcessPriorityClass OriginalPriority { get; set; }
+        public IntPtr OriginalAffinity { get; set; }
+    }
+
+    private readonly Dictionary<int, ProcessOriginalState> _originalProcessStates = new();
     private readonly List<GameProfileItem> _monitoredGames = new()
     {
         new GameProfileItem { ExecutableName = "cs2.exe", DisplayName = "Counter-Strike 2" },
@@ -140,16 +148,22 @@ public class GameProfilerService : IDisposable
             {
                 if (game.IsActive)
                 {
+                    int oldPid = game.ProcessId;
                     game.IsActive = false;
                     game.ProcessId = 0;
+                    RevertProcessBoost(oldPid);
                     OnGameStatusChanged?.Invoke(game.DisplayName, false);
                 }
             }
         }
 
-        if (!anyGameRunning && _isTimerBoosted)
+        if (!anyGameRunning)
         {
-            RevertTimerResolution();
+            if (_isTimerBoosted)
+            {
+                RevertTimerResolution();
+            }
+            EcoQoSService.Instance.RevertAllEcoQoS();
         }
     }
 
@@ -159,29 +173,46 @@ public class GameProfilerService : IDisposable
 
         try
         {
+            // Capture original state before making any modifications
+            try
+            {
+                if (!_originalProcessStates.ContainsKey(proc.Id))
+                {
+                    _originalProcessStates[proc.Id] = new ProcessOriginalState
+                    {
+                        OriginalPriority = proc.PriorityClass,
+                        OriginalAffinity = proc.ProcessorAffinity
+                    };
+                }
+            }
+            catch { }
+
             // 1. High Priority
             if (profile.AutoHighPriority)
             {
                 proc.PriorityClass = ProcessPriorityClass.High;
             }
 
-            // 2. Enforce P-Cores (First 8 physical threads / cores on modern Intel/AMD CPUs)
+            // 2. Enforce P-Cores only if explicitly requested (Default is scheduler-managed)
             if (profile.AutoEnforcePCores)
             {
                 int totalCores = Environment.ProcessorCount;
                 if (totalCores >= 8)
                 {
-                    // Mask for first 8 or 16 threads (P-Cores)
-                    long pCoreMask = (1L << Math.Min(16, totalCores)) - 1;
-                    proc.ProcessorAffinity = (IntPtr)pCoreMask;
+                    // If hybrid CPU topology provides specific P-core mask, use it; otherwise leave to Windows Thread Director
+                    long pCoreMask = CpuTopologyService.Instance.GetPerformanceCoreMask();
+                    if (pCoreMask > 0)
+                    {
+                        proc.ProcessorAffinity = (IntPtr)pCoreMask;
+                    }
                 }
             }
 
-            // 3. Purge RAM before game starts
+            // 3. Purge RAM before game starts (Only if explicitly enabled by user)
             if (profile.AutoPurgeRam)
             {
                 var mem = new MemoryService();
-                mem.PurgeMemory(true, true);
+                mem.PurgeMemory(purgeStandby: true, purgeWorkingSets: false);
             }
 
             // 4. Force 0.5ms Timer Resolution
@@ -191,15 +222,49 @@ public class GameProfilerService : IDisposable
                 _isTimerBoosted = true;
             }
 
+            // 5. Apply EcoQoS to secondary background apps
+            if (profile.AutoEcoQoSBackground)
+            {
+                EcoQoSService.Instance.ApplyEcoQoSToBackgroundApps(new[] { proc.Id });
+            }
+
             _boostedProcessIds.Add(proc.Id);
         }
         catch { }
     }
 
+    private void RevertProcessBoost(int pid)
+    {
+        if (_originalProcessStates.TryGetValue(pid, out var orig))
+        {
+            try
+            {
+                using var proc = Process.GetProcessById(pid);
+                if (!proc.HasExited)
+                {
+                    proc.PriorityClass = orig.OriginalPriority;
+                    proc.ProcessorAffinity = orig.OriginalAffinity;
+                }
+            }
+            catch { }
+            finally
+            {
+                _originalProcessStates.Remove(pid);
+            }
+        }
+        _boostedProcessIds.Remove(pid);
+    }
+
     private void RevertAllBoosts()
     {
+        foreach (var pid in _originalProcessStates.Keys.ToList())
+        {
+            RevertProcessBoost(pid);
+        }
         _boostedProcessIds.Clear();
+        _originalProcessStates.Clear();
         RevertTimerResolution();
+        EcoQoSService.Instance.RevertAllEcoQoS();
     }
 
     private void RevertTimerResolution()

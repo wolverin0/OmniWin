@@ -239,6 +239,24 @@ public class CompanionServerService : IDisposable
                 return;
             }
 
+            if (path == "/api/stutter")
+            {
+                if (!string.Equals(token, _pairingToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    resp.StatusCode = 401;
+                    resp.Close();
+                    return;
+                }
+
+                var report = StutterInvestigatorService.Instance.AnalyzeRecentStutter(TimeSpan.FromSeconds(15));
+                byte[] reportBytes = JsonSerializer.SerializeToUtf8Bytes(report);
+                resp.ContentType = "application/json";
+                resp.StatusCode = 200;
+                await resp.OutputStream.WriteAsync(reportBytes, ct);
+                resp.Close();
+                return;
+            }
+
             if (path == "/api/command" && req.HttpMethod == "POST")
             {
                 if (!string.Equals(token, _pairingToken, StringComparison.OrdinalIgnoreCase))
@@ -323,6 +341,12 @@ public class CompanionServerService : IDisposable
                         awake.Activate(AwakeMode.KeepAwakeIndefinite, duration: null, keepDisplayOn: true);
                     break;
 
+                case "stutter_trigger":
+                case "analyze_stutter":
+                    var stutter = StutterInvestigatorService.Instance.AnalyzeRecentStutter(TimeSpan.FromSeconds(15));
+                    OnCommandReceived?.Invoke($"stutter:{stutter.ProbableCause}");
+                    break;
+
                 default:
                     OnCommandReceived?.Invoke(action);
                     break;
@@ -338,6 +362,23 @@ public class CompanionServerService : IDisposable
             try
             {
                 await Task.Delay(1000, ct);
+
+                // Record rolling telemetry for Stutter Investigator
+                var memStats = new MemoryService().GetMemoryStats();
+                var thermalStats = ThermalSensorService.Instance.GetSnapshot();
+                StutterInvestigatorService.Instance.RecordSnapshot(new TelemetrySnapshot
+                {
+                    Timestamp = DateTime.UtcNow,
+                    CpuLoadPercent = 0.0,
+                    GpuLoadPercent = 0.0,
+                    CpuTempC = thermalStats.CpuPackageTemp ?? 0.0,
+                    GpuTempC = thermalStats.GpuCoreTemp ?? 0.0,
+                    AvailableRamMb = memStats.AvailablePhysicalBytes / (1024 * 1024),
+                    FrameTimeMs = 0.0,
+                    Fps = 0.0,
+                    ThermalThrottling = (thermalStats.CpuPackageTemp >= 90.0 || thermalStats.GpuCoreTemp >= 86.0)
+                });
+
                 if (_activeSockets.IsEmpty) continue;
 
                 string json = GetLiveTelemetryJson();
@@ -472,6 +513,21 @@ public class CompanionServerService : IDisposable
     </div>
   </div>
 
+  <div style="margin-top: 14px;">
+    <div class="btn" style="background: linear-gradient(135deg, #1E1B4B, #312E81); border: 1px solid #6366F1; display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding: 14px 18px; border-radius: 12px; cursor: pointer;" onclick="triggerStutter()">
+      <span style="font-size: 22px;">⚠</span>
+      <div style="text-align: left;">
+        <div style="font-weight: 800; font-size: 14px; color: #E0E7FF;">¡Sentí un Stutter!</div>
+        <div style="font-size: 11px; color: #A5B4FC;">Diagnosticar tirones de los últimos 15s</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="stutterBox" style="display: none; margin-top: 12px; background: #0F172A; border: 1px solid #6366F1; border-radius: 12px; padding: 14px;">
+    <div style="font-size: 13px; font-weight: 800; color: #F59E0B; margin-bottom: 6px;" id="stutterCause">Diagnóstico</div>
+    <div style="font-size: 12px; color: var(--text); line-height: 1.4;" id="stutterDetails">...</div>
+  </div>
+
   <div id="toast" class="toast">Comando enviado</div>
 
   <script>
@@ -492,6 +548,21 @@ public class CompanionServerService : IDisposable
       t.innerText = msg;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 1600);
+    }
+
+    function triggerStutter() {
+      if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+      showToast('Analizando telemetría reciente...');
+      fetch('/api/stutter?token=' + token)
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('stutterBox').style.display = 'block';
+          document.getElementById('stutterCause').innerText = data.ProbableCause || data.probableCause || 'Stutter Analizado';
+          document.getElementById('stutterDetails').innerText = data.Summary || data.summary || 'Telemetría dentro de rangos normales.';
+        })
+        .catch(() => {
+          sendCmd('stutter_trigger');
+        });
     }
 
     function connect() {

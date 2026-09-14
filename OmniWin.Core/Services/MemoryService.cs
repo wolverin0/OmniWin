@@ -146,13 +146,14 @@ public class MemoryService
         return new MemoryStats();
     }
 
-    public MemoryPurgeResult PurgeMemory(bool purgeStandby = true, bool purgeWorkingSets = true)
+    public MemoryPurgeResult PurgeMemory(bool purgeStandby = true, bool purgeWorkingSets = false)
     {
         var before = GetMemoryStats();
         int emptiedProcesses = 0;
         bool standbyPurged = false;
+        bool admin = IsAdmin();
 
-        if (IsAdmin())
+        if (admin)
         {
             EnablePrivilege("SeIncreaseQuotaPrivilege");
             EnablePrivilege("SeProfileSingleProcessPrivilege");
@@ -206,13 +207,27 @@ public class MemoryService
             ? after.AvailablePhysicalBytes - before.AvailablePhysicalBytes 
             : 0;
 
+        bool success = standbyPurged || (purgeWorkingSets && emptiedProcesses > 0) || freed > 0;
+
+        string msg;
+        if (success)
+        {
+            msg = $"Memoria optimizada. Procesos limpiados: {emptiedProcesses}. Standby purgado: {(standbyPurged ? "Sí" : (admin ? "No" : "Requiere Admin"))}. Liberados: {freed / (1024 * 1024):N0} MB.";
+        }
+        else
+        {
+            msg = admin 
+                ? "No fue necesario liberar páginas de memoria; el sistema ya contaba con espacio disponible óptimo." 
+                : "Se requieren privilegios de Administrador para purgar la lista Standby del kernel de Windows.";
+        }
+
         return new MemoryPurgeResult
         {
-            Success = true,
+            Success = success,
             BytesFreed = freed,
             MemoryBeforeUsed = before.UsedPhysicalBytes,
             MemoryAfterUsed = after.UsedPhysicalBytes,
-            Message = $"Memoria optimizada. Procesos limpiados: {emptiedProcesses}. Standby purgado: {(standbyPurged ? "Sí" : "Requiere Admin")}. Liberados: {freed / (1024 * 1024):N0} MB."
+            Message = msg
         };
     }
 }

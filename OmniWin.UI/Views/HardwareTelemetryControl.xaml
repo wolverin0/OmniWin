@@ -449,7 +449,8 @@
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button x:Name="BtnApplyHighResTimer" Content="⚡ Activar Timer 0.5ms" Click="BtnApplyHighResTimer_Click" Background="#0284C7" Foreground="White" Margin="0,0,8,0" Padding="12,6" FontSize="11" />
-                            <Button x:Name="BtnBenchmarkLatency" Content="🧪 Test de Jitter DPC" Click="BtnBenchmarkLatency_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" />
+                            <Button x:Name="BtnBenchmarkLatency" Content="🧪 Test de Jitter DPC" Click="BtnBenchmarkLatency_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" Margin="0,0,8,0" />
+                            <Button x:Name="BtnTriggerStutterCheck" Content="⚠️ Auditar Stutter" Click="BtnTriggerStutterCheck_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" ToolTip="Analiza los últimos 30 segundos de telemetría para diagnosticar la causa raíz del tirón o microcorte" />
                         </StackPanel>
                     </Grid>
 

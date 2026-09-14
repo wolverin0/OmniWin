@@ -57,27 +57,14 @@ public class CpuOptimizationService
                 details.Vendor = (key.GetValue("VendorIdentifier") as string ?? "Desconocido").Trim();
             }
 
-            details.LogicalProcessors = Environment.ProcessorCount;
+            var topo = CpuTopologyService.Instance.GetTopology();
+            details.LogicalProcessors = topo.LogicalProcessorCount;
+            details.PhysicalCores = topo.PhysicalCoreCount;
 
-            // Determinar núcleos físicos aproximados
-            if (details.Vendor.Contains("Intel", StringComparison.OrdinalIgnoreCase))
+            // Determinar arquitectura de núcleos físicos
+            if (topo.IsHybrid)
             {
-                if (details.Name.Contains("12th", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("13th", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("14th", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("14900", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("13900", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("13700", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("14700", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("12700", StringComparison.OrdinalIgnoreCase) ||
-                    details.Name.Contains("12900", StringComparison.OrdinalIgnoreCase))
-                {
-                    details.ArchitectureType = CpuArchitectureType.IntelHybrid_P_E_Cores;
-                }
-                else
-                {
-                    details.ArchitectureType = CpuArchitectureType.Standard;
-                }
+                details.ArchitectureType = CpuArchitectureType.IntelHybrid_P_E_Cores;
             }
             else if (details.Vendor.Contains("AMD", StringComparison.OrdinalIgnoreCase))
             {
@@ -89,6 +76,10 @@ public class CpuOptimizationService
                 {
                     details.ArchitectureType = CpuArchitectureType.AmdRyzen_Standard;
                 }
+            }
+            else
+            {
+                details.ArchitectureType = CpuArchitectureType.Standard;
             }
 
             // 2. Consultar ajustes de energía de CPU actuales
@@ -103,85 +94,84 @@ public class CpuOptimizationService
     {
         try
         {
-            // Consultar Core Parking actual
-            string outCp = RunPowerCfg($"/q scheme_current {SubgroupProcessor} {SettingCpMinCores}");
-            if (outCp.Contains("Current AC Power Setting Index: 0x"))
+            // Consultar Core Parking actual (compatible con Windows en inglés, español y cualquier idioma)
+            var (outCp, _) = RunPowerCfg($"/q scheme_current {SubgroupProcessor} {SettingCpMinCores}");
+            int? cpVal = ExtractHexSetting(outCp);
+            if (cpVal.HasValue)
             {
-                string hex = outCp.Substring(outCp.IndexOf("Current AC Power Setting Index: 0x") + 34, 8).Trim();
-                if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out int cpVal))
-                {
-                    details.CoreParkingMinPercent = Math.Clamp(cpVal, 0, 100);
-                }
+                details.CoreParkingMinPercent = Math.Clamp(cpVal.Value, 0, 100);
             }
 
             // Consultar EPP actual
-            string outEpp = RunPowerCfg($"/q scheme_current {SubgroupProcessor} {SettingPerfEpp}");
-            if (outEpp.Contains("Current AC Power Setting Index: 0x"))
+            var (outEpp, _) = RunPowerCfg($"/q scheme_current {SubgroupProcessor} {SettingPerfEpp}");
+            int? eppVal = ExtractHexSetting(outEpp);
+            if (eppVal.HasValue)
             {
-                string hex = outEpp.Substring(outEpp.IndexOf("Current AC Power Setting Index: 0x") + 34, 8).Trim();
-                if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out int eppVal))
-                {
-                    details.EnergyPerformancePreference = Math.Clamp(eppVal, 0, 100);
-                }
+                details.EnergyPerformancePreference = Math.Clamp(eppVal.Value, 0, 100);
             }
         }
         catch { }
     }
 
+    private static int? ExtractHexSetting(string powerCfgOutput)
+    {
+        if (string.IsNullOrWhiteSpace(powerCfgOutput)) return null;
+
+        // Busca la línea de corriente alterna (AC / CA) independientemente del idioma del SO
+        var lines = powerCfgOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            if (line.Contains("AC", StringComparison.OrdinalIgnoreCase) || line.Contains("CA", StringComparison.OrdinalIgnoreCase))
+            {
+                int hexIdx = line.IndexOf("0x", StringComparison.OrdinalIgnoreCase);
+                if (hexIdx >= 0 && hexIdx + 2 < line.Length)
+                {
+                    string hexSub = line.Substring(hexIdx + 2).Trim();
+                    string hex = new string(hexSub.TakeWhile(c => Uri.IsHexDigit(c)).ToArray());
+                    if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out int val))
+                    {
+                        return val;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public bool ApplyGamingCpuTuning()
     {
-        bool ok = true;
-        // 1. Core parking a 100% (Desactivar estacionamiento de núcleos para que todos estén despiertos)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 100);
-        
-        // 2. EPP a 0 (Máximo rendimiento inmediato sin demora de rampa de frecuencia)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 0);
+        bool anyApplied = false;
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 100);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 0);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingHeteroPolicy, 0);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 100);
 
-        // 3. Si es Intel Hybrid, priorizar P-Cores
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingHeteroPolicy, 0);
-
-        // 4. Asegurar 100% de frecuencia máxima
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 100);
-
-        // Activar cambios en el esquema actual
-        RunPowerCfg("/setactive scheme_current");
-        return ok;
+        var (_, exitCode) = RunPowerCfg("/setactive scheme_current");
+        return anyApplied || exitCode == 0;
     }
 
     public bool ApplyBalancedCpuTuning()
     {
-        bool ok = true;
-        // Core parking balanceado (50%)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 50);
+        bool anyApplied = false;
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 50);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 50);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingHeteroPolicy, 1);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMin, 5);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 100);
 
-        // EPP a 50 (Transición equilibrada entre ahorro y velocidad)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 50);
-
-        // Heterogeneous policy balanceado
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingHeteroPolicy, 1);
-
-        // Mínimo 5%, Máximo 100%
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMin, 5);
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 100);
-
-        RunPowerCfg("/setactive scheme_current");
-        return ok;
+        var (_, exitCode) = RunPowerCfg("/setactive scheme_current");
+        return anyApplied || exitCode == 0;
     }
 
     public bool ApplyEcoSilentCpuTuning()
     {
-        bool ok = true;
-        // Core parking conservador
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 25);
+        bool anyApplied = false;
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingCpMinCores, 25);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 80);
+        anyApplied |= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 99);
 
-        // EPP al 80-100% (Favorece temperaturas frías y ventiladores en reposo)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingPerfEpp, 80);
-
-        // Limitar CPU al 99% (desactiva Intel Turbo Boost o AMD Precision Boost agresivo)
-        ok &= SetPowerSettingIndex(SubgroupProcessor, SettingProcThrottleMax, 99);
-
-        RunPowerCfg("/setactive scheme_current");
-        return ok;
+        var (_, exitCode) = RunPowerCfg("/setactive scheme_current");
+        return anyApplied || exitCode == 0;
     }
 
     public bool SetCoreParkingMinPercent(int percent)
@@ -207,9 +197,9 @@ public class CpuOptimizationService
             string argsAc = $"/setacvalueindex scheme_current {subgroup} {setting} {value}";
             string argsDc = $"/setdcvalueindex scheme_current {subgroup} {setting} {value}";
 
-            RunPowerCfg(argsAc);
-            RunPowerCfg(argsDc);
-            return true;
+            var (_, exitAc) = RunPowerCfg(argsAc);
+            var (_, exitDc) = RunPowerCfg(argsDc);
+            return exitAc == 0 || exitDc == 0;
         }
         catch
         {
@@ -217,7 +207,7 @@ public class CpuOptimizationService
         }
     }
 
-    private static string RunPowerCfg(string arguments)
+    private static (string output, int exitCode) RunPowerCfg(string arguments)
     {
         try
         {
@@ -232,12 +222,12 @@ public class CpuOptimizationService
             };
             proc.Start();
             string output = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit(1500);
-            return output;
+            proc.WaitForExit(2000);
+            return (output, proc.ExitCode);
         }
         catch
         {
-            return string.Empty;
+            return (string.Empty, -1);
         }
     }
 }

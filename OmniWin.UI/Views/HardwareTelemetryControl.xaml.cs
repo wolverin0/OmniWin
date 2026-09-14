@@ -120,6 +120,15 @@ public partial class HardwareTelemetryControl : UserControl
             // 5. Dibujar Sparklines en los Canvas
             RenderSparkline(CanvasCpu, PolyLineCpu, PolyAreaCpu, DotCurrentCpu, _cpuHistory);
             RenderSparkline(CanvasRam, PolyLineRam, PolyAreaRam, DotCurrentRam, _ramHistory);
+
+            // 6. Alimentar buffer circular forense de Stutter Investigator
+            StutterInvestigatorService.Instance.RecordSnapshot(new TelemetrySnapshot
+            {
+                Timestamp = DateTime.UtcNow,
+                CpuLoadPercent = cpuVal,
+                AvailableRamMb = mem.AvailablePhysicalBytes / (1024 * 1024),
+                ThermalThrottling = false
+            });
         }
         catch (Exception ex)
         {
@@ -343,10 +352,49 @@ public partial class HardwareTelemetryControl : UserControl
             BtnRefreshGpuDiag.Content = "⏳ Analizando...";
 
             var status = await Task.Run(() => NvidiaGpuTuningService.Instance.GetStatus());
+            var pcieReport = await Task.Run(() => PcieLinkInspector.Instance.RunDoctorCheck());
 
             if (!status.IsNvidiaGpuDetected)
             {
-                TxtGpuModelHeader.Text = "No se detectó GPU discreta NVIDIA";
+                var fallbackGpu = pcieReport.Devices.FirstOrDefault(d => d.DeviceClass == "GPU");
+                if (fallbackGpu != null)
+                {
+                    TxtGpuModelHeader.Text = fallbackGpu.DeviceName;
+                    TxtGpuVbiosChip.Text = "PnP Device";
+                    TxtGpuSlotChip.Text = fallbackGpu.DeviceId.Length > 20 ? fallbackGpu.DeviceId[..20] : fallbackGpu.DeviceId;
+                    TxtGpuVendorChip.Text = fallbackGpu.DeviceName.Contains("AMD", StringComparison.OrdinalIgnoreCase) || fallbackGpu.DeviceName.Contains("Radeon", StringComparison.OrdinalIgnoreCase) ? "AMD" : "Intel / Genérico";
+                    TxtGpuDriverChip.Text = "WDDM Driver";
+
+                    if (fallbackGpu.CurrentLinkWidthLanes > 0 && fallbackGpu.MaxLinkWidthLanes > 0)
+                    {
+                        TxtPcieWidthVal.Text = fallbackGpu.CurrentWidthString;
+                        TxtPcieWidthMaxVal.Text = $" / {fallbackGpu.MaxWidthString} max";
+                        double pct = (double)fallbackGpu.CurrentLinkWidthLanes / fallbackGpu.MaxLinkWidthLanes * 100.0;
+                        PbPcieWidth.Value = pct;
+                        TxtPcieWidthPercent.Text = $"{pct:F0}% del ancho de banda nativo";
+
+                        if (fallbackGpu.IsDegraded)
+                        {
+                            TxtPcieWidthVal.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                            PbPcieWidth.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                            BoxWidthBottleneck.Visibility = Visibility.Visible;
+                            TxtWidthBottleneckMsg.Text = fallbackGpu.DiagnosticMessage;
+                        }
+                        else
+                        {
+                            TxtPcieWidthVal.Foreground = new SolidColorBrush(Color.FromRgb(16, 185, 129));
+                            PbPcieWidth.Foreground = new SolidColorBrush(Color.FromRgb(16, 185, 129));
+                            BoxWidthBottleneck.Visibility = Visibility.Collapsed;
+                        }
+                    }
+
+                    TxtPcieGenVal.Text = fallbackGpu.CurrentSpeedString;
+                    TxtPcieGenDetails.Text = $"Capacidad: {fallbackGpu.MaxSpeedString}";
+                    BoxReBarNotice.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                TxtGpuModelHeader.Text = "No se detectó GPU discreta";
                 TxtGpuVbiosChip.Text = "N/A";
                 TxtGpuSlotChip.Text = "N/A";
                 TxtGpuVendorChip.Text = "N/A";
@@ -364,20 +412,38 @@ public partial class HardwareTelemetryControl : UserControl
             TxtGpuDriverChip.Text = string.IsNullOrWhiteSpace(status.DriverVersion) ? "N/A" : $"NVIDIA {status.DriverVersion}";
 
             // Métricas de ancho de banda PCIe
-            if (status.PcieWidthMax > 0 && status.PcieWidthCurrent > 0)
+            int currentWidth = status.PcieWidthCurrent;
+            int maxWidth = status.PcieWidthMax;
+            bool isDegraded = status.IsWidthBottlenecked;
+            string bottleneckMsg = status.BottleneckNotice;
+
+            // Cross-check con PcieLinkInspector para GPU NVIDIA
+            var pcieGpu = pcieReport.Devices.FirstOrDefault(d => d.DeviceClass == "GPU");
+            if (pcieGpu != null)
             {
-                TxtPcieWidthVal.Text = $"x{status.PcieWidthCurrent}";
-                TxtPcieWidthMaxVal.Text = $" / x{status.PcieWidthMax} max";
-                double pct = (double)status.PcieWidthCurrent / status.PcieWidthMax * 100.0;
+                if (maxWidth <= 0 && pcieGpu.MaxLinkWidthLanes > 0) maxWidth = pcieGpu.MaxLinkWidthLanes;
+                if (currentWidth <= 0 && pcieGpu.CurrentLinkWidthLanes > 0) currentWidth = pcieGpu.CurrentLinkWidthLanes;
+                if (pcieGpu.IsDegraded)
+                {
+                    isDegraded = true;
+                    bottleneckMsg = pcieGpu.DiagnosticMessage;
+                }
+            }
+
+            if (maxWidth > 0 && currentWidth > 0)
+            {
+                TxtPcieWidthVal.Text = $"x{currentWidth}";
+                TxtPcieWidthMaxVal.Text = $" / x{maxWidth} max";
+                double pct = (double)currentWidth / maxWidth * 100.0;
                 PbPcieWidth.Value = pct;
                 TxtPcieWidthPercent.Text = $"{pct:F0}% del ancho de banda nativo";
 
-                if (status.IsWidthBottlenecked)
+                if (isDegraded)
                 {
                     TxtPcieWidthVal.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)); // Ámbar
                     PbPcieWidth.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
                     BoxWidthBottleneck.Visibility = Visibility.Visible;
-                    TxtWidthBottleneckMsg.Text = status.BottleneckNotice;
+                    TxtWidthBottleneckMsg.Text = bottleneckMsg;
                 }
                 else
                 {
@@ -431,6 +497,22 @@ public partial class HardwareTelemetryControl : UserControl
         {
             BtnRefreshGpuDiag.IsEnabled = true;
             BtnRefreshGpuDiag.Content = "🔄 Re-analizar Enlace";
+        }
+    }
+
+    private void BtnTriggerStutterCheck_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var report = StutterInvestigatorService.Instance.AnalyzeRecentStutter(TimeSpan.FromSeconds(30));
+            TxtLatencyVerdict.Text = $"[Stutter] {report.ProbableCause}: {report.Summary}";
+            TxtLatencyVerdict.Foreground = report.ProbableCause == "Sin anomalías evidentes"
+                ? new SolidColorBrush(Color.FromRgb(52, 211, 153))
+                : new SolidColorBrush(Color.FromRgb(245, 158, 11));
+        }
+        catch (Exception ex)
+        {
+            TxtLatencyVerdict.Text = $"Error: {ex.Message}";
         }
     }
 

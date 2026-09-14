@@ -5,10 +5,10 @@
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
 [![MCP Protocol](https://img.shields.io/badge/MCP-28%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
 [![Tests](https://img.shields.io/badge/Tests-109%2F109%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
-[![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-100%25%20Safe%20(Layered%20No--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
+[![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **OmniWin** is a native, ultra-high-performance Windows 10/11 engineering, gaming optimization, and observability control plane written in compiled C# (.NET 9) with direct Win32 & NT Kernel API integrations.
+> **OmniWin** is a native, ultra-high-performance Windows 10 and Windows 11 (24H2 / 25H2 / 26H1) engineering, gaming optimization, and observability control plane written in compiled C# (.NET 9) with direct Win32 & NT Kernel API integrations.
 > It replaces 8+ separate fragmented utilities (*HWMonitor, Process Hacker, Autoruns, FanControl, CCleaner, RTSS OSD, Simplewall, IObit Unlocker, EarTrumpet*) into a single zero-bloat standalone executable, backed by a 28-tool **Model Context Protocol (MCP)** server for autonomous AI agents.
 
 ---
@@ -19,19 +19,19 @@
 * **Atomic RAM Purge**: Leverages `NtSetSystemInformation` with `SYSTEM_MEMORY_LIST_COMMAND` to flush:
   * Modified Page List
   * Standby Priority Lists (0 to 7)
-  * System Cache and Working Sets
-* **Zero Process Restarting**: Unlike rudimentary scripts that kill explorer or services, OmniWin signals the NT Memory Manager directly, safely reclaiming hundreds of megabytes of physical RAM instantly.
+  * System Cache and Working Sets (when requested)
+* **Non-Destructive by Default**: Preserves application working sets during active game launches to prevent cold page faults and startup stuttering.
 
 ### 2. 🔓 Windows Restart Manager File Unlocker (`FileLockService`)
 * Direct integration with `rstrtmgr.dll` (`RmStartSession`, `RmRegisterResources`, `RmGetList`).
 * Pinpoints the exact Process IDs (PIDs), application names, and window titles locking any file or directory on NTFS, with 1-click safe unlock and termination.
 
 ### 3. ⏱️ 0.50 ms Esports Multimedia Timer (`PowerService`)
-* Sets system interrupt clock resolution down from the standard 15.6 ms to **0.50 ms** via `timeBeginPeriod` / `NtSetTimerResolution`.
+* Sets system interrupt clock resolution down to **0.50 ms** via `NtSetTimerResolution`, with symmetric unsetting to cleanly restore standard Windows clock resolution on game exit.
 * Drastically reduces input lag, frame-time variance, and mouse jitter in competitive gaming titles.
 
 ### 4. 🎮 Customizable Gaming HUD Overlay (`GamingOverlayWindow`)
-* **100% Anti-Cheat Safe**: Uses a layered Click-Through window (`WS_EX_TRANSPARENT | WS_EX_NOACTIVATE`) with global Windows hotkeys. Never hooks DirectX/Vulkan game pipelines or injects DLLs.
+* **Safe-by-Design Overlay**: Uses a layered transparent Click-Through window (`WS_EX_TRANSPARENT | WS_EX_NOACTIVATE`) with global Windows hotkeys. Never hooks DirectX/Vulkan game pipelines or injects DLLs into game memory.
 * **3 Selectable Styles**:
   1. **RivaTuner / RTSS OSD Mode**: Pure floating telemetry text over 3D game rendering without any background "card" or borders, backed by high-contrast perimeter drop shadow (`DropShadowEffect`).
   2. **Glassmorphic Card Mode**: Modern translucent panel with mini progress bars, thermal alert banners, and session timers.

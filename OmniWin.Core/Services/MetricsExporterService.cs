@@ -165,6 +165,11 @@ public class MetricsExporterService : IDisposable
         }
     }
 
+    private static double _cachedCpuPercent = 0.0;
+    private static DateTime _lastProcessSampleTime = DateTime.MinValue;
+    private static (long handles, long threads) _cachedHandlesAndThreads = (0, 0);
+    private static readonly object _processSampleLock = new();
+
     public double GetCpuUsagePercent()
     {
         lock (_cpuLock)
@@ -172,7 +177,7 @@ public class MetricsExporterService : IDisposable
             try
             {
                 if (!GetSystemTimes(out long idleTime, out long kernelTime, out long userTime))
-                    return 0.0;
+                    return _cachedCpuPercent;
 
                 if (!_hasCpuSample)
                 {
@@ -180,10 +185,7 @@ public class MetricsExporterService : IDisposable
                     _prevKernelTime = kernelTime;
                     _prevUserTime = userTime;
                     _hasCpuSample = true;
-
-                    Thread.Sleep(40);
-                    if (!GetSystemTimes(out idleTime, out kernelTime, out userTime))
-                        return 0.0;
+                    return _cachedCpuPercent;
                 }
 
                 long usr = userTime - _prevUserTime;
@@ -195,48 +197,61 @@ public class MetricsExporterService : IDisposable
                 _prevUserTime = userTime;
 
                 long total = usr + ker;
-                if (total <= 0) return 0.0;
+                if (total <= 0) return _cachedCpuPercent;
 
                 double load = (double)(total - idl) / total * 100.0;
-                return Math.Clamp(load, 0.0, 100.0);
+                _cachedCpuPercent = Math.Clamp(load, 0.0, 100.0);
+                return _cachedCpuPercent;
             }
             catch
             {
-                return 0.0;
+                return _cachedCpuPercent;
             }
         }
     }
 
     public (long handles, long threads) GetSystemHandlesAndThreads()
     {
-        long handles = 0;
-        long threads = 0;
-
-        try
+        lock (_processSampleLock)
         {
-            foreach (var proc in Process.GetProcesses())
+            // Cache results for 2 seconds to avoid iterate-all-processes overhead on rapid Prometheus scrapes
+            if (DateTime.UtcNow - _lastProcessSampleTime < TimeSpan.FromSeconds(2) && _cachedHandlesAndThreads.handles > 0)
             {
-                try
-                {
-                    handles += proc.HandleCount;
-                    threads += proc.Threads.Count;
-                }
-                catch
-                {
-                    // Procesos del sistema protegidos
-                }
-                finally
-                {
-                    proc.Dispose();
-                }
+                return _cachedHandlesAndThreads;
             }
-        }
-        catch
-        {
-            // Error general
-        }
 
-        return (handles, threads);
+            long handles = 0;
+            long threads = 0;
+
+            try
+            {
+                foreach (var proc in Process.GetProcesses())
+                {
+                    try
+                    {
+                        handles += proc.HandleCount;
+                        threads += proc.Threads.Count;
+                    }
+                    catch
+                    {
+                        // Procesos del sistema protegidos
+                    }
+                    finally
+                    {
+                        proc.Dispose();
+                    }
+                }
+
+                _cachedHandlesAndThreads = (handles, threads);
+                _lastProcessSampleTime = DateTime.UtcNow;
+            }
+            catch
+            {
+                // Retornar último cache si falla
+            }
+
+            return _cachedHandlesAndThreads;
+        }
     }
 
     public string GenerateMetricsText()

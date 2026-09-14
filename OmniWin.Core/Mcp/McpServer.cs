@@ -507,6 +507,52 @@ public class McpServer
             }
         });
 
+        // 29. win_pcie_doctor
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_pcie_doctor",
+            ["description"] = "Diagnóstico profundo de ancho de carril y velocidad de enlace PCIe (GPU y unidades de almacenamiento NVMe) detectando degradación o estrangulamiento de hardware.",
+            ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() }
+        });
+
+        // 30. win_bypassio_doctor
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_bypassio_doctor",
+            ["description"] = "Inspecciona la compatibilidad de DirectStorage BypassIO en los volúmenes del sistema e identifica controladores o filtros minifilter que bloquean la carga ultrarrápida.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["volume"] = new JsonObject { ["type"] = "string", ["description"] = "Letra de unidad o ruta a inspeccionar (opcional, por defecto todos los discos)" }
+                }
+            }
+        });
+
+        // 31. win_stutter_investigate
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_stutter_investigate",
+            ["description"] = "Analiza los últimos 15 a 30 segundos de telemetría del sistema para diagnosticar causas de tirones (throttling térmico, presión de RAM/pagefile, DPC latency o GPU stall).",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["lookback_seconds"] = new JsonObject { ["type"] = "integer", ["description"] = "Segundos a analizar hacia atrás (por defecto 15)" }
+                }
+            }
+        });
+
+        // 32. win_cpu_topology
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_cpu_topology",
+            ["description"] = "Obtiene la topología física y lógica de núcleos del procesador mediante Win32 CPU Sets nativo, clasificando P-Cores vs E-Cores y máscaras de afinidad sin adivinar por SKU.",
+            ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject() }
+        });
+
         return tools;
     }
 
@@ -729,6 +775,30 @@ public class McpServer
                     bool cEnable = args["enable"]?.GetValue<bool>() ?? true;
                     bool ctxOk = _contextMenuService.ToggleContextMenuItem(pPath, kName, cEnable);
                     content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(new { parent = pPath, key = kName, enabled = cEnable, success = ctxOk }) });
+                    break;
+
+                case "win_pcie_doctor":
+                    var pcieReport = PcieLinkInspector.Instance.RunDoctorCheck();
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(pcieReport, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_bypassio_doctor":
+                    string? vol = args["volume"]?.GetValue<string>();
+                    object bypassResult = string.IsNullOrWhiteSpace(vol)
+                        ? BypassIoService.Instance.CheckSystemBypassIoState()
+                        : BypassIoService.Instance.CheckVolumeBypassIo(vol);
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(bypassResult, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_stutter_investigate":
+                    int seconds = args["lookback_seconds"]?.GetValue<int>() ?? 15;
+                    var stutterReport = StutterInvestigatorService.Instance.AnalyzeRecentStutter(TimeSpan.FromSeconds(seconds));
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(stutterReport, new JsonSerializerOptions { WriteIndented = true }) });
+                    break;
+
+                case "win_cpu_topology":
+                    var topo = CpuTopologyService.Instance.GetTopology();
+                    content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(topo, new JsonSerializerOptions { WriteIndented = true }) });
                     break;
 
                 default:

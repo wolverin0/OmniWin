@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using OmniWin.Core.Services;
 
 namespace OmniWin.UI.Views;
@@ -48,6 +49,66 @@ public partial class DiskSpaceAnalyzerControl : UserControl
                 CmbDrives.Items.Add("C:\\");
                 CmbDrives.SelectedIndex = 0;
             }
+        }
+
+        CmbDrives.SelectionChanged -= CmbDrives_SelectionChanged;
+        CmbDrives.SelectionChanged += CmbDrives_SelectionChanged;
+        UpdateBypassIoStatusAsync();
+    }
+
+    private void CmbDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateBypassIoStatusAsync();
+    }
+
+    private async void UpdateBypassIoStatusAsync()
+    {
+        try
+        {
+            string selected = CmbDrives.SelectedItem?.ToString() ?? "C:\\";
+            string drive = selected.Split(' ')[0].Trim();
+            if (drive.Length >= 2) drive = drive.Substring(0, 2);
+
+            var detail = await Task.Run(() => BypassIoService.Instance.CheckVolumeBypassIo(drive));
+            Dispatcher.Invoke(() =>
+            {
+                switch (detail.Status)
+                {
+                    case BypassIoStatus.Supported:
+                        BadgeBypassIo.Background = new SolidColorBrush(Color.FromRgb(6, 78, 59));
+                        BadgeBypassIo.BorderBrush = new SolidColorBrush(Color.FromRgb(16, 185, 129));
+                        TxtBypassIoIcon.Text = "⚡";
+                        TxtBypassIoStatus.Text = $"DirectStorage BypassIO: Activo en {drive} (Full HW NVMe Bypass)";
+                        TxtBypassIoStatus.Foreground = new SolidColorBrush(Color.FromRgb(52, 211, 153));
+                        break;
+                    case BypassIoStatus.UnsupportedOsVersion:
+                        BadgeBypassIo.Background = new SolidColorBrush(Color.FromRgb(30, 41, 59));
+                        BadgeBypassIo.BorderBrush = new SolidColorBrush(Color.FromRgb(71, 85, 105));
+                        TxtBypassIoIcon.Text = "ℹ️";
+                        TxtBypassIoStatus.Text = $"DirectStorage: Modo Estándar NVMe (Windows 10)";
+                        TxtBypassIoStatus.Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184));
+                        break;
+                    case BypassIoStatus.NotSupported:
+                    case BypassIoStatus.PartiallySupported:
+                        BadgeBypassIo.Background = new SolidColorBrush(Color.FromRgb(69, 26, 3));
+                        BadgeBypassIo.BorderBrush = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        TxtBypassIoIcon.Text = "⚠️";
+                        string reason = detail.BlockingDrivers.Count > 0 ? $"Filtro: {string.Join(", ", detail.BlockingDrivers)}" : "Driver o volumen no compatible";
+                        TxtBypassIoStatus.Text = $"DirectStorage BypassIO: Inactivo ({reason})";
+                        TxtBypassIoStatus.Foreground = new SolidColorBrush(Color.FromRgb(251, 191, 36));
+                        break;
+                    default:
+                        BadgeBypassIo.Background = new SolidColorBrush(Color.FromRgb(15, 23, 42));
+                        TxtBypassIoIcon.Text = "💾";
+                        TxtBypassIoStatus.Text = $"DirectStorage BypassIO: No evaluado en {drive}";
+                        TxtBypassIoStatus.Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184));
+                        break;
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[BypassIO UI Error] {ex.Message}");
         }
     }
 

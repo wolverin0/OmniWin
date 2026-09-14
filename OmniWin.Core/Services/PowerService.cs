@@ -39,9 +39,9 @@ public class PowerService
     {
         try
         {
-            // 5000 units = 0.5 ms; 10000 = 1.0 ms
-            uint desired = enable05Ms ? 5000u : 10000u;
-            int status = NtSetTimerResolution(desired, true, out uint current);
+            // 5000 units = 0.5 ms; SetResolution = true requests resolution; false releases it
+            uint desired = enable05Ms ? 5000u : 156250u;
+            int status = NtSetTimerResolution(desired, enable05Ms, out uint current);
             return (status == 0, current / 10000.0);
         }
         catch
