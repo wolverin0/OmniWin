@@ -125,7 +125,7 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigra
 32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling atómico EcoQoS.
 33. `win_msi_doctor`: Diagnóstico y auditoría de dispositivos PCIe (GPU, NICs) para MSI/MSI-X con prioridad alta sin restringir MessageNumberLimit en NICs ni GPUs.
 34. `win_launcher_hibernator`: Suspensión / EcoQoS atómica de Discord, SteamWebHelper, Epic y navegadores durante gaming competitivo.
-35. `win_experiment_engine`: Micro-benchmarking empírico A/B de tweaks con medición de scheduler wake jitter (P95, P99, P99.9), EvidenceScore, reconocimiento de reinicio y auto-reversión transaccional determinista.
+35. `win_experiment_engine`: Micro-benchmarking empírico A/B multi-dominio (Scheduler Wake Jitter, Network ICMP RTT, Frame Pacing, Functional y Reboot-Required), prueba t de Welch con grados de libertad Welch-Satterthwaite, persistencia reanudable post-reinicio y auto-reversión determinista.
 
 ---
 
@@ -152,11 +152,29 @@ Comandos ejecutables desde PowerShell, CMD o tareas automatizadas:
 
 ---
 
-## 6. Infraestructura de Pruebas y Validación E2E en Hyper-V
+## 6. Arquitectura Transaccional Blindada (`TransactionService`)
+
+1. **Write-Ahead Logging (WAL) & Resistencia a Fallos**:
+   - Escritura atómica a archivo temporal con `FileStream.Flush(flushToDisk: true)` garantizando sincronización a disco a nivel de sistema de archivos.
+   - Reemplazo atómico vía `File.Move(..., overwrite: true)` y rotación automática de copias de seguridad (`wal.previous.json`).
+   - Recuperación automática en cascada en arranque (`RecoverWalIfPresent()`) revirtiendo mutaciones interrumpidas por BSOD o cortes de energía.
+2. **Protección de Línea de Base por Doble Aplicación**:
+   - `BeginTransaction` verifica si el tweak ya cuenta con una transacción comprometida activa y clona los snapshots existentes, garantizando que el estado inicial original del usuario jamás sea sobrescrito por un valor mutado.
+3. **Rollback Inmediato en Vuelo**:
+   - Ante cualquier excepción o fallo en la aplicación de un tweak, se invoca inmediatamente `RollbackInFlightTransaction()` revirtiendo cualquier snapshot parcial y limpiando el WAL para evitar estados huérfanos.
+4. **Restauración Integral de Servicios**:
+   - Snapshots de servicios de Windows (`CaptureServicePreState`) registrando modo de inicio (`Start`) y estado de ejecución (`Status`), restaurando servicios como `DiagTrack` y `dmwappushservice` con fidelidad total.
+5. **Verificación de Identidad de Procesos por StartTime**:
+   - `LauncherHibernatorService` y `GameProfilerService` validan `proc.StartTime == recorded.StartTime` para neutralizar por completo riesgos de reciclaje de PIDs de Windows.
+
+---
+
+## 7. Infraestructura de Pruebas y Validación E2E en Hyper-V
 
 Para garantizar cero regresiones y validación fidedigna de cambios:
 * **Entornos Limpios**: `OmniWin-Lab-Win10` (Windows 10 22H2) y `OmniWin-Lab-Win11` (Windows 11 23H2).
 * **Conexión Directa**: PowerShell Direct sobre VMBus (`-VMId`) sin dependencia de red.
 * **UI Automation**: Conducción programática mediante `InvokePattern` y `AutomationId`.
 * **Ground-Truth Matrix**: Verificación directa de claves de registro reales en el sistema operativo para confirmar que cada tweak aplicado persiste en Windows.
-* **Suite de Pruebas Automatizadas**: 146 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).
+* **Suite de Pruebas Automatizadas**: 156 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).
+

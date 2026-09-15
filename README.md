@@ -4,7 +4,7 @@
 [![C# Native](https://img.shields.io/badge/Language-C%23%2013-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
 [![MCP Protocol](https://img.shields.io/badge/MCP-35%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-146%2F146%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
+[![Tests](https://img.shields.io/badge/Tests-156%2F156%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
 [![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -62,23 +62,28 @@
 ### 8. 🎯 Intelligent Game Profiler & Hybrid Core Scheduler (`GameProfilerService`, `CpuTopologyService`)
 * Automatically detects active foreground esports games (`cs2.exe`, `valorant.exe`, `cod.exe`, `overwatch.exe`, etc.).
 * Dynamically prioritizes game execution on Performance Cores (P-Cores) via `GetSystemCpuSetInformation` while applying `EcoQoS` (efficiency execution throttling) to non-critical background services.
+* **PID-Reuse Protection**: Guards process prioritization and reverts with `StartTime` identity verification against Windows PID recycling.
 
 ### 9. 📱 OmniCompanion 2.0 — Mobile/Tablet Touch PWA & Remote HUD Controller (`CompanionServerService`)
 * Embedded HttpListener Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger safe RAM purges, and **remotely control the in-game HUD overlay** (style switcher, opacity, scale, corner snap, and metric toggles) from a phone or tablet.
 * Zero-friction setup via dynamic QR Code pairing on the local network.
+* **Decoupled Architecture**: Strictly consumes passive snapshots from `TelemetryHub` to eliminate redundant polling loops.
 
 ### 10. ⚡ MSI Mode & IRQ Interrupt Doctor (`MsiInterruptService`)
 * Audit-first inspection of all PCIe devices under `HKLM\SYSTEM\CurrentControlSet\Enum\PCI`.
 * Enables Message Signaled Interrupts (MSI Mode) on supported GPUs and NICs with `DevicePriority=High` without injecting artificial `MessageNumberLimit` caps that can impair multi-queue RSS or GPU throughput.
 
-### 11. 💤 Intelligent Launcher & WebView Hibernator (`LauncherHibernatorService`)
+### 11. 💤 Background QoS Modulation & Launcher Hibernation (`LauncherHibernatorService`)
 * Automatically detects when competitive games launch and applies atomic `EcoQoS` throttling (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`) and idle priority to background Chromium/CEF launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, browsers).
 * Frees physical RAM and CPU cycles without disconnecting Discord voice or terminating Steam downloads, and seamlessly restores full performance when games exit.
+* **PID-Safe Wake**: Uses process creation timestamps (`StartTime`) to ensure recycled PIDs are never erroneously altered.
 
-### 12. 🔬 Empirical A/B Experiment Engine & Transactional Rollbacks (`OmniExperimentEngine`, `TransactionService`)
-* **Empirical Optimization**: Automated A/B micro-benchmarking of system tweaks against kernel thread scheduler wake jitter, computing Mean, Wake Jitter P95, Wake Jitter P99, and Wake Jitter P99.9 with an empirical EvidenceScore.
-* **Context & Reboot Awareness**: Accurately flags tweaks that require system reboots or are non-performance (UI/privacy) adjustments, preventing misleading immediate benchmark results.
-* **Deterministic Rollbacks & Crash-Proof WAL**: Captures the exact pre-existing state of registry keys and service states into a persistent journal (`journal.json`) backed by a Write-Ahead Log (`wal.json`) that recovers uncommitted mutations after unexpected crashes. Auto-reverts neutral or harmful tweaks and restores exact prior configurations.
+### 12. 🔬 Empirical A/B Experiment Engine & Crash-Proof Transactions (`OmniExperimentEngine`, `TransactionService`)
+* **Metric Domain Awareness**: Classifies tweaks across specialized evaluation domains (Scheduler Jitter, Network Latency RTT ping, Frame Pacing, Functional Non-Performance, and Reboot-Required) with resumable cross-reboot state management (`ResumableExperimentState`).
+* **Rigorous Welch's t-Test**: Computes unequal variance two-tailed hypothesis testing with Welch-Satterthwaite degrees of freedom and p-value estimation.
+* **Crash-Proof Atomic WAL & Journal**: Writes transaction state through an atomic `.tmp` file with OS-level `FileStream.Flush(flushToDisk: true)`, atomic replace, and automated backup rotation (`wal.previous.json`) for seamless recovery even if Windows crashes mid-mutation.
+* **Double-Apply Protection & In-Flight Rollback**: Double-applying tweaks strictly preserves the original user baseline snapshot; unexpected exceptions or partial failures immediately trigger `RollbackInFlightTransaction()` to eliminate orphan mutations.
+* **Service State Tracking**: Full pre-state capture and deterministic restoration of Windows service configurations (`Start` type, status) alongside registry values.
 * **Unified Telemetry Hub (`TelemetryHub`)**: Decoupled, non-blocking telemetry aggregator feeding continuous 1 Hz kernel jitter, CPU, GPU load/thermals/VRAM to Stutter Investigator, Companion, and Prometheus.
 
 ### 13. 🤖 35-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
@@ -134,7 +139,7 @@ OmniWin/
 dotnet build OmniWin.sln -c Release
 ```
 
-### 2. Run Test Suite (146 Tests)
+### 2. Run Test Suite (156 Tests)
 ```bash
 dotnet test OmniWin.Tests/OmniWin.Tests.csproj -c Release
 ```

@@ -167,14 +167,23 @@ public class EcoQoSService
                         uint size = (uint)Marshal.SizeOf(typeof(PROCESS_POWER_THROTTLING_STATE));
                         bool ecoOk = SetProcessInformation(hProc, ProcessPowerThrottling, ref state, size);
 
+                        bool priorityRestored = false;
                         try
                         {
                             proc.PriorityClass = identity.OriginalPriority;
+                            priorityRestored = true;
                         }
                         catch { }
 
-                        _throttledProcesses.Remove(pid);
-                        return ecoOk;
+                        // Review Item 5: Only remove from tracking if BOTH EcoQoS OFF and priority restoration succeeded!
+                        // If either fails, keep tracking to allow retries.
+                        if (ecoOk && priorityRestored)
+                        {
+                            _throttledProcesses.Remove(pid);
+                            return true;
+                        }
+
+                        return false;
                     }
                     finally
                     {
@@ -234,6 +243,23 @@ public class EcoQoSService
             {
                 try
                 {
+                    // Check if process has already terminated or PID was recycled
+                    try
+                    {
+                        using var proc = Process.GetProcessById(identity.Pid);
+                        if (proc.HasExited || proc.StartTime != identity.StartTime)
+                        {
+                            _throttledProcesses.Remove(identity.Pid);
+                            continue;
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Process is no longer running
+                        _throttledProcesses.Remove(identity.Pid);
+                        continue;
+                    }
+
                     if (SetProcessEcoQoS(identity.Pid, false))
                     {
                         revertedCount++;
@@ -241,7 +267,7 @@ public class EcoQoSService
                 }
                 catch { }
             }
-            _throttledProcesses.Clear();
+            // Do not call _throttledProcesses.Clear() blindly: any failed revert retains tracking for retry
         }
         return revertedCount;
     }

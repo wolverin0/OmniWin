@@ -10,6 +10,7 @@ namespace OmniWin.Core.Services;
 public class HibernatedProcessInfo
 {
     public int ProcessId { get; set; }
+    public DateTime StartTime { get; set; }
     public string ProcessName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty; // "Launcher", "Comms", "Browser", "Media"
     public ProcessPriorityClass OriginalPriority { get; set; } = ProcessPriorityClass.Normal;
@@ -108,6 +109,7 @@ public class LauncherHibernatorService
                     var info = new HibernatedProcessInfo
                     {
                         ProcessId = proc.Id,
+                        StartTime = proc.StartTime,
                         ProcessName = proc.ProcessName,
                         Category = category,
                         InitialWorkingSetMb = wsBefore,
@@ -168,7 +170,7 @@ public class LauncherHibernatorService
             Processes = _hibernated.Values.OrderBy(p => p.Category).ThenBy(p => p.ProcessName).ToList(),
             Summary = _hibernated.IsEmpty
                 ? "No se encontraron procesos de launchers o navegadores secundarios en ejecución."
-                : $"Hibernados {_hibernated.Count} procesos secundarios. Se liberaron ~{freedMb:F0} MB de RAM física para el juego y se asignó EcoQoS."
+                : $"Modulados {_hibernated.Count} procesos en segundo plano (EcoQoS + Idle Priority). {(TrimWorkingSetsOnHibernation ? $"Se liberaron ~{freedMb:F0} MB de RAM." : "")}".Trim()
         };
     }
 
@@ -185,12 +187,13 @@ public class LauncherHibernatorService
                 try
                 {
                     using var proc = Process.GetProcessById(pid);
-                    if (!proc.HasExited)
+                    // Review Item 6: Verify identity with StartTime to prevent PID recycling issues!
+                    if (!proc.HasExited && proc.StartTime == info.StartTime)
                     {
                         // 1. Remove EcoQoS
                         EcoQoSService.Instance.SetProcessEcoQoS(pid, false);
 
-                        // 2. Restore Priority
+                        // 2. Restore Priority only if PID belongs to the exact same process
                         try
                         {
                             proc.PriorityClass = info.OriginalPriority;
@@ -224,8 +227,8 @@ public class LauncherHibernatorService
                 TotalMemoryFreedMb = freed,
                 Processes = _hibernated.Values.OrderBy(p => p.Category).ThenBy(p => p.ProcessName).ToList(),
                 Summary = _hibernated.IsEmpty
-                    ? "El hibernador de launchers está inactivo (sin procesos restringidos)."
-                    : $"{_hibernated.Count} procesos hibernados (~{freed:F0} MB recuperados)."
+                    ? "El controlador de segundo plano está inactivo (sin procesos restringidos)."
+                    : $"{_hibernated.Count} procesos modulados en segundo plano (EcoQoS + Idle)."
             };
         }
     }

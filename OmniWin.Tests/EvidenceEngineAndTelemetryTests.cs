@@ -374,4 +374,277 @@ public class EvidenceEngineAndTelemetryTests : IDisposable
         Assert.Contains("windows_memory_physical_used_bytes", metrics);
         Assert.Contains("windows_system_uptime_seconds", metrics);
     }
+
+    [Fact]
+    public void TransactionService_DoubleApply_PreservesOriginalBaseline()
+    {
+        string subPath = @"Software\OmniWinDoubleApplyTest";
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(subPath, true))
+        {
+            key.SetValue("OriginalVal", 42, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+
+        string journalFile = Path.Combine(_tempTestDir, "test_double_apply_journal.json");
+        var tx = new TransactionService(journalFile);
+
+        string tweakId = "tweak_double_apply";
+        // 1st apply: change from 42 to 100
+        tx.BeginTransaction(tweakId, "First application");
+        tx.SetDword(Microsoft.Win32.Registry.CurrentUser, subPath, "OriginalVal", 100);
+        tx.CommitTransaction(tweakId);
+
+        // Verify registry is 100
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(100, Convert.ToInt32(key?.GetValue("OriginalVal")));
+        }
+
+        // 2nd apply (double-apply!): change from 100 to 200
+        tx.BeginTransaction(tweakId, "Second application");
+        tx.SetDword(Microsoft.Win32.Registry.CurrentUser, subPath, "OriginalVal", 200);
+        tx.CommitTransaction(tweakId);
+
+        // Verify registry is 200
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(200, Convert.ToInt32(key?.GetValue("OriginalVal")));
+        }
+
+        // Rollback: MUST restore 42, NOT 100!
+        bool rolledBack = tx.RollbackTransaction(tweakId, out string msg);
+        Assert.True(rolledBack, msg);
+
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(42, Convert.ToInt32(key?.GetValue("OriginalVal")));
+        }
+
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void TransactionService_MutationFailsMidway_ImmediatelyRollsBackInFlight()
+    {
+        string subPath = @"Software\OmniWinMidwayFailTest";
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(subPath, true))
+        {
+            key.SetValue("SafeVal", 77, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+
+        string journalFile = Path.Combine(_tempTestDir, "test_midway_fail_journal.json");
+        var tx = new TransactionService(journalFile);
+
+        string tweakId = "tweak_fail_midway";
+        tx.BeginTransaction(tweakId, "Testing midway failure rollback");
+        tx.SetDword(Microsoft.Win32.Registry.CurrentUser, subPath, "SafeVal", 999);
+
+        // Assert that value was mutated in registry
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(999, Convert.ToInt32(key?.GetValue("SafeVal")));
+        }
+
+        Assert.True(tx.HasInFlightTransaction);
+
+        // Simulate failure trigger: immediate in-flight rollback
+        bool reverted = tx.RollbackInFlightTransaction();
+        Assert.True(reverted);
+        Assert.False(tx.HasInFlightTransaction);
+
+        // Verify value was restored back to 77
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(77, Convert.ToInt32(key?.GetValue("SafeVal")));
+        }
+
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void TransactionService_BeginTransaction_WhileInFlightPrepared_RejectsConcurrentTransaction()
+    {
+        string journalFile = Path.Combine(_tempTestDir, "test_concurrent_journal.json");
+        var tx = new TransactionService(journalFile);
+
+        tx.BeginTransaction("tweak_first", "First in flight");
+        Assert.True(tx.HasInFlightTransaction);
+
+        // Attempting to begin another transaction with a different ID while one is in-flight throws InvalidOperationException
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            tx.BeginTransaction("tweak_second", "Second in flight");
+        });
+
+        Assert.Contains("already in-flight", ex.Message);
+
+        // Clean up
+        tx.RollbackInFlightTransaction();
+        Assert.False(tx.HasInFlightTransaction);
+    }
+
+    [Fact]
+    public void TransactionService_CorruptWal_GracefullyRecoversFromBackupWal()
+    {
+        string journalFile = Path.Combine(_tempTestDir, "test_backup_wal_journal.json");
+        string walFile = Path.Combine(_tempTestDir, "test_backup_wal_journal.wal.json");
+        string walBackupFile = Path.Combine(_tempTestDir, "test_backup_wal_journal.wal.previous.json");
+        string subPath = @"Software\OmniWinWalBackupTest";
+
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(subPath, true))
+        {
+            key.SetValue("RecoverMe", 9999, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+
+        // Corrupt primary WAL file
+        File.WriteAllText(walFile, "{ \"Corrupt\": true, \"TweakId\": ... [TRUNCATED] }");
+
+        // Create valid backup WAL file pointing to original baseline 333
+        var backupTx = new TweakTransaction
+        {
+            TweakId = "backup_wal_tweak",
+            Description = "Recovered from backup WAL",
+            State = "PREPARED",
+            AppliedAt = DateTime.UtcNow,
+            RegistrySnapshots = new List<RegistryValueSnapshot>
+            {
+                new RegistryValueSnapshot
+                {
+                    HiveName = Microsoft.Win32.Registry.CurrentUser.Name,
+                    SubPath = subPath,
+                    ValueName = "RecoverMe",
+                    ExistedBefore = true,
+                    ValueKind = "DWord",
+                    StringifiedValue = "333"
+                }
+            }
+        };
+        File.WriteAllText(walBackupFile, JsonSerializer.Serialize(backupTx));
+
+        // When starting new TransactionService, primary is corrupt, so it falls back to wal.previous.json!
+        var txService = new TransactionService(journalFile);
+
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(333, Convert.ToInt32(key?.GetValue("RecoverMe")));
+        }
+
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void TransactionService_ServiceStateSnapshot_SerializesAndRestoresCorrectly()
+    {
+        string journalFile = Path.Combine(_tempTestDir, "test_svc_journal.json");
+        var tx = new TransactionService(journalFile);
+
+        string tweakId = "tweak_service_test";
+        tx.BeginTransaction(tweakId, "Service snapshot verification");
+
+        // Capture a known service (e.g., Spooler)
+        tx.CaptureServicePreState("Spooler");
+        tx.CommitTransaction(tweakId);
+
+        Assert.True(tx.HasActiveTransaction(tweakId));
+
+        // Reload from journal to verify serialization
+        var txReloaded = new TransactionService(journalFile);
+        Assert.True(txReloaded.HasActiveTransaction(tweakId));
+    }
+
+    [Fact]
+    public void EcoQoSService_InvalidPid_DoesNotThrowAndMaintainsStableTracking()
+    {
+        var eco = EcoQoSService.Instance;
+        Assert.NotNull(eco);
+
+        // Attempting to modulate non-existent PID should gracefully return false and not throw
+        bool result = eco.SetProcessEcoQoS(-99999, true);
+        Assert.False(result);
+
+        // Reverting non-existent PID should also return false and not corrupt list
+        bool revertResult = eco.SetProcessEcoQoS(-99999, false);
+        Assert.False(revertResult);
+
+        // RevertAllEcoQoS handles empty/stale processes cleanly
+        int reverted = eco.RevertAllEcoQoS();
+        Assert.True(reverted >= 0);
+    }
+
+    [Fact]
+    public void LauncherHibernatorService_GetStatus_ContainsCorrectSummary()
+    {
+        var hibernator = LauncherHibernatorService.Instance;
+        Assert.NotNull(hibernator);
+
+        var status = hibernator.GetStatus();
+        Assert.NotNull(status);
+        Assert.NotNull(status.Summary);
+
+        // Verify summary matches modernized wording
+        Assert.Contains("segundo plano", status.Summary);
+    }
+
+    [Fact]
+    public void OmniExperimentEngine_MetricDomains_ClassifiesCorrectly()
+    {
+        Assert.Equal(TweakMetricDomain.NetworkLatency, OmniExperimentEngine.GetMetricDomain("network_throttling_disable"));
+        Assert.Equal(TweakMetricDomain.NetworkLatency, OmniExperimentEngine.GetMetricDomain("tcp_nagle_disable"));
+        Assert.Equal(TweakMetricDomain.RebootRequired, OmniExperimentEngine.GetMetricDomain("gaming_hpet_disable"));
+        Assert.Equal(TweakMetricDomain.RebootRequired, OmniExperimentEngine.GetMetricDomain("sys_disable_hibernation"));
+        Assert.Equal(TweakMetricDomain.FunctionalNonPerformance, OmniExperimentEngine.GetMetricDomain("privacy_telemetry_disable"));
+        Assert.Equal(TweakMetricDomain.FunctionalNonPerformance, OmniExperimentEngine.GetMetricDomain("win11_classic_context_menu"));
+        Assert.Equal(TweakMetricDomain.FramePacing, OmniExperimentEngine.GetMetricDomain("game_bar_disable"));
+        Assert.Equal(TweakMetricDomain.SchedulerJitter, OmniExperimentEngine.GetMetricDomain("scheduler_priorities"));
+    }
+
+    [Fact]
+    public void OmniExperimentEngine_WelchTTest_CalculatesDegreesOfFreedomAndSignificance()
+    {
+        var baseline = new double[] { 100.0, 102.0, 98.0, 101.0, 99.0, 103.0 };
+        var treatment = new double[] { 70.0, 72.0, 69.0, 71.0, 68.0, 70.0 };
+
+        var (evidence, tStat, df, pVal) = OmniExperimentEngine.ComputeWelchTTest(baseline, treatment);
+
+        Assert.True(df > 1.0, $"Expected df > 1, got {df}");
+        Assert.True(tStat > 5.0, $"Expected large tStat, got {tStat}");
+        Assert.True(evidence > 0.90, $"Expected high evidence score, got {evidence}");
+        Assert.True(pVal < 0.01, $"Expected low pVal, got {pVal}");
+    }
+
+    [Fact]
+    public void OmniExperimentEngine_ResumableState_PersistsAndLoadsAcrossSessions()
+    {
+        string historyFile = Path.Combine(_tempTestDir, "test_resumable_history.json");
+        var engine = new OmniExperimentEngine(historyFile);
+
+        string testTweak = "gaming_hpet_disable";
+        var state = new ResumableExperimentState
+        {
+            TweakId = testTweak,
+            Status = "PendingReboot",
+            StagedAt = DateTime.UtcNow,
+            PreRebootBaseline = new ExperimentMetricSummary
+            {
+                Mean = 12.5,
+                P95 = 25.0,
+                P99 = 40.0,
+                P99_9 = 65.0
+            }
+        };
+
+        engine.SaveResumableState(state);
+
+        var loaded = engine.LoadResumableState(testTweak);
+        Assert.NotNull(loaded);
+        Assert.Equal(testTweak, loaded.TweakId);
+        Assert.Equal("PendingReboot", loaded.Status);
+        Assert.Equal(12.5, loaded.PreRebootBaseline.Mean);
+        Assert.Equal(40.0, loaded.PreRebootBaseline.P99);
+
+        // Remove
+        engine.RemoveResumableState(testTweak);
+        var afterRemoval = engine.LoadResumableState(testTweak);
+        Assert.Null(afterRemoval);
+    }
 }
+

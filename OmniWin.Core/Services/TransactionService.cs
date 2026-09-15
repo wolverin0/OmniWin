@@ -53,6 +53,14 @@ public class TransactionService
     private Dictionary<string, TweakTransaction> _transactions = new(StringComparer.OrdinalIgnoreCase);
     private TweakTransaction? _inFlightTransaction;
 
+    public bool HasInFlightTransaction
+    {
+        get
+        {
+            lock (_lock) { return _inFlightTransaction != null; }
+        }
+    }
+
     public TransactionService(string? customJournalPath = null)
     {
         if (!string.IsNullOrWhiteSpace(customJournalPath))
@@ -83,6 +91,38 @@ public class TransactionService
     {
         lock (_lock)
         {
+            // Review Item 3: Concurrency protection — If another transaction is in-flight and PREPARED,
+            // reject to prevent overwriting or leaving orphan state.
+            if (_inFlightTransaction != null && _inFlightTransaction.State == "PREPARED")
+            {
+                if (!_inFlightTransaction.TweakId.Equals(tweakId, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Cannot begin transaction for '{tweakId}': transaction for '{_inFlightTransaction.TweakId}' is already in-flight (PREPARED).");
+                }
+                // Same tweak already in-flight: reuse
+                return;
+            }
+
+            // Review Item 1: Double-Apply Protection — If this tweak is already committed with active snapshots,
+            // DO NOT overwrite the original user baseline!
+            // Clone the existing baseline snapshots into the new transaction so that subsequent mutations
+            // cannot replace the true pre-state with the already-mutated value.
+            if (_transactions.TryGetValue(tweakId, out var existingTx) && existingTx.IsActive &&
+                (existingTx.RegistrySnapshots.Count > 0 || existingTx.ServiceSnapshots.Count > 0))
+            {
+                _inFlightTransaction = new TweakTransaction
+                {
+                    TweakId = tweakId,
+                    Description = description,
+                    AppliedAt = DateTime.UtcNow,
+                    State = "PREPARED",
+                    RegistrySnapshots = new List<RegistryValueSnapshot>(existingTx.RegistrySnapshots),
+                    ServiceSnapshots = new List<ServiceStateSnapshot>(existingTx.ServiceSnapshots)
+                };
+                SaveWal();
+                return;
+            }
+
             _inFlightTransaction = new TweakTransaction
             {
                 TweakId = tweakId,
@@ -292,6 +332,31 @@ public class TransactionService
         }
     }
 
+    /// <summary>
+    /// Rolls back any mutations performed by the currently in-flight transaction,
+    /// marks WAL as ROLLED_BACK, and cleans up in-flight state.
+    /// Used when a tweak execution throws or fails midway.
+    /// </summary>
+    public bool RollbackInFlightTransaction()
+    {
+        lock (_lock)
+        {
+            if (_inFlightTransaction == null) return false;
+            var inFlight = _inFlightTransaction;
+            _inFlightTransaction = null;
+
+            bool result = false;
+            if (inFlight.RegistrySnapshots.Count > 0 || inFlight.ServiceSnapshots.Count > 0)
+            {
+                _transactions[inFlight.TweakId] = inFlight;
+                result = RollbackTransaction(inFlight.TweakId, out _);
+                _transactions.Remove(inFlight.TweakId);
+            }
+            ClearWal();
+            return result;
+        }
+    }
+
     public bool HasActiveTransaction(string tweakId)
     {
         lock (_lock)
@@ -467,14 +532,30 @@ public class TransactionService
                 Directory.CreateDirectory(dir);
             }
 
+            string tmpPath = _journalPath + ".tmp";
             string json = JsonSerializer.Serialize(_transactions.Values.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_journalPath, json);
+
+            // Durable flush to disk before rename
+            using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var sw = new StreamWriter(fs, System.Text.Encoding.UTF8))
+            {
+                sw.Write(json);
+                sw.Flush();
+                fs.Flush(true);
+            }
+
+            File.Move(tmpPath, _journalPath, true);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[TransactionService] Error writing journal: {ex.Message}");
         }
     }
+
+    private string GetPreviousWalPath() =>
+        _walPath.EndsWith(".wal.json", StringComparison.OrdinalIgnoreCase)
+            ? _walPath.Substring(0, _walPath.Length - 9) + ".wal.previous.json"
+            : _walPath.Replace(".json", ".previous.json");
 
     private void SaveWal()
     {
@@ -487,8 +568,31 @@ public class TransactionService
                 Directory.CreateDirectory(dir);
             }
 
+            string tmpPath = _walPath + ".tmp";
+            string prevPath = GetPreviousWalPath();
             string json = JsonSerializer.Serialize(_inFlightTransaction, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_walPath, json);
+
+            // 1. Write to tmp file with durable OS flush
+            using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var sw = new StreamWriter(fs, System.Text.Encoding.UTF8))
+            {
+                sw.Write(json);
+                sw.Flush();
+                fs.Flush(true);
+            }
+
+            // 2. Rotate previous WAL if main exists
+            if (File.Exists(_walPath))
+            {
+                try
+                {
+                    File.Copy(_walPath, prevPath, true);
+                }
+                catch { }
+            }
+
+            // 3. Atomic replace / move
+            File.Move(tmpPath, _walPath, true);
         }
         catch (Exception ex)
         {
@@ -500,22 +604,54 @@ public class TransactionService
     {
         try
         {
-            if (File.Exists(_walPath))
-            {
-                File.Delete(_walPath);
-            }
+            if (File.Exists(_walPath)) File.Delete(_walPath);
+            string prevPath = GetPreviousWalPath();
+            if (File.Exists(prevPath)) File.Delete(prevPath);
+            string tmpPath = _walPath + ".tmp";
+            if (File.Exists(tmpPath)) File.Delete(tmpPath);
         }
         catch { }
     }
 
     private void RecoverWalIfPresent()
     {
-        try
+        lock (_lock)
         {
-            if (File.Exists(_walPath))
+            try
             {
-                string json = File.ReadAllText(_walPath);
-                var uncommittedTx = JsonSerializer.Deserialize<TweakTransaction>(json);
+                string prevPath = GetPreviousWalPath();
+
+                TweakTransaction? uncommittedTx = null;
+
+                // 1. Try reading primary WAL
+                if (File.Exists(_walPath))
+                {
+                    try
+                    {
+                        string json = File.ReadAllText(_walPath);
+                        uncommittedTx = JsonSerializer.Deserialize<TweakTransaction>(json);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[TransactionService] Primary WAL file corrupted ({ex.Message}), checking backup...");
+                    }
+                }
+
+                // 2. Fall back to previous backup WAL if primary was corrupt/truncated
+                if (uncommittedTx == null && File.Exists(prevPath))
+                {
+                    try
+                    {
+                        string json = File.ReadAllText(prevPath);
+                        uncommittedTx = JsonSerializer.Deserialize<TweakTransaction>(json);
+                        Debug.WriteLine($"[TransactionService] Successfully recovered uncommitted transaction from backup WAL: {uncommittedTx?.TweakId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[TransactionService] Backup WAL file also corrupted: {ex.Message}");
+                    }
+                }
+
                 if (uncommittedTx != null && uncommittedTx.State == "PREPARED")
                 {
                     Debug.WriteLine($"[TransactionService] Interrupted transaction detected for '{uncommittedTx.TweakId}'. Rolling back to safe baseline...");
@@ -524,12 +660,13 @@ public class TransactionService
                     RollbackTransaction(uncommittedTx.TweakId, out _);
                     _transactions.Remove(uncommittedTx.TweakId);
                 }
+
                 ClearWal();
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[TransactionService] Error during WAL recovery: {ex.Message}");
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[TransactionService] Error during WAL recovery: {ex.Message}");
+            }
         }
     }
 }

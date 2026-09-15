@@ -30,6 +30,7 @@ public class GameProfilerService : IDisposable
 
     private class ProcessOriginalState
     {
+        public DateTime StartTime { get; set; }
         public ProcessPriorityClass OriginalPriority { get; set; }
         public IntPtr OriginalAffinity { get; set; }
     }
@@ -182,6 +183,7 @@ public class GameProfilerService : IDisposable
                 {
                     _originalProcessStates[proc.Id] = new ProcessOriginalState
                     {
+                        StartTime = proc.StartTime,
                         OriginalPriority = proc.PriorityClass,
                         OriginalAffinity = proc.ProcessorAffinity
                     };
@@ -248,7 +250,8 @@ public class GameProfilerService : IDisposable
             try
             {
                 using var proc = Process.GetProcessById(pid);
-                if (!proc.HasExited)
+                // Verify PID hasn't been recycled by checking StartTime
+                if (!proc.HasExited && proc.StartTime == orig.StartTime)
                 {
                     proc.PriorityClass = orig.OriginalPriority;
                     proc.ProcessorAffinity = orig.OriginalAffinity;

@@ -384,9 +384,7 @@ public class CompanionServerService : IDisposable
             {
                 await Task.Delay(1000, ct);
 
-                // Sample live system telemetry via unified TelemetryHub (feeds StutterInvestigatorService with real CPU/GPU metrics)
-                var hubSnap = TelemetryHub.Instance.SampleNow();
-
+                // Decoupled telemetry observation: TelemetryHub samples continuously at 1 Hz in its own background loop.
                 if (_activeSockets.IsEmpty) continue;
 
                 string json = GetLiveTelemetryJson();

@@ -421,6 +421,34 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - Métrica de confianza redenominada a `EvidenceScore`.
   - Detección automática de tweaks que requieren reinicio (`IsRebootRequired`) y tweaks funcionales o estéticos (`IsNonPerformanceTweak`), evitando benchmarks de temporizador engañosos.
 
+### Fase 26.2: Blindaje Forense Profundo & Resiliencia Multi-Capa (100% Completada)
+- [x] **Protección contra Pérdida de Línea de Base por Doble Aplicación (`TransactionService`)**:
+  - `BeginTransaction` verifica si el tweak ya cuenta con una transacción comprometida activa y clona los snapshots existentes. Si el usuario o un agente aplica dos veces un tweak, el pre-state baseline verdadero jamás es reemplazado por el valor ya mutado.
+- [x] **WAL Atómico y Duradero con Rotación de Backups (`TransactionService`)**:
+  - Escritura a archivo temporal con `FileStream.Flush(flushToDisk: true)` para forzar sincronización física a disco a nivel de sistema de archivos.
+  - Reemplazo atómico con `File.Move(..., overwrite: true)`.
+  - Rotación a `wal.previous.json` y recuperación en cascada automática si el archivo principal se encuentra truncado o corrompido por caídas de energía.
+- [x] **Rollback Inmediato de Transacciones en Vuelo ante Fallo Parcial (`TransactionService`, `ExpandedTweakService`)**:
+  - Si la ejecución de un tweak lanza una excepción o devuelve fallo midway, se invoca de inmediato `RollbackInFlightTransaction()`, revirtiendo cualquier mutación parcial a su estado original y eliminando el WAL en vuelo para no dejar estados huérfanos.
+  - Salvaguarda de concurrencia: se rechaza abrir una nueva transacción si otra está en vuelo (`PREPARED`).
+- [x] **Rollback Automatizado de Estado de Servicios Windows (`TransactionService`, `ExpandedTweakService`)**:
+  - Extensión de snapshots para registrar modo de inicio (`Start`) y estado de ejecución (`Status`) de servicios de Windows.
+  - Instrumentación de captura para `DiagTrack` y `dmwappushservice` en tweaks de telemetría.
+  - `RollbackTransaction` restaura automáticamente el tipo de inicio y levanta los servicios si estaban en ejecución.
+- [x] **Prevención Integral de Reutilización de PIDs por StartTime (`LauncherHibernatorService`, `GameProfilerService`, `EcoQoSService`)**:
+  - Captura y verificación estricta de `proc.StartTime == recorded.StartTime` antes de modificar prioridades o afinidades, evitando modificar procesos reciclados por el kernel.
+  - `EcoQoSService`: no elimina el proceso de seguimiento si la desaplicación de EcoQoS o prioridad falla; `RevertAllEcoQoS` depura procesos cerrados de forma segura sin `Clear()` ciego.
+- [x] **Motor de Experimentación Multi-Dominio con Test de Welch (`OmniExperimentEngine`)**:
+  - Clasificación en dominios: `SchedulerJitter`, `NetworkLatency`, `FramePacing`, `FunctionalNonPerformance` y `RebootRequired`.
+  - Muestreo real de latencia de red vía ICMP RTT a `1.1.1.1` para tweaks de TCP/Nagle.
+  - Gestión de experimentos entre reinicios con `ResumableExperimentState` (`SaveResumableState`, `LoadResumableState`, `RemoveResumableState`, `ResumeRebootExperimentAsync`).
+  - Prueba t de Welch para varianzas desiguales con grados de libertad Welch-Satterthwaite y cálculo de significancia estadística.
+  - Tratamiento de tweaks ya aplicados: reversión temporal controlada para registrar una línea de base limpia previa a la medición.
+- [x] **Desacoplamiento Total del Servidor Companion (`CompanionServerService`)**:
+  - Eliminación de llamadas redundantes a `TelemetryHub.SampleNow()`; el WebSocket emite pasivamente `CurrentSnapshot`, protegiendo la cadencia de muestreo de 1 Hz.
+- [x] **Suite Completa de Pruebas Automatizadas 100% Verde (156/156 Tests)**:
+  - Incorporación de 10 nuevas pruebas unitarias forenses que validan doble aplicación, rollback en vuelo, recuperación de WAL corrupto, clasificación de dominios, test de Welch y persistencia reanudable.
+
 ---
 
 ### Fase 27: Telemetría de Verdad Terreno & Forense de Kernel (En Desarrollo)

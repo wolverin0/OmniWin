@@ -788,11 +788,13 @@ public class ExpandedTweakService
                     return Ok(id, "Dominios de telemetría de Microsoft bloqueados en C:\\Windows\\System32\\drivers\\etc\\hosts.");
 
                 case "privacy_diagtrack":
+                    CaptureServicePreState("DiagTrack");
                     SetRegDword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start", 4);
                     RunCmd("sc stop DiagTrack");
                     return Ok(id, "Servicio DiagTrack detenido y configurado como Deshabilitado.");
 
                 case "privacy_dmwappushservice":
+                    CaptureServicePreState("dmwappushservice");
                     SetRegDword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Services\dmwappushservice", "Start", 4);
                     RunCmd("sc stop dmwappushservice");
                     return Ok(id, "Servicio dmwappushservice detenido y configurado como Deshabilitado.");
@@ -992,6 +994,7 @@ public class ExpandedTweakService
         }
         catch (Exception ex)
         {
+            TransactionService.Instance.RollbackInFlightTransaction();
             return Fail(id, $"Error al aplicar tweak '{id}': {ex.Message}");
         }
     }
@@ -1961,6 +1964,11 @@ public class ExpandedTweakService
     // ==========================================
     // MÉTODOS DE SOPORTE (REGISTRY / CMD / HOSTS)
     // ==========================================
+    private static void CaptureServicePreState(string serviceName)
+    {
+        TransactionService.Instance.CaptureServicePreState(serviceName);
+    }
+
     private static void SetRegDword(RegistryKey root, string subPath, string valueName, int value)
     {
         TransactionService.Instance.SetDword(root, subPath, valueName, value);
@@ -2138,6 +2146,13 @@ public class ExpandedTweakService
         return new() { Success = true, TweakId = id, Message = message };
     }
 
-    private static TweakExecutionResult Fail(string id, string message) =>
-        new() { Success = false, TweakId = id, Message = message };
+    private static TweakExecutionResult Fail(string id, string message)
+    {
+        try
+        {
+            TransactionService.Instance.RollbackInFlightTransaction();
+        }
+        catch { }
+        return new() { Success = false, TweakId = id, Message = message };
+    }
 }
