@@ -21,7 +21,7 @@ ReleaseDate: 2026-09-13
 Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/pauol/OmniWin/releases/download/v1.2.0/omniwin-sc.zip
-    InstallerSha256: 688527273A598056B632981FF739377282094C51786F1F80190D8C9B8F1C2558
+    InstallerSha256: 55EDD3ED7919B0B4CA0D588AEBB0327ABC9D41258F7640C5B6F757534C2509B1
     UpgradeBehavior: install
 ManifestType: installer
 ManifestVersion: 1.6.0
