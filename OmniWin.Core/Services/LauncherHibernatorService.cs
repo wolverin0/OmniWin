@@ -71,7 +71,7 @@ public class LauncherHibernatorService
     public bool HibernateComms { get; set; } = true;
     public bool HibernateBrowsers { get; set; } = true;
     public bool HibernateMedia { get; set; } = true;
-    public bool TrimWorkingSetsOnHibernation { get; set; } = true;
+    public bool TrimWorkingSetsOnHibernation { get; set; } = false;
 
     public bool IsHibernating => !_hibernated.IsEmpty;
 
@@ -123,17 +123,10 @@ public class LauncherHibernatorService
                         info.OriginalPriority = ProcessPriorityClass.Normal;
                     }
 
-                    // 1. Force EcoQoS (Efficiency Cores & low execution speed)
+                    // 1. Force EcoQoS (Efficiency Cores & low execution speed, handles Idle priority modulation atomically)
                     EcoQoSService.Instance.SetProcessEcoQoS(proc.Id, true);
 
-                    // 2. Reduce Process Priority to Idle
-                    try
-                    {
-                        proc.PriorityClass = ProcessPriorityClass.Idle;
-                    }
-                    catch { }
-
-                    // 3. Trim inactive memory pages (flushes bloated Chromium heap to standby)
+                    // 2. Trim inactive memory pages if requested (flushes bloated Chromium heap to standby)
                     if (TrimWorkingSetsOnHibernation)
                     {
                         try

@@ -100,6 +100,9 @@ public class TelemetryHub : IDisposable
         {
             if (IsRunning) return;
 
+            // Start continuous 1Hz scheduler jitter provider
+            KernelLatencyService.Instance.StartContinuousSampler(1);
+
             _cts = new CancellationTokenSource();
             _samplingTask = Task.Run(() => SamplingLoopAsync(intervalMs, _cts.Token));
         }
@@ -113,6 +116,7 @@ public class TelemetryHub : IDisposable
 
             try
             {
+                KernelLatencyService.Instance.StopContinuousSampler();
                 _cts?.Cancel();
                 _cts?.Dispose();
             }

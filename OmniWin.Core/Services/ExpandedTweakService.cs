@@ -732,13 +732,11 @@ public class ExpandedTweakService
                     return Ok(id, "GameDVR y captura en fondo desactivados.");
 
                 case "gaming_gpu_priority_games":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", true))
-                    {
-                        key.SetValue("GPU Priority", 8, RegistryValueKind.DWord);
-                        key.SetValue("Priority", 6, RegistryValueKind.DWord);
-                        key.SetValue("Scheduling Category", "High", RegistryValueKind.String);
-                        key.SetValue("SFIO Priority", "High", RegistryValueKind.String);
-                    }
+                    const string sysProfileGames = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
+                    SetRegDword(Registry.LocalMachine, sysProfileGames, "GPU Priority", 8);
+                    SetRegDword(Registry.LocalMachine, sysProfileGames, "Priority", 6);
+                    SetRegString(Registry.LocalMachine, sysProfileGames, "Scheduling Category", "High");
+                    SetRegString(Registry.LocalMachine, sysProfileGames, "SFIO Priority", "High");
                     return Ok(id, "Prioridad de GPU y programación en perfil 'Games' elevadas al máximo.");
 
                 case "gaming_game_bar_presence":
@@ -747,12 +745,9 @@ public class ExpandedTweakService
                     return Ok(id, "GameBarPresenceWriter y comportamientos invasivos de Game Bar desactivados.");
 
                 case "gaming_mouse_accel":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Mouse", true))
-                    {
-                        key.SetValue("MouseSpeed", "0", RegistryValueKind.String);
-                        key.SetValue("MouseThreshold1", "0", RegistryValueKind.String);
-                        key.SetValue("MouseThreshold2", "0", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseSpeed", "0");
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseThreshold1", "0");
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseThreshold2", "0");
                     return Ok(id, "Aceleración de ratón desactivada (respuesta lineal 1:1).");
 
                 case "gaming_hpet_disable":
@@ -812,30 +807,24 @@ public class ExpandedTweakService
                     return Ok(id, "ID de publicidad de Microsoft desactivado.");
 
                 case "privacy_start_suggestions":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", true))
-                    {
-                        key.SetValue("SystemPaneSuggestionsEnabled", 0, RegistryValueKind.DWord);
-                        key.SetValue("SubscribedContent-338388Enabled", 0, RegistryValueKind.DWord);
-                        key.SetValue("SubscribedContent-338389Enabled", 0, RegistryValueKind.DWord);
-                        key.SetValue("SilentInstalledAppsEnabled", 0, RegistryValueKind.DWord);
-                    }
+                    const string cdmPath = @"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager";
+                    SetRegDword(Registry.CurrentUser, cdmPath, "SystemPaneSuggestionsEnabled", 0);
+                    SetRegDword(Registry.CurrentUser, cdmPath, "SubscribedContent-338388Enabled", 0);
+                    SetRegDword(Registry.CurrentUser, cdmPath, "SubscribedContent-338389Enabled", 0);
+                    SetRegDword(Registry.CurrentUser, cdmPath, "SilentInstalledAppsEnabled", 0);
                     return Ok(id, "Sugerencias y aplicaciones patrocinadas en Menú Inicio desactivadas.");
 
                 case "privacy_cortana_telemetry":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Policies\Microsoft\Windows\Windows Search", true))
-                    {
-                        key.SetValue("AllowCortana", 0, RegistryValueKind.DWord);
-                        key.SetValue("ConnectedSearchUseWeb", 0, RegistryValueKind.DWord);
-                        key.SetValue("DisableWebSearch", 1, RegistryValueKind.DWord);
-                    }
+                    const string winSearchPath = @"SOFTWARE\Policies\Microsoft\Windows\Windows Search";
+                    SetRegDword(Registry.LocalMachine, winSearchPath, "AllowCortana", 0);
+                    SetRegDword(Registry.LocalMachine, winSearchPath, "ConnectedSearchUseWeb", 0);
+                    SetRegDword(Registry.LocalMachine, winSearchPath, "DisableWebSearch", 1);
                     return Ok(id, "Cortana y búsquedas web en nube de Windows Search desactivadas.");
 
                 case "privacy_activity_history":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Policies\Microsoft\Windows\System", true))
-                    {
-                        key.SetValue("PublishUserActivities", 0, RegistryValueKind.DWord);
-                        key.SetValue("UploadUserActivities", 0, RegistryValueKind.DWord);
-                    }
+                    const string winSysPath = @"SOFTWARE\Policies\Microsoft\Windows\System";
+                    SetRegDword(Registry.LocalMachine, winSysPath, "PublishUserActivities", 0);
+                    SetRegDword(Registry.LocalMachine, winSysPath, "UploadUserActivities", 0);
                     return Ok(id, "Historial de actividad y sincronización con nube Timeline desactivados.");
 
                 case "privacy_ceip":
@@ -848,20 +837,16 @@ public class ExpandedTweakService
                     return Ok(id, "Servicios y sensores de ubicación global desactivados.");
 
                 case "privacy_typing_personalization":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\InputPersonalization", true))
-                    {
-                        key.SetValue("RestrictImplicitInkCollection", 1, RegistryValueKind.DWord);
-                        key.SetValue("RestrictImplicitTextCollection", 1, RegistryValueKind.DWord);
-                    }
+                    const string inputPersPath = @"Software\Microsoft\InputPersonalization";
+                    SetRegDword(Registry.CurrentUser, inputPersPath, "RestrictImplicitInkCollection", 1);
+                    SetRegDword(Registry.CurrentUser, inputPersPath, "RestrictImplicitTextCollection", 1);
                     SetRegDword(Registry.CurrentUser, @"Software\Microsoft\Personalization\Settings", "AcceptedPrivacyPolicy", 0);
                     return Ok(id, "Personalización de entrada de texto y mecanografía desactivada.");
 
                 case "privacy_feedback_frequency":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Siuf\Rules", true))
-                    {
-                        key.SetValue("NumberOfSIFUrlSegments", 0, RegistryValueKind.DWord);
-                        key.SetValue("PeriodInNanoSeconds", 0, RegistryValueKind.DWord);
-                    }
+                    const string siufPath = @"Software\Microsoft\Siuf\Rules";
+                    SetRegDword(Registry.CurrentUser, siufPath, "NumberOfSIFUrlSegments", 0);
+                    SetRegDword(Registry.CurrentUser, siufPath, "PeriodInNanoSeconds", 0);
                     SetRegDword(Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "DoNotShowFeedbackNotifications", 1);
                     return Ok(id, "Encuestas y recolección de feedback desactivadas.");
 
@@ -876,10 +861,7 @@ public class ExpandedTweakService
 
                 // --- WINDOWS 11 UI & EXPLORER ---
                 case "win11_classic_context_menu":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32", true))
-                    {
-                        key.SetValue("", "");
-                    }
+                    SetRegString(Registry.CurrentUser, @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32", "", "");
                     return Ok(id, "Menú contextual clásico de Windows 10 habilitado. Reinicia explorer.exe para verlo de inmediato.");
 
                 case "win11_show_file_extensions":
@@ -942,19 +924,14 @@ public class ExpandedTweakService
                     return Ok(id, "Hibernación desactivada. Archivo hiberfil.sys eliminado para liberar almacenamiento.");
 
                 case "sys_waittokill_service":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SYSTEM\CurrentControlSet\Control", true))
-                    {
-                        key.SetValue("WaitToKillServiceTimeout", "2000", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control", "WaitToKillServiceTimeout", "2000");
                     return Ok(id, "WaitToKillServiceTimeout ajustado a 2000ms (apagado acelerado).");
 
                 case "sys_hung_app_timeout":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop", true))
-                    {
-                        key.SetValue("HungAppTimeout", "1000", RegistryValueKind.String);
-                        key.SetValue("WaitToKillAppTimeout", "2000", RegistryValueKind.String);
-                        key.SetValue("AutoEndTasks", "1", RegistryValueKind.String);
-                    }
+                    const string desktopPath = @"Control Panel\Desktop";
+                    SetRegString(Registry.CurrentUser, desktopPath, "HungAppTimeout", "1000");
+                    SetRegString(Registry.CurrentUser, desktopPath, "WaitToKillAppTimeout", "2000");
+                    SetRegString(Registry.CurrentUser, desktopPath, "AutoEndTasks", "1");
                     return Ok(id, "Cierre de aplicaciones colgadas al apagar ajustado a 1-2 segundos.");
 
                 case "sys_ntfs_disable_8dot3":
@@ -966,10 +943,7 @@ public class ExpandedTweakService
                     return Ok(id, "Marca de último acceso en NTFS desactivada (menos escrituras en SSD).");
 
                 case "sys_menu_show_delay":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop", true))
-                    {
-                        key.SetValue("MenuShowDelay", "10", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Desktop", "MenuShowDelay", "10");
                     return Ok(id, "Retardo de apertura de menús ajustado a 10ms.");
 
                 case "sys_disable_autoreboot_bsod":
@@ -1067,13 +1041,11 @@ public class ExpandedTweakService
                     return Ok(id, "GameDVR restaurado a sus valores iniciales.");
 
                 case "gaming_gpu_priority_games":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", true))
-                    {
-                        key.SetValue("GPU Priority", 8, RegistryValueKind.DWord);
-                        key.SetValue("Priority", 2, RegistryValueKind.DWord);
-                        key.SetValue("Scheduling Category", "Medium", RegistryValueKind.String);
-                        key.SetValue("SFIO Priority", "Normal", RegistryValueKind.String);
-                    }
+                    const string sysProfileGamesRb = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
+                    SetRegDword(Registry.LocalMachine, sysProfileGamesRb, "GPU Priority", 8);
+                    SetRegDword(Registry.LocalMachine, sysProfileGamesRb, "Priority", 2);
+                    SetRegString(Registry.LocalMachine, sysProfileGamesRb, "Scheduling Category", "Medium");
+                    SetRegString(Registry.LocalMachine, sysProfileGamesRb, "SFIO Priority", "Normal");
                     return Ok(id, "Prioridades del perfil 'Games' restauradas a valores predeterminados.");
 
                 case "gaming_game_bar_presence":
@@ -1082,12 +1054,9 @@ public class ExpandedTweakService
                     return Ok(id, "Comportamientos de Game Bar restaurados.");
 
                 case "gaming_mouse_accel":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Mouse", true))
-                    {
-                        key.SetValue("MouseSpeed", "1", RegistryValueKind.String);
-                        key.SetValue("MouseThreshold1", "6", RegistryValueKind.String);
-                        key.SetValue("MouseThreshold2", "10", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseSpeed", "1");
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseThreshold1", "6");
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Mouse", "MouseThreshold2", "10");
                     return Ok(id, "Curva de aceleración de ratón restaurada a estándar de Windows.");
 
                 case "gaming_hpet_disable":
@@ -1161,86 +1130,53 @@ public class ExpandedTweakService
                     return Ok(id, "ID de publicidad restaurado.");
 
                 case "privacy_start_suggestions":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", true))
-                    {
-                        key.SetValue("SystemPaneSuggestionsEnabled", 1, RegistryValueKind.DWord);
-                        key.SetValue("SubscribedContent-338388Enabled", 1, RegistryValueKind.DWord);
-                        key.SetValue("SubscribedContent-338389Enabled", 1, RegistryValueKind.DWord);
-                        key.SetValue("SilentInstalledAppsEnabled", 1, RegistryValueKind.DWord);
-                    }
+                    const string cdmPathRb = @"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager";
+                    SetRegDword(Registry.CurrentUser, cdmPathRb, "SystemPaneSuggestionsEnabled", 1);
+                    SetRegDword(Registry.CurrentUser, cdmPathRb, "SubscribedContent-338388Enabled", 1);
+                    SetRegDword(Registry.CurrentUser, cdmPathRb, "SubscribedContent-338389Enabled", 1);
+                    SetRegDword(Registry.CurrentUser, cdmPathRb, "SilentInstalledAppsEnabled", 1);
                     return Ok(id, "Sugerencias de inicio restauradas.");
 
                 case "privacy_cortana_telemetry":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows\Windows Search", true))
-                    {
-                        key?.DeleteValue("AllowCortana", false);
-                        key?.DeleteValue("ConnectedSearchUseWeb", false);
-                        key?.DeleteValue("DisableWebSearch", false);
-                    }
+                    const string winSearchPathRb = @"SOFTWARE\Policies\Microsoft\Windows\Windows Search";
+                    DeleteRegValue(Registry.LocalMachine, winSearchPathRb, "AllowCortana");
+                    DeleteRegValue(Registry.LocalMachine, winSearchPathRb, "ConnectedSearchUseWeb");
+                    DeleteRegValue(Registry.LocalMachine, winSearchPathRb, "DisableWebSearch");
                     return Ok(id, "Configuración de Cortana y búsqueda web restaurada.");
 
                 case "privacy_activity_history":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows\System", true))
-                    {
-                        key?.DeleteValue("PublishUserActivities", false);
-                        key?.DeleteValue("UploadUserActivities", false);
-                    }
+                    const string winSysPathRb = @"SOFTWARE\Policies\Microsoft\Windows\System";
+                    DeleteRegValue(Registry.LocalMachine, winSysPathRb, "PublishUserActivities");
+                    DeleteRegValue(Registry.LocalMachine, winSysPathRb, "UploadUserActivities");
                     return Ok(id, "Historial de actividad restaurado.");
 
                 case "privacy_ceip":
-                    using (var k1 = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\SQMClient\Windows", true))
-                    {
-                        k1?.DeleteValue("CEIPEnable", false);
-                    }
-                    using (var k2 = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\SQMClient\ReliabilityAnalysis", true))
-                    {
-                        k2?.DeleteValue("CEIPEnable", false);
-                    }
+                    DeleteRegValue(Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\SQMClient\Windows", "CEIPEnable");
+                    DeleteRegValue(Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\SQMClient\ReliabilityAnalysis", "CEIPEnable");
                     return Ok(id, "CEIP / SQM restaurado.");
 
                 case "privacy_location_access":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors", true))
-                    {
-                        key?.DeleteValue("DisableLocation", false);
-                    }
+                    DeleteRegValue(Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors", "DisableLocation");
                     return Ok(id, "Acceso a sensores de localización restaurado.");
 
                 case "privacy_typing_personalization":
-                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\InputPersonalization", true))
-                    {
-                        key?.DeleteValue("RestrictImplicitInkCollection", false);
-                        key?.DeleteValue("RestrictImplicitTextCollection", false);
-                    }
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Microsoft\InputPersonalization", "RestrictImplicitInkCollection");
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Microsoft\InputPersonalization", "RestrictImplicitTextCollection");
                     return Ok(id, "Personalización de entrada de texto restaurada.");
 
                 case "privacy_feedback_frequency":
-                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Siuf\Rules", true))
-                    {
-                        key?.DeleteValue("NumberOfSIFUrlSegments", false);
-                        key?.DeleteValue("PeriodInNanoSeconds", false);
-                    }
-                    using (var k2 = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows\DataCollection", true))
-                    {
-                        k2?.DeleteValue("DoNotShowFeedbackNotifications", false);
-                    }
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Microsoft\Siuf\Rules", "NumberOfSIFUrlSegments");
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Microsoft\Siuf\Rules", "PeriodInNanoSeconds");
+                    DeleteRegValue(Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "DoNotShowFeedbackNotifications");
                     return Ok(id, "Notificaciones de feedback restauradas.");
 
                 case "privacy_tailored_experiences":
-                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Policies\Microsoft\Windows\CloudContent", true))
-                    {
-                        key?.DeleteValue("DisableTailoredExperiencesWithDiagnosticData", false);
-                    }
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Policies\Microsoft\Windows\CloudContent", "DisableTailoredExperiencesWithDiagnosticData");
                     return Ok(id, "Experiencias personalizadas restauradas.");
 
                 case "privacy_wifi_sense":
-                    using (var k1 = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting", true))
-                    {
-                        k1?.SetValue("value", 1, RegistryValueKind.DWord);
-                    }
-                    using (var k2 = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots", true))
-                    {
-                        k2?.SetValue("value", 1, RegistryValueKind.DWord);
-                    }
+                    SetRegDword(Registry.LocalMachine, @"SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting", "value", 1);
+                    SetRegDword(Registry.LocalMachine, @"SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots", "value", 1);
                     return Ok(id, "Opciones de Wi-Fi Sense restauradas.");
 
                 // --- WINDOWS 11 UI ROLLBACK ---
@@ -1317,19 +1253,14 @@ public class ExpandedTweakService
                     return Ok(id, "Hibernación reanudada (hiberfil.sys regenerado).");
 
                 case "sys_waittokill_service":
-                    using (var key = Registry.LocalMachine.CreateSubKey(@"SYSTEM\CurrentControlSet\Control", true))
-                    {
-                        key.SetValue("WaitToKillServiceTimeout", "5000", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control", "WaitToKillServiceTimeout", "5000");
                     return Ok(id, "WaitToKillServiceTimeout restaurado a 5000ms.");
 
                 case "sys_hung_app_timeout":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop", true))
-                    {
-                        key.SetValue("HungAppTimeout", "5000", RegistryValueKind.String);
-                        key.SetValue("WaitToKillAppTimeout", "5000", RegistryValueKind.String);
-                        key.SetValue("AutoEndTasks", "0", RegistryValueKind.String);
-                    }
+                    const string desktopPathRb = @"Control Panel\Desktop";
+                    SetRegString(Registry.CurrentUser, desktopPathRb, "HungAppTimeout", "5000");
+                    SetRegString(Registry.CurrentUser, desktopPathRb, "WaitToKillAppTimeout", "5000");
+                    SetRegString(Registry.CurrentUser, desktopPathRb, "AutoEndTasks", "0");
                     return Ok(id, "Tiempos de espera de aplicaciones colgadas restaurados a valores por defecto.");
 
                 case "sys_ntfs_disable_8dot3":
@@ -1341,10 +1272,7 @@ public class ExpandedTweakService
                     return Ok(id, "Registro de último acceso en NTFS restaurado.");
 
                 case "sys_menu_show_delay":
-                    using (var key = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop", true))
-                    {
-                        key.SetValue("MenuShowDelay", "400", RegistryValueKind.String);
-                    }
+                    SetRegString(Registry.CurrentUser, @"Control Panel\Desktop", "MenuShowDelay", "400");
                     return Ok(id, "Demora de apertura de menús restaurada a 400ms.");
 
                 case "sys_disable_autoreboot_bsod":
@@ -1352,10 +1280,7 @@ public class ExpandedTweakService
                     return Ok(id, "Reinicio automático tras BSOD restaurado.");
 
                 case "sys_disable_wer":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\Windows Error Reporting", true))
-                    {
-                        key?.DeleteValue("Disabled", false);
-                    }
+                    DeleteRegValue(Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows\Windows Error Reporting", "Disabled");
                     return Ok(id, "Windows Error Reporting restaurado.");
 
                 case "sys_clear_pagefile_shutdown":
@@ -1367,10 +1292,7 @@ public class ExpandedTweakService
                     return Ok(id, "LargeSystemCache restaurado a 0.");
 
                 case "sys_svchost_split":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control", true))
-                    {
-                        key?.DeleteValue("SvcHostSplitThresholdInKB", false);
-                    }
+                    DeleteRegValue(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control", "SvcHostSplitThresholdInKB");
                     return Ok(id, "Configuración de Svchost restaurada.");
 
                 case "sys_disable_remote_assistance":
@@ -1382,10 +1304,7 @@ public class ExpandedTweakService
                     return Ok(id, "Prioridad de E/S de disco restaurada.");
 
                 case "sys_startup_delay":
-                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize", true))
-                    {
-                        key?.DeleteValue("StartupDelayInMSec", false);
-                    }
+                    DeleteRegValue(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize", "StartupDelayInMSec");
                     return Ok(id, "Retardo de arranque restaurado a valores por defecto de Windows.");
 
                 case "sys_ntfs_memory_usage":
@@ -1393,10 +1312,7 @@ public class ExpandedTweakService
                     return Ok(id, "Caché de memoria NTFS restaurada al valor predeterminado (1).");
 
                 case "sys_autochk_timeout":
-                    using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager", true))
-                    {
-                        key?.DeleteValue("AutoChkTimeOut", false);
-                    }
+                    DeleteRegValue(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Session Manager", "AutoChkTimeOut");
                     return Ok(id, "Tiempo de espera de comprobación de disco en arranque restaurado.");
 
                 default:
@@ -2047,14 +1963,32 @@ public class ExpandedTweakService
     // ==========================================
     private static void SetRegDword(RegistryKey root, string subPath, string valueName, int value)
     {
-        try
-        {
-            TransactionService.Instance.CaptureRegistryPreState(root, subPath, valueName);
-        }
-        catch { }
+        TransactionService.Instance.SetDword(root, subPath, valueName, value);
+    }
 
-        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
-        key?.SetValue(valueName, value, RegistryValueKind.DWord);
+    private static void SetRegString(RegistryKey root, string subPath, string valueName, string value)
+    {
+        TransactionService.Instance.SetString(root, subPath, valueName, value);
+    }
+
+    private static void SetRegQword(RegistryKey root, string subPath, string valueName, long value)
+    {
+        TransactionService.Instance.SetQword(root, subPath, valueName, value);
+    }
+
+    private static void SetRegMultiString(RegistryKey root, string subPath, string valueName, string[] values)
+    {
+        TransactionService.Instance.SetMultiString(root, subPath, valueName, values);
+    }
+
+    private static void SetRegBinary(RegistryKey root, string subPath, string valueName, byte[] bytes)
+    {
+        TransactionService.Instance.SetBinary(root, subPath, valueName, bytes);
+    }
+
+    private static void DeleteRegValue(RegistryKey root, string subPath, string valueName)
+    {
+        TransactionService.Instance.DeleteValue(root, subPath, valueName);
     }
 
     private static void ApplyNagle(bool disable)
@@ -2091,19 +2025,16 @@ public class ExpandedTweakService
 
             foreach (var subName in targets)
             {
-                using var sub = baseKey.OpenSubKey(subName, true);
-                if (sub != null)
+                string ifaceSubPath = $@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{subName}";
+                if (disable)
                 {
-                    if (disable)
-                    {
-                        sub.SetValue("TcpAckFrequency", 1, RegistryValueKind.DWord);
-                        sub.SetValue("TCPNoDelay", 1, RegistryValueKind.DWord);
-                    }
-                    else
-                    {
-                        sub.DeleteValue("TcpAckFrequency", false);
-                        sub.DeleteValue("TCPNoDelay", false);
-                    }
+                    SetRegDword(Registry.LocalMachine, ifaceSubPath, "TcpAckFrequency", 1);
+                    SetRegDword(Registry.LocalMachine, ifaceSubPath, "TCPNoDelay", 1);
+                }
+                else
+                {
+                    DeleteRegValue(Registry.LocalMachine, ifaceSubPath, "TcpAckFrequency");
+                    DeleteRegValue(Registry.LocalMachine, ifaceSubPath, "TCPNoDelay");
                 }
             }
         }

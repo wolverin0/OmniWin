@@ -393,9 +393,44 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
   - Registro de la prioridad original previa del proceso y restauración exacta al salir de juego o revertir la optimización.
 - [x] **26.6 Purga Segura Remota de Memoria (`CompanionServerService`)**:
   - Configuración de purga segura en OmniCompanion (`PurgeMemory(true, false)`), vaciando listas de espera sin purgar agresivamente el working set de aplicaciones en primer plano.
-- [x] **26.7 Suite Completa de Pruebas Automatizadas 100% Verde (140/140 Tests)**:
-  - 140 pruebas unitarias y de integración pasando con éxito en .NET 9 (`OmniWin.Tests`).
+- [x] **26.7 Suite Completa de Pruebas Automatizadas 100% Verde (146/146 Tests)**:
+  - 146 pruebas unitarias y de integración pasando con éxito en .NET 9 (`OmniWin.Tests`).
   - Cobertura completa de `TelemetryHub`, `TransactionService`, `OmniExperimentEngine`, `McpServer` con 35 herramientas, métricas de Prometheus y telemetría móvil.
 
+### Fase 26.1: Endurecimiento Transaccional & Saneamiento Forense (100% Completada)
+- [x] **Write-Ahead Logging (WAL) & Crash Recovery (`TransactionService`)**:
+  - Implementación de WAL (`wal.json`) con estados `PREPARED`, `COMMITTED` y `ROLLED_BACK`.
+  - Mecanismo de recuperación automática en el arranque (`RecoverWalIfPresent()`): si Windows experimenta un BSOD o apagado súbito a mitad de una mutación, OmniWin revierte las mutaciones en vuelo a su línea de base segura original.
+  - Salvaguarda contra transacciones vacías: si una transacción no contiene snapshots capturados, `RollbackTransaction()` devuelve `false` garantizando que se ejecute el switch de fallback clásico en lugar de silenciar cambios.
+- [x] **Instrumentación Exhaustiva de Registro (`ExpandedTweakService`)**:
+  - Abstracción completa de mutaciones a través de helpers transaccionales: `SetRegDword`, `SetRegString`, `SetRegQword`, `SetRegMultiString`, `SetRegBinary` y `DeleteRegValue`.
+  - Eliminación total de llamadas directas y no capturadas a `RegistryKey.SetValue()` en todos los tweaks de gaming (`gaming_gpu_priority_games`, `gaming_mouse_accel`), privacidad (`privacy_start_suggestions`, `privacy_cortana_telemetry`, etc.) y optimizaciones del sistema.
+- [x] **Atomicidad y Prevención de Reciclaje de PIDs en EcoQoS (`EcoQoSService`)**:
+  - Reversión atómica en caso de fallo parcial: si `SetProcessInformation` falla, la prioridad del proceso nunca queda atrapada en `Idle`.
+  - Identidad de proceso estricta: seguimiento mediante `(int Pid, DateTime StartTime)` para blindar contra la reutilización de PIDs por el kernel de Windows.
+- [x] **Saneamiento Defensivo en MCP (`McpServer`)**:
+  - Herramienta `win_purge_ram`: `purge_workingsets` modificado por defecto a `false` para que agentes de IA autónomos nunca purguen agresivamente los working sets de aplicaciones salvo instrucción explícita.
+  - Saneamiento en `LauncherHibernatorService`: `TrimWorkingSetsOnHibernation` desactivado por defecto (`false`) y eliminación de modulación de prioridad redundante.
+- [x] **Saneamiento de MSI Doctor (`MsiInterruptService`)**:
+  - Eliminación de la inyección automática de `MessageNumberLimit = 1` para GPUs y otros dispositivos no de red. El controlador de hardware mantiene el control total de los límites de vectores.
+  - Modo audit-first: inspección técnica precisa sin afirmaciones especulativas de línea IRQ compartida.
+- [x] **Muestreador Continuo de Scheduler Jitter (`KernelLatencyService`, `TelemetryHub`)**:
+  - Background sampler a 1 Hz en `KernelLatencyService` (`StartContinuousSampler`), garantizando que `TelemetryHub` y la telemetría del sistema siempre dispongan de lecturas frescas de jitter del temporizador de Windows (`KernelJitterUs`).
+- [x] **Semántica Rigurosa y Selector de Métricas en ExperimentEngine (`OmniExperimentEngine`)**:
+  - Corrección terminológica: métricas redenominadas a `Wake Jitter P95`, `Wake Jitter P99` y `Wake Jitter P99.9` (eliminando falsas equivalencias con "1% Low FPS").
+  - Métrica de confianza redenominada a `EvidenceScore`.
+  - Detección automática de tweaks que requieren reinicio (`IsRebootRequired`) y tweaks funcionales o estéticos (`IsNonPerformanceTweak`), evitando benchmarks de temporizador engañosos.
 
+---
 
+### Fase 27: Telemetría de Verdad Terreno & Forense de Kernel (En Desarrollo)
+- [ ] **27.1 Proveedor PresentMon Nativo (`PresentMonProvider`)**:
+  - Captura real de frametimes y latencia de presentación GPU/Display sin DLL hooks invasivos.
+- [ ] **27.2 Proveedor Kernel ETW (`KernelEtwProvider`)**:
+  - Medición directa de tiempo de ejecución DPC (Deferred Procedure Calls) e ISR (Interrupt Service Routines) mediante Event Tracing for Windows.
+- [ ] **27.3 Proveedor Storage ETW (`StorageEtwProvider`)**:
+  - Latencia de I/O de disco, colas de lectura/escritura NVMe y correlación con tirones de streaming.
+- [ ] **27.4 Diagnóstico y Correlación WHEA / TDR (`KernelHealthService`)**:
+  - Monitoreo en tiempo real de eventos WHEA-Logger y reinicios del controlador de pantalla (GPU TDR ID 4101).
+- [ ] **27.5 Formato de Volcado Forense `.omniwintrace`**:
+  - Exportación de sesiones completas de telemetría y diagnósticos forenses para análisis offline.

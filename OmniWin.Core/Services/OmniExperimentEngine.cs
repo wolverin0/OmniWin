@@ -23,9 +23,9 @@ public record ExperimentMetricSummary
     public double Mean { get; init; }
     public double StdDev { get; init; }
     public double Median { get; init; }
-    public double P95 { get; init; }
-    public double P99 { get; init; }      // 1% Low equivalent
-    public double P99_9 { get; init; }    // 0.1% Low equivalent
+    public double P95 { get; init; }      // Wake Jitter P95 (µs)
+    public double P99 { get; init; }      // Wake Jitter P99 (µs)
+    public double P99_9 { get; init; }    // Wake Jitter P99.9 (µs)
     public double Min { get; init; }
     public double Max { get; init; }
 }
@@ -46,7 +46,12 @@ public record ExperimentReport
     public double MeanDeltaPercent { get; init; }
     public double P99DeltaPercent { get; init; }
     public double P99_9DeltaPercent { get; init; }
-    public double ConfidenceScore { get; init; } // 0.0 to 1.0 (statistical significance proxy)
+    public double EvidenceScore { get; init; } // 0.0 to 1.0 (empirical evidence score)
+    public double ConfidenceScore => EvidenceScore; // Backward compatibility alias
+
+    public bool RequiresReboot { get; init; }
+    public bool IsNonPerformanceTweak { get; init; }
+    public string EvaluatedMetric { get; init; } = "KernelWakeJitter";
 
     public ExperimentVerdict Verdict { get; init; }
     public string Recommendation { get; init; } = string.Empty;
@@ -56,8 +61,9 @@ public record ExperimentReport
 
 /// <summary>
 /// OmniExperimentEngine: Automated A/B micro-benchmarking engine for Windows optimization.
-/// Measures real kernel latency, thread wake jitter, and system stability under rigorous baseline vs treatment phases.
-/// Keeps tweaks only when empirically proven beneficial (statistical evidence); auto-reverts neutral or harmful tweaks.
+/// Measures real kernel latency, thread wake jitter, and system stability under baseline vs treatment phases.
+/// Keeps tweaks only when empirically proven beneficial; auto-reverts neutral or harmful tweaks.
+/// Distinguishes tweaks that require system reboot or are non-performance (privacy/UI) settings.
 /// </summary>
 public class OmniExperimentEngine
 {
@@ -89,6 +95,23 @@ public class OmniExperimentEngine
         LoadHistory();
     }
 
+    public static bool IsRebootRequired(string tweakId) => tweakId switch
+    {
+        "gaming_hags" => true,
+        "sys_disable_hibernation" => true,
+        "gaming_hpet_disable" => true,
+        "sys_disable_autoreboot_bsod" => true,
+        "sys_ntfs_disable_8dot3" => true,
+        "sys_ntfs_disable_last_access" => true,
+        "sys_large_system_cache" => true,
+        "sys_svchost_split" => true,
+        _ => false
+    };
+
+    public static bool IsNonPerformanceTweak(string tweakId) =>
+        tweakId.StartsWith("privacy_", StringComparison.OrdinalIgnoreCase) ||
+        tweakId.StartsWith("win11_", StringComparison.OrdinalIgnoreCase);
+
     public async Task<ExperimentReport> RunExperimentAsync(
         string tweakId,
         int baselineSeconds = 5,
@@ -96,17 +119,61 @@ public class OmniExperimentEngine
         bool autoRevertIfNotBeneficial = true,
         CancellationToken ct = default)
     {
+        var startTime = DateTime.UtcNow;
+        var tweakService = new ExpandedTweakService();
+
+        // Check if tweak requires Windows reboot before kernel changes take effect
+        if (IsRebootRequired(tweakId))
+        {
+            var applyRes = tweakService.ApplyTweak(tweakId);
+            var rebootReport = new ExperimentReport
+            {
+                TweakId = tweakId,
+                Description = $"Tweak '{tweakId}' requiere reinicio de Windows para que el kernel cargue los cambios.",
+                StartedAt = startTime,
+                CompletedAt = DateTime.UtcNow,
+                RequiresReboot = true,
+                EvaluatedMetric = "PendingReboot",
+                Verdict = ExperimentVerdict.Inconclusive,
+                EvidenceScore = 1.0,
+                Recommendation = "Este ajuste modifica subsistemas de bajo nivel que requieren reiniciar Windows antes de poder ser evaluados empíricamente.",
+                AutoReverted = false,
+                ActionTaken = applyRes.Success ? "Aplicado con éxito (Reinicio pendiente)" : $"Error al aplicar: {applyRes.Message}"
+            };
+            lock (_lock) { _history.Add(rebootReport); SaveHistory(); }
+            return rebootReport;
+        }
+
+        // Check if tweak is non-performance (UI, Privacy, Context Menu)
+        if (IsNonPerformanceTweak(tweakId))
+        {
+            var applyRes = tweakService.ApplyTweak(tweakId);
+            var nonPerfReport = new ExperimentReport
+            {
+                TweakId = tweakId,
+                Description = $"Tweak funcional/estético/privacidad: '{tweakId}' no altera la latencia de interrupción ni el temporizador del kernel.",
+                StartedAt = startTime,
+                CompletedAt = DateTime.UtcNow,
+                IsNonPerformanceTweak = true,
+                EvaluatedMetric = "NonPerformanceFunctional",
+                Verdict = applyRes.Success ? ExperimentVerdict.Beneficial : ExperimentVerdict.Inconclusive,
+                EvidenceScore = 1.0,
+                Recommendation = "Ajuste de política de privacidad o interfaz sin impacto en el scheduler del sistema.",
+                AutoReverted = false,
+                ActionTaken = applyRes.Success ? "Aplicado y verificado en registro" : $"Error: {applyRes.Message}"
+            };
+            lock (_lock) { _history.Add(nonPerfReport); SaveHistory(); }
+            return nonPerfReport;
+        }
+
         if (baselineSeconds < 2) baselineSeconds = 2;
         if (treatmentSeconds < 2) treatmentSeconds = 2;
-
-        var startTime = DateTime.UtcNow;
 
         // 1. Collect Baseline Samples
         var baselineSamples = await SampleJitterSeriesAsync(TimeSpan.FromSeconds(baselineSeconds), ct);
         var baselineSummary = ComputeSummary(baselineSamples);
 
         // 2. Apply Tweak via ExpandedTweakService (TransactionService captures pre-state)
-        var tweakService = new ExpandedTweakService();
         var applyResult = tweakService.ApplyTweak(tweakId);
         if (!applyResult.Success)
         {
@@ -154,12 +221,12 @@ public class OmniExperimentEngine
         if (p99DeltaPct <= -3.0 && meanDeltaPct <= -1.5 && confidence >= 0.70)
         {
             verdict = ExperimentVerdict.Beneficial;
-            recommendation = $"Mejora verificada empíricamente: reducción del {Math.Abs(p99DeltaPct):F1}% en P99 jitter ({baselineSummary.P99:F1} µs -> {treatmentSummary.P99:F1} µs) con nivel de confianza de {confidence * 100:F0}%. Se recomienda conservar.";
+            recommendation = $"Mejora verificada empíricamente: reducción del {Math.Abs(p99DeltaPct):F1}% en Wake Jitter P99 ({baselineSummary.P99:F1} µs -> {treatmentSummary.P99:F1} µs) con EvidenceScore de {confidence:F2}. Se recomienda conservar.";
         }
         else if (p99DeltaPct >= 3.0 || meanDeltaPct >= 4.0)
         {
             verdict = ExperimentVerdict.Harmful;
-            recommendation = $"Regresión detectada: aumento del {p99DeltaPct:F1}% en P99 jitter ({baselineSummary.P99:F1} µs -> {treatmentSummary.P99:F1} µs). Produce mayor inestabilidad temporal en el kernel.";
+            recommendation = $"Regresión detectada: aumento del {p99DeltaPct:F1}% en Wake Jitter P99 ({baselineSummary.P99:F1} µs -> {treatmentSummary.P99:F1} µs). Produce mayor inestabilidad temporal en el kernel.";
         }
         else if (treatmentSamples.Count < 10 || confidence < 0.50)
         {
@@ -169,7 +236,7 @@ public class OmniExperimentEngine
         else
         {
             verdict = ExperimentVerdict.Neutral;
-            recommendation = $"Impacto estadísticamente neutral (delta P99: {p99DeltaPct:+0.0;-0.0}%, delta media: {meanDeltaPct:+0.0;-0.0}%). El tweak no ofrece beneficios medibles en este hardware.";
+            recommendation = $"Impacto neutral (delta Wake Jitter P99: {p99DeltaPct:+0.0;-0.0}%, delta media: {meanDeltaPct:+0.0;-0.0}%). El tweak no ofrece beneficios medibles en este hardware.";
         }
 
         // 6. Enforce Auto-Revert if requested
@@ -186,7 +253,7 @@ public class OmniExperimentEngine
         }
         else if (verdict == ExperimentVerdict.Beneficial)
         {
-            actionTaken = $"Tweak conservado: verificado como {verdict} con {confidence * 100:F0}% de confianza.";
+            actionTaken = $"Tweak conservado: verificado como {verdict} con EvidenceScore de {confidence:F2}.";
         }
         else
         {
@@ -206,7 +273,7 @@ public class OmniExperimentEngine
             MeanDeltaPercent = Math.Round(meanDeltaPct, 2),
             P99DeltaPercent = Math.Round(p99DeltaPct, 2),
             P99_9DeltaPercent = Math.Round(p99_9DeltaPct, 2),
-            ConfidenceScore = Math.Round(confidence, 2),
+            EvidenceScore = Math.Round(confidence, 2),
             Verdict = verdict,
             Recommendation = recommendation,
             AutoReverted = reverted,

@@ -33,6 +33,10 @@ public class KernelLatencyService
 
     private double _lastJitterUs = 0;
     public double CurrentJitterUs => _lastJitterUs;
+    public DateTime LastJitterSampleTime { get; private set; } = DateTime.MinValue;
+
+    private CancellationTokenSource? _samplerCts;
+    private readonly object _samplerLock = new();
 
     [DllImport("ntdll.dll", SetLastError = true)]
     private static extern int NtQueryTimerResolution(out uint minResolution, out uint maxResolution, out uint currentResolution);
@@ -42,6 +46,48 @@ public class KernelLatencyService
 
     [DllImport("ntdll.dll", SetLastError = true)]
     private static extern int NtDelayExecution(bool alertable, ref long delayInterval);
+
+    public void StartContinuousSampler(int frequencyHz = 1)
+    {
+        lock (_samplerLock)
+        {
+            if (_samplerCts != null) return;
+            _samplerCts = new CancellationTokenSource();
+            var token = _samplerCts.Token;
+            int delayMs = Math.Max(200, 1000 / Math.Max(1, frequencyHz));
+
+            Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        MeasureTimerJitterUs();
+                        await Task.Delay(delayMs, token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) { break; }
+                    catch { }
+                }
+            }, token);
+        }
+    }
+
+    public void StopContinuousSampler()
+    {
+        lock (_samplerLock)
+        {
+            try
+            {
+                _samplerCts?.Cancel();
+                _samplerCts?.Dispose();
+            }
+            catch { }
+            finally
+            {
+                _samplerCts = null;
+            }
+        }
+    }
 
     public double MeasureTimerJitterUs()
     {
@@ -56,6 +102,7 @@ public class KernelLatencyService
             double actualUs = ((end - start) * 1_000_000.0) / freq;
             double jitter = actualUs > 1000.0 ? (actualUs - 1000.0) : 0.0;
             _lastJitterUs = Math.Round(jitter, 1);
+            LastJitterSampleTime = DateTime.UtcNow;
             return _lastJitterUs;
         }
         catch

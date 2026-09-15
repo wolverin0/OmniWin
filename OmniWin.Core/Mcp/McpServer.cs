@@ -188,14 +188,14 @@ public class McpServer
         tools.Add(new JsonObject
         {
             ["name"] = "win_purge_ram",
-            ["description"] = "Libera memoria RAM instantáneamente purgando Standby List y Working Sets.",
+            ["description"] = "Libera memoria RAM de forma segura purgando Standby List y opcionalmente Working Sets de procesos.",
             ["inputSchema"] = new JsonObject
             {
                 ["type"] = "object",
                 ["properties"] = new JsonObject
                 {
-                    ["purge_standby"] = new JsonObject { ["type"] = "boolean" },
-                    ["purge_workingsets"] = new JsonObject { ["type"] = "boolean" }
+                    ["purge_standby"] = new JsonObject { ["type"] = "boolean", ["description"] = "Purgar listas en espera (Standby List, seguro). Por defecto true." },
+                    ["purge_workingsets"] = new JsonObject { ["type"] = "boolean", ["description"] = "Purgar working sets de todos los procesos (agresivo, provoca page faults transitorios). Por defecto false." }
                 }
             }
         });
@@ -708,7 +708,7 @@ public class McpServer
 
                 case "win_purge_ram":
                     bool purgeStandby = args["purge_standby"]?.GetValue<bool>() ?? true;
-                    bool purgeWs = args["purge_workingsets"]?.GetValue<bool>() ?? true;
+                    bool purgeWs = args["purge_workingsets"]?.GetValue<bool>() ?? false;
                     var purgeRes = _memoryService.PurgeMemory(purgeStandby, purgeWs);
                     content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(purgeRes, new JsonSerializerOptions { WriteIndented = true }) });
                     break;

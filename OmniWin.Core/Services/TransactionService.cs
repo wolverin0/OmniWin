@@ -34,12 +34,13 @@ public class TweakTransaction
     public List<RegistryValueSnapshot> RegistrySnapshots { get; init; } = new();
     public List<ServiceStateSnapshot> ServiceSnapshots { get; init; } = new();
     public bool IsActive { get; set; } = true;
+    public string State { get; set; } = "PREPARED"; // PREPARED, COMMITTED, ROLLED_BACK
 }
 
 /// <summary>
 /// TransactionService: Provides transactional change-set management and deterministic rollbacks for OmniWin tweaks.
-/// Captures exact pre-tweak registry values, types, and service states into a persistent JSON journal.
-/// Ensures rollbacks return Windows to its exact prior state rather than guessing generic defaults.
+/// Uses a Write-Ahead Log (WAL) to ensure crash safety if Windows BSODs, reboots, or crashes mid-mutation.
+/// Restores exact pre-existing registry values/types and service states.
 /// </summary>
 public class TransactionService
 {
@@ -48,6 +49,7 @@ public class TransactionService
 
     private readonly object _lock = new();
     private readonly string _journalPath;
+    private readonly string _walPath;
     private Dictionary<string, TweakTransaction> _transactions = new(StringComparer.OrdinalIgnoreCase);
     private TweakTransaction? _inFlightTransaction;
 
@@ -56,6 +58,9 @@ public class TransactionService
         if (!string.IsNullOrWhiteSpace(customJournalPath))
         {
             _journalPath = customJournalPath;
+            string dir = Path.GetDirectoryName(_journalPath) ?? Path.GetTempPath();
+            string fname = Path.GetFileNameWithoutExtension(_journalPath);
+            _walPath = Path.Combine(dir, $"{fname}.wal.json");
         }
         else
         {
@@ -67,9 +72,11 @@ public class TransactionService
             }
             catch { }
             _journalPath = Path.Combine(dir, "journal.json");
+            _walPath = Path.Combine(dir, "wal.json");
         }
 
         LoadJournal();
+        RecoverWalIfPresent();
     }
 
     public void BeginTransaction(string tweakId, string description = "")
@@ -80,8 +87,10 @@ public class TransactionService
             {
                 TweakId = tweakId,
                 Description = description,
-                AppliedAt = DateTime.UtcNow
+                AppliedAt = DateTime.UtcNow,
+                State = "PREPARED"
             };
+            SaveWal();
         }
     }
 
@@ -113,6 +122,7 @@ public class TransactionService
                         ValueName = valueName,
                         ExistedBefore = false
                     });
+                    SaveWal();
                     return;
                 }
 
@@ -154,6 +164,8 @@ public class TransactionService
                         StringifiedValue = stringVal
                     });
                 }
+
+                SaveWal();
             }
             catch (Exception ex)
             {
@@ -208,12 +220,59 @@ public class TransactionService
                     StartType = startMode,
                     Status = status
                 });
+
+                SaveWal();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[TransactionService] Failed to capture service {serviceName}: {ex.Message}");
             }
         }
+    }
+
+    // ==========================================
+    // TRANSACTION-AWARE MUTATORS
+    // ==========================================
+    public void SetDword(RegistryKey root, string subPath, string valueName, int value)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
+        key?.SetValue(valueName, value, RegistryValueKind.DWord);
+    }
+
+    public void SetString(RegistryKey root, string subPath, string valueName, string value)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
+        key?.SetValue(valueName, value, RegistryValueKind.String);
+    }
+
+    public void SetQword(RegistryKey root, string subPath, string valueName, long value)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
+        key?.SetValue(valueName, value, RegistryValueKind.QWord);
+    }
+
+    public void SetMultiString(RegistryKey root, string subPath, string valueName, string[] values)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
+        key?.SetValue(valueName, values, RegistryValueKind.MultiString);
+    }
+
+    public void SetBinary(RegistryKey root, string subPath, string valueName, byte[] bytes)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true) ?? root.CreateSubKey(subPath, true);
+        key?.SetValue(valueName, bytes, RegistryValueKind.Binary);
+    }
+
+    public void DeleteValue(RegistryKey root, string subPath, string valueName)
+    {
+        CaptureRegistryPreState(root, subPath, valueName);
+        using var key = root.OpenSubKey(subPath, true);
+        key?.DeleteValue(valueName, false);
     }
 
     public void CommitTransaction(string tweakId)
@@ -224,10 +283,12 @@ public class TransactionService
                 return;
 
             _inFlightTransaction.IsActive = true;
+            _inFlightTransaction.State = "COMMITTED";
             _transactions[tweakId] = _inFlightTransaction;
             _inFlightTransaction = null;
 
             SaveJournal();
+            ClearWal();
         }
     }
 
@@ -246,6 +307,14 @@ public class TransactionService
             if (!_transactions.TryGetValue(tweakId, out var tx) || !tx.IsActive)
             {
                 message = $"No hay transacción activa registrada para el tweak '{tweakId}'.";
+                return false;
+            }
+
+            // CRITICAL FIX: If transaction was recorded with 0 snapshots, do NOT claim success!
+            // Return false so caller can execute its legacy fallback logic.
+            if (tx.RegistrySnapshots.Count == 0 && tx.ServiceSnapshots.Count == 0)
+            {
+                message = $"La transacción registrada para '{tweakId}' no contiene snapshots de cambios.";
                 return false;
             }
 
@@ -336,6 +405,7 @@ public class TransactionService
             }
 
             tx.IsActive = false;
+            tx.State = "ROLLED_BACK";
             SaveJournal();
 
             message = $"Transacción '{tweakId}' revertida con éxito ({regRestored} valores de registro y {svcRestored} servicios restaurados a su estado exacto original).";
@@ -403,6 +473,63 @@ public class TransactionService
         catch (Exception ex)
         {
             Debug.WriteLine($"[TransactionService] Error writing journal: {ex.Message}");
+        }
+    }
+
+    private void SaveWal()
+    {
+        if (_inFlightTransaction == null) return;
+        try
+        {
+            string? dir = Path.GetDirectoryName(_walPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            string json = JsonSerializer.Serialize(_inFlightTransaction, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_walPath, json);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[TransactionService] Error writing WAL: {ex.Message}");
+        }
+    }
+
+    private void ClearWal()
+    {
+        try
+        {
+            if (File.Exists(_walPath))
+            {
+                File.Delete(_walPath);
+            }
+        }
+        catch { }
+    }
+
+    private void RecoverWalIfPresent()
+    {
+        try
+        {
+            if (File.Exists(_walPath))
+            {
+                string json = File.ReadAllText(_walPath);
+                var uncommittedTx = JsonSerializer.Deserialize<TweakTransaction>(json);
+                if (uncommittedTx != null && uncommittedTx.State == "PREPARED")
+                {
+                    Debug.WriteLine($"[TransactionService] Interrupted transaction detected for '{uncommittedTx.TweakId}'. Rolling back to safe baseline...");
+                    // Restore captured pre-states
+                    _transactions[uncommittedTx.TweakId] = uncommittedTx;
+                    RollbackTransaction(uncommittedTx.TweakId, out _);
+                    _transactions.Remove(uncommittedTx.TweakId);
+                }
+                ClearWal();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[TransactionService] Error during WAL recovery: {ex.Message}");
         }
     }
 }

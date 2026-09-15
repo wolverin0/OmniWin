@@ -87,12 +87,12 @@ Inspirado en la filosofía de **Yamicsoft Windows Manager**, el asistente guía 
 
 ---
 
-## 4. Servidor MCP para Agentes IA (32 Herramientas JSON-RPC)
+## 4. Servidor MCP para Agentes IA (35 Herramientas JSON-RPC)
 
 El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigravity) ejecuten diagnósticos, reparaciones y optimizaciones directamente:
 
 1. `win_get_system_health`: Telemetría (quick, performance, network, security, full).
-2. `win_purge_ram`: Purga atómica de Standby List y Working Sets.
+2. `win_purge_ram`: Purga segura de Standby List y opcionalmente Working Sets (`purge_workingsets: false` por defecto).
 3. `win_analyze_disk_bloat`: Auditoría de temporales, cachés y crash dumps.
 4. `win_clean_disk`: Limpieza parametrizada con vaciado de papelera.
 5. `win_test_network`: Diagnóstico de red, DNS, ping y sockets TCP.
@@ -111,8 +111,8 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigra
 18. `win_list_startup_items`: Programas al inicio en Registro y Tareas.
 19. `win_toggle_startup_item`: Habilitar o deshabilitar programas de inicio.
 20. `win_list_tweaks`: Estado del catálogo de 55 optimizaciones.
-21. `win_apply_tweak`: Aplicación con respaldo VSS.
-22. `win_rollback_tweak`: Reversión atómica de cualquier optimización.
+21. `win_apply_tweak`: Aplicación con respaldo VSS y captura en diario transaccional WAL.
+22. `win_rollback_tweak`: Reversión atómica y determinista al estado exacto previo.
 23. `win_find_file_locks`: Detección de procesos bloqueadores con Restart Manager.
 24. `win_unlock_file`: Liberación forzosa de archivos bloqueados.
 25. `win_list_windows_services`: Auditoría de servicios de Windows.
@@ -121,11 +121,11 @@ El servidor MCP permite que agentes autónomos (Claude, Gemini, ChatGPT, Antigra
 28. `win_list_context_menus` & `win_toggle_context_menu`: Menús contextuales de clic derecho.
 29. `win_pcie_doctor`: Auditoría de velocidad y ancho de enlace PCIe (detección de degradación x1/x4 vs x16), ReBAR y saturación.
 30. `win_bypassio_doctor`: Diagnóstico de DirectStorage 1.2 BypassIO y filtros de pila de almacenamiento en NVMe.
-31. `win_stutter_investigate`: Detección forense de micro-stuttering, jitter de interrupción de kernel vía `NtDelayExecution(-10000)` y DPC/ISR.
-32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling EcoQoS.
-33. `win_msi_doctor`: Diagnóstico, auditoría y conmutación de dispositivos PCIe (GPU, NICs) de IRQ compartido a MSI/MSI-X con prioridad alta para erradicar DPC latency spikes.
-34. `win_launcher_hibernator`: Suspensión / EcoQoS y trim de RAM de Discord, SteamWebHelper, Epic y navegadores durante gaming competitivo.
-35. `win_experiment_engine`: Micro-benchmarking empírico A/B de tweaks con medición de jitter de kernel, 1% Low / P99 y auto-reversión transaccional determinista.
+31. `win_stutter_investigate`: Detección forense de micro-stuttering, jitter de despertador de hilos del scheduler y correlación de telemetría.
+32. `win_cpu_topology`: Detección de topología de núcleos híbridos (P-Cores vs E-Cores) vía `GetSystemCpuSetInformation` y throttling atómico EcoQoS.
+33. `win_msi_doctor`: Diagnóstico y auditoría de dispositivos PCIe (GPU, NICs) para MSI/MSI-X con prioridad alta sin restringir MessageNumberLimit en NICs ni GPUs.
+34. `win_launcher_hibernator`: Suspensión / EcoQoS atómica de Discord, SteamWebHelper, Epic y navegadores durante gaming competitivo.
+35. `win_experiment_engine`: Micro-benchmarking empírico A/B de tweaks con medición de scheduler wake jitter (P95, P99, P99.9), EvidenceScore, reconocimiento de reinicio y auto-reversión transaccional determinista.
 
 ---
 
@@ -159,4 +159,4 @@ Para garantizar cero regresiones y validación fidedigna de cambios:
 * **Conexión Directa**: PowerShell Direct sobre VMBus (`-VMId`) sin dependencia de red.
 * **UI Automation**: Conducción programática mediante `InvokePattern` y `AutomationId`.
 * **Ground-Truth Matrix**: Verificación directa de claves de registro reales en el sistema operativo para confirmar que cada tweak aplicado persiste en Windows.
-* **Suite de Pruebas Automatizadas**: 140 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).
+* **Suite de Pruebas Automatizadas**: 146 tests unitarios y de integración en xUnit / .NET 9 (100% pasando sin fallos).

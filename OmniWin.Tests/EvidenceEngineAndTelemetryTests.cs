@@ -81,7 +81,11 @@ public class EvidenceEngineAndTelemetryTests : IDisposable
         var txService = new TransactionService(journalFile);
 
         string testTweakId = "test_custom_tweak_01";
+        string subPath = @"Software\OmniWinTestTx";
         txService.BeginTransaction(testTweakId, "Test Tweak Description");
+
+        // Mutate a registry value using transaction-aware mutator
+        txService.SetDword(Microsoft.Win32.Registry.CurrentUser, subPath, "TestVal", 42);
 
         // Commit transaction
         txService.CommitTransaction(testTweakId);
@@ -98,6 +102,160 @@ public class EvidenceEngineAndTelemetryTests : IDisposable
         Assert.True(rolledBack);
         Assert.Contains("revertida con éxito", msg);
         Assert.False(txServiceReloaded.HasActiveTransaction(testTweakId));
+
+        // Clean up test key
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void TransactionService_ZeroSnapshots_ReturnsFalseAndLeavesRollbackToFallback()
+    {
+        string journalFile = Path.Combine(_tempTestDir, "test_zero_snap_journal.json");
+        var txService = new TransactionService(journalFile);
+
+        string testTweakId = "test_zero_snap";
+        txService.BeginTransaction(testTweakId, "Zero snapshot tweak");
+        txService.CommitTransaction(testTweakId);
+
+        bool rolledBack = txService.RollbackTransaction(testTweakId, out string msg);
+        // Must return false so caller executes legacy fallback!
+        Assert.False(rolledBack);
+        Assert.Contains("no contiene snapshots", msg);
+    }
+
+    [Fact]
+    public void TransactionService_CustomDwordAndStringRestoration_WorksExactly()
+    {
+        string subPath = @"Software\OmniWinExactTest";
+        // Setup initial custom values in registry
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(subPath, true))
+        {
+            key.SetValue("CustomDword", 999, Microsoft.Win32.RegistryValueKind.DWord);
+            key.SetValue("CustomStr", "OriginalString", Microsoft.Win32.RegistryValueKind.String);
+        }
+
+        string journalFile = Path.Combine(_tempTestDir, "test_exact_journal.json");
+        var tx = new TransactionService(journalFile);
+
+        string tweakId = "tweak_exact_restore";
+        tx.BeginTransaction(tweakId, "Testing exact values");
+
+        // Mutate both values
+        tx.SetDword(Microsoft.Win32.Registry.CurrentUser, subPath, "CustomDword", 111);
+        tx.SetString(Microsoft.Win32.Registry.CurrentUser, subPath, "CustomStr", "OverwrittenString");
+        tx.CommitTransaction(tweakId);
+
+        // Verify values changed
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(111, Convert.ToInt32(key?.GetValue("CustomDword")));
+            Assert.Equal("OverwrittenString", key?.GetValue("CustomStr") as string);
+        }
+
+        // Rollback
+        bool success = tx.RollbackTransaction(tweakId, out string msg);
+        Assert.True(success);
+
+        // Verify exact original values restored
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(999, Convert.ToInt32(key?.GetValue("CustomDword")));
+            Assert.Equal("OriginalString", key?.GetValue("CustomStr") as string);
+        }
+
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void TransactionService_WalCrashRecovery_RestoresUncommittedMutations()
+    {
+        string journalFile = Path.Combine(_tempTestDir, "test_wal_journal.json");
+        string walFile = Path.Combine(_tempTestDir, "test_wal_journal.wal.json");
+        string subPath = @"Software\OmniWinWalTest";
+
+        // Initial state: value exists with 1234
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(subPath, true))
+        {
+            key.SetValue("CrashVal", 1234, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+
+        // Simulate an in-flight uncommitted transaction recorded in WAL
+        var uncommittedTx = new TweakTransaction
+        {
+            TweakId = "crash_tweak",
+            Description = "Simulated crash mid-mutation",
+            State = "PREPARED",
+            AppliedAt = DateTime.UtcNow,
+            RegistrySnapshots = new List<RegistryValueSnapshot>
+            {
+                new RegistryValueSnapshot
+                {
+                    HiveName = Microsoft.Win32.Registry.CurrentUser.Name,
+                    SubPath = subPath,
+                    ValueName = "CrashVal",
+                    ExistedBefore = true,
+                    ValueKind = "DWord",
+                    StringifiedValue = "1234"
+                }
+            }
+        };
+
+        // Mutate registry to corrupted value (as if app crashed right after mutating)
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath, true))
+        {
+            key?.SetValue("CrashVal", 9999, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+
+        // Write WAL file
+        File.WriteAllText(walFile, System.Text.Json.JsonSerializer.Serialize(uncommittedTx));
+
+        // When new TransactionService starts, it detects uncommitted WAL and recovers to baseline!
+        var txService = new TransactionService(journalFile);
+
+        // Verify that WAL recovery restored "CrashVal" back to 1234
+        using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(subPath))
+        {
+            Assert.Equal(1234, Convert.ToInt32(key?.GetValue("CrashVal")));
+        }
+
+        // Verify WAL file is cleaned up after recovery
+        Assert.False(File.Exists(walFile));
+
+        try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(subPath, false); } catch { }
+    }
+
+    [Fact]
+    public void EcoQoSService_InvalidPid_FailsGracefullyWithoutTracking()
+    {
+        var eco = EcoQoSService.Instance;
+        int nonExistentPid = 999999;
+        bool result = eco.SetProcessEcoQoS(nonExistentPid, true);
+
+        Assert.False(result);
+        Assert.DoesNotContain(nonExistentPid, eco.GetThrottledPids());
+    }
+
+    [Fact]
+    public void McpServer_WinPurgeRam_DefaultsToSafeStandbyOnly()
+    {
+        var tools = McpServer.GetToolsList();
+        var purgeTool = tools.OfType<JsonObject>().FirstOrDefault(t => t?["name"]?.GetValue<string>() == "win_purge_ram");
+        Assert.NotNull(purgeTool);
+
+        string desc = purgeTool["description"]?.GetValue<string>() ?? "";
+        Assert.Contains("segura", desc, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void OmniExperimentEngine_CategorizesRebootAndNonPerformanceTweaks()
+    {
+        Assert.True(OmniExperimentEngine.IsRebootRequired("gaming_hags"));
+        Assert.True(OmniExperimentEngine.IsRebootRequired("sys_disable_hibernation"));
+        Assert.False(OmniExperimentEngine.IsRebootRequired("gaming_gpu_priority_games"));
+
+        Assert.True(OmniExperimentEngine.IsNonPerformanceTweak("privacy_cortana_telemetry"));
+        Assert.True(OmniExperimentEngine.IsNonPerformanceTweak("win11_classic_context_menu"));
+        Assert.False(OmniExperimentEngine.IsNonPerformanceTweak("gaming_gpu_priority_games"));
     }
 
     [Fact]

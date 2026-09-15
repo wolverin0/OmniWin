@@ -4,7 +4,7 @@
 [![C# Native](https://img.shields.io/badge/Language-C%23%2013-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![WPF / Direct3D](https://img.shields.io/badge/GUI-WPF%20%2F%20Hardware--Accelerated-0078D4?logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
 [![MCP Protocol](https://img.shields.io/badge/MCP-35%20Tools%20Enabled-8A2BE2)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-140%2F140%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
+[![Tests](https://img.shields.io/badge/Tests-146%2F146%20Passing%20(100%25)-brightgreen)](docs/E2E_VM_TESTING_GUIDE.md)
 [![Anti-Cheat](https://img.shields.io/badge/Anti--Cheat-Safe--by--Design%20(Zero--Injection)-blue)](OmniWin.UI/Views/GamingOverlayWindow.xaml.cs)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -19,8 +19,8 @@
 * **Atomic RAM Purge**: Leverages `NtSetSystemInformation` with `SYSTEM_MEMORY_LIST_COMMAND` to flush:
   * Modified Page List
   * Standby Priority Lists (0 to 7)
-  * System Cache and Working Sets (when requested)
-* **Non-Destructive by Default**: Preserves application working sets during active game launches to prevent cold page faults and startup stuttering.
+  * System Cache and Working Sets (when explicitly requested)
+* **Non-Destructive by Default**: Defaults to safe standby list flushing and preserves application working sets during active game launches to prevent cold page faults and startup stuttering.
 
 ### 2. 🔓 Windows Restart Manager File Unlocker (`FileLockService`)
 * Direct integration with `rstrtmgr.dll` (`RmStartSession`, `RmRegisterResources`, `RmGetList`).
@@ -29,7 +29,7 @@
 ### 3. ⏱️ 0.50 ms Esports Multimedia Timer & Kernel Latency Jitter (`PowerService`, `KernelLatencyService`)
 * Sets system interrupt clock resolution down to **0.50 ms** via `NtSetTimerResolution`, with symmetric unsetting to cleanly restore standard Windows clock resolution on game exit.
 * Drastically reduces input lag, frame-time variance, and mouse jitter in competitive gaming titles.
-* Measures genuine DPC/interrupt dispatch latency through `NtDelayExecution(-10000)` kernel wake jitter measurement.
+* Measures genuine thread scheduler timer wake jitter / overshoot through `NtDelayExecution(-10000)` high-resolution microsecond sampling.
 
 ### 4. 🎮 Customizable Gaming HUD Overlay (`GamingOverlayWindow`)
 * **Safe-by-Design Overlay**: Uses a layered transparent Click-Through window (`WS_EX_TRANSPARENT | WS_EX_NOACTIVATE`) with global Windows hotkeys. Never hooks DirectX/Vulkan game pipelines or injects DLLs into game memory.
@@ -41,12 +41,12 @@
 * **Global Hotkeys**:
   * <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd>: Toggle HUD visibility anywhere, anytime.
   * <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd>: Toggle Locked In-Game Mode (mouse passes through directly to the game) vs Unlocked Configuration Mode.
-* **RTSS Shared Memory Sync**: Bi-directional shared memory pipe with RivaTuner Statistics Server when running.
+* **RTSS OSD Integration**: OSD text injection into RivaTuner Statistics Server shared-memory when running.
 
 ### 5. 🔬 Deep Silicon, PCIe Doctor & XMP/EXPO Diagnostics (`PcieHealthService`, `MotherboardBiosService`)
-* GPU-Z style diagnostic engine interrogating NVIDIA / AMD / Intel drivers via SetupAPI, DXGI, and WMI.
+* Diagnostic engine interrogating NVIDIA / AMD / Intel drivers via SetupAPI and DXGI.
 * Verifies physical vs negotiated PCIe link width (e.g. alerts if a GPU is running degraded at `x1 Gen 4` instead of `x16 Gen 4`).
-* Inspects VBIOS version, Resizable BAR (BAR1 aperture) support, and memory bus widths.
+* Inspects VBIOS version, Resizable BAR support, and memory bus widths.
 * **XMP / EXPO Doctor**: Detects if high-speed RAM is inadvertently stuck running at standard JEDEC baseline frequencies (e.g., 4800 MT/s instead of 6000 MT/s) and flags single-channel configurations.
 
 ### 6. 📊 Built-in Prometheus Metrics Exporter (`MetricsExporterService`)
@@ -64,25 +64,26 @@
 * Dynamically prioritizes game execution on Performance Cores (P-Cores) via `GetSystemCpuSetInformation` while applying `EcoQoS` (efficiency execution throttling) to non-critical background services.
 
 ### 9. 📱 OmniCompanion 2.0 — Mobile/Tablet Touch PWA & Remote HUD Controller (`CompanionServerService`)
-* Embedded Kestrel Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger RAM purges, and **remotely control the in-game HUD overlay** (style switcher, opacity, scale, corner snap, and metric toggles) from a phone or tablet.
+* Embedded HttpListener Web & WebSocket server allowing players to monitor live telemetry, inspect thermals, trigger safe RAM purges, and **remotely control the in-game HUD overlay** (style switcher, opacity, scale, corner snap, and metric toggles) from a phone or tablet.
 * Zero-friction setup via dynamic QR Code pairing on the local network.
 
 ### 10. ⚡ MSI Mode & IRQ Interrupt Doctor (`MsiInterruptService`)
-* Audits all PCIe devices under `HKLM\SYSTEM\CurrentControlSet\Enum\PCI`.
-* Switches GPUs and physical network cards from shared line-based interrupts (Legacy IRQ) to dedicated memory-signaled interrupts (MSI/MSI-X) with `DevicePriority=High (2)` to eliminate DPC/ISR latency spikes and micro-stuttering.
+* Audit-first inspection of all PCIe devices under `HKLM\SYSTEM\CurrentControlSet\Enum\PCI`.
+* Enables Message Signaled Interrupts (MSI Mode) on supported GPUs and NICs with `DevicePriority=High` without injecting artificial `MessageNumberLimit` caps that can impair multi-queue RSS or GPU throughput.
 
 ### 11. 💤 Intelligent Launcher & WebView Hibernator (`LauncherHibernatorService`)
-* Automatically detects when competitive games launch and applies `EcoQoS` throttling (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`), idle priority, and working set trimming to background Chromium/CEF launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, browsers).
-* Frees 1.2 GB – 2.8 GB of physical RAM without disconnecting Discord voice or terminating Steam downloads, and seamlessly restores full performance when games exit.
+* Automatically detects when competitive games launch and applies atomic `EcoQoS` throttling (`PROCESS_POWER_THROTTLING_EXECUTION_SPEED`) and idle priority to background Chromium/CEF launchers (`Discord.exe`, `SteamWebHelper.exe`, `EpicGamesLauncher.exe`, `Battle.net.exe`, browsers).
+* Frees physical RAM and CPU cycles without disconnecting Discord voice or terminating Steam downloads, and seamlessly restores full performance when games exit.
 
 ### 12. 🔬 Empirical A/B Experiment Engine & Transactional Rollbacks (`OmniExperimentEngine`, `TransactionService`)
-* **Scientific Optimization (autoresearch for Windows)**: Automated A/B micro-benchmarking of system tweaks against kernel thread scheduler wake jitter, computing Mean, P99 (1% Low equivalent), and P99.9 (0.1% Low equivalent) statistical deltas.
-* **Deterministic Rollbacks**: Captures the exact pre-existing state of registry keys and service states into a persistent journal (`journal.json`). Auto-reverts neutral or harmful tweaks and restores exact prior configurations instead of guessing default values.
-* **Unified Telemetry Hub (`TelemetryHub`)**: Decoupled, non-blocking telemetry aggregator feeding live CPU, GPU load/thermals/VRAM, and kernel jitter to Stutter Investigator, Companion, and Prometheus.
+* **Empirical Optimization**: Automated A/B micro-benchmarking of system tweaks against kernel thread scheduler wake jitter, computing Mean, Wake Jitter P95, Wake Jitter P99, and Wake Jitter P99.9 with an empirical EvidenceScore.
+* **Context & Reboot Awareness**: Accurately flags tweaks that require system reboots or are non-performance (UI/privacy) adjustments, preventing misleading immediate benchmark results.
+* **Deterministic Rollbacks & Crash-Proof WAL**: Captures the exact pre-existing state of registry keys and service states into a persistent journal (`journal.json`) backed by a Write-Ahead Log (`wal.json`) that recovers uncommitted mutations after unexpected crashes. Auto-reverts neutral or harmful tweaks and restores exact prior configurations.
+* **Unified Telemetry Hub (`TelemetryHub`)**: Decoupled, non-blocking telemetry aggregator feeding continuous 1 Hz kernel jitter, CPU, GPU load/thermals/VRAM to Stutter Investigator, Companion, and Prometheus.
 
 ### 13. 🤖 35-Tool MCP Server for AI Agents (`OmniWin.Mcp`)
 * Native JSON-RPC stdio Model Context Protocol (MCP) server compatible with Claude Desktop, Antigravity, Cursor, and Ollama.
-* Empowers AI agents to diagnose system health, purge memory, manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, audit kernel jitter, optimize MSI interrupts, manage launcher hibernation, and run A/B tweak micro-benchmarks autonomously.
+* Empowers AI agents to diagnose system health, safely purge memory (defaulting to non-aggressive standby purge), manage startup items, heal network issues, unlock files, analyze DirectStorage BypassIO, inspect PCIe links, audit kernel jitter, optimize MSI interrupts, manage launcher hibernation, and run A/B tweak micro-benchmarks autonomously.
 
 ---
 
@@ -114,7 +115,7 @@ OmniWin/
 │   └── Assets/                # Application icons and vector graphics
 ├── OmniWin.Cli/               # Standalone headless command-line interface ('omni')
 ├── OmniWin.Mcp/               # Model Context Protocol (MCP) Server for AI Agents (35 tools)
-├── OmniWin.Tests/             # 140 automated unit, integration and STA visual tests
+├── OmniWin.Tests/             # 146 automated unit, integration and STA visual tests
 ├── distribution/              # Packaging configurations, manifests and WinGet definitions
 ├── docs/                      # Technical documentation, E2E VM lab guides, ROADMAP.md, and assets
 └── scripts/                   # PowerShell distribution build and packaging automation
@@ -133,7 +134,7 @@ OmniWin/
 dotnet build OmniWin.sln -c Release
 ```
 
-### 2. Run Test Suite (129 Tests)
+### 2. Run Test Suite (146 Tests)
 ```bash
 dotnet test OmniWin.Tests/OmniWin.Tests.csproj -c Release
 ```

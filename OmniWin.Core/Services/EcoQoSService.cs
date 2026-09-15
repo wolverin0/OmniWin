@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 
 namespace OmniWin.Core.Services;
 
+public record ThrottledProcessIdentity(int Pid, DateTime StartTime, ProcessPriorityClass OriginalPriority);
+
 public class EcoQoSService
 {
     private static readonly Lazy<EcoQoSService> _instance = new(() => new EcoQoSService());
@@ -41,8 +43,7 @@ public class EcoQoSService
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr hObject);
 
-    private readonly HashSet<int> _throttledPids = new();
-    private readonly Dictionary<int, ProcessPriorityClass> _originalPriorities = new();
+    private readonly Dictionary<int, ThrottledProcessIdentity> _throttledProcesses = new();
     private readonly object _lock = new();
 
     // Known background workers safe to throttle to EcoQoS during competitive gaming
@@ -61,55 +62,126 @@ public class EcoQoSService
 
     public bool SetProcessEcoQoS(int pid, bool enable)
     {
-        // 1. Modulate PriorityClass
+        Process proc;
+        DateTime startTime;
         try
         {
-            using var proc = Process.GetProcessById(pid);
-            lock (_lock)
-            {
-                if (enable)
-                {
-                    if (!_originalPriorities.ContainsKey(pid))
-                    {
-                        _originalPriorities[pid] = proc.PriorityClass;
-                    }
-                    proc.PriorityClass = ProcessPriorityClass.Idle;
-                }
-                else
-                {
-                    if (_originalPriorities.TryGetValue(pid, out var origPriority))
-                    {
-                        proc.PriorityClass = origPriority;
-                        _originalPriorities.Remove(pid);
-                    }
-                }
-            }
-        }
-        catch { }
-
-        // 2. Set Win32 ProcessPowerThrottling state
-        IntPtr hProc = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
-        if (hProc == IntPtr.Zero) return false;
-
-        try
-        {
-            var state = new PROCESS_POWER_THROTTLING_STATE
-            {
-                Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
-                ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
-                StateMask = enable ? PROCESS_POWER_THROTTLING_EXECUTION_SPEED : 0
-            };
-
-            uint size = (uint)Marshal.SizeOf(typeof(PROCESS_POWER_THROTTLING_STATE));
-            return SetProcessInformation(hProc, ProcessPowerThrottling, ref state, size);
+            proc = Process.GetProcessById(pid);
+            startTime = proc.StartTime;
         }
         catch
         {
             return false;
         }
-        finally
+
+        using (proc)
         {
-            CloseHandle(hProc);
+            lock (_lock)
+            {
+                if (enable)
+                {
+                    // Check if already throttled
+                    if (_throttledProcesses.TryGetValue(pid, out var existing) && existing.StartTime == startTime)
+                    {
+                        return true;
+                    }
+
+                    ProcessPriorityClass originalPriority;
+                    try
+                    {
+                        originalPriority = proc.PriorityClass;
+                    }
+                    catch
+                    {
+                        originalPriority = ProcessPriorityClass.Normal;
+                    }
+
+                    // 1. Open process handle for SetProcessInformation
+                    IntPtr hProc = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+                    if (hProc == IntPtr.Zero) return false;
+
+                    try
+                    {
+                        var state = new PROCESS_POWER_THROTTLING_STATE
+                        {
+                            Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                            ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+                            StateMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+                        };
+
+                        uint size = (uint)Marshal.SizeOf(typeof(PROCESS_POWER_THROTTLING_STATE));
+                        bool ecoOk = SetProcessInformation(hProc, ProcessPowerThrottling, ref state, size);
+                        if (!ecoOk)
+                        {
+                            return false;
+                        }
+
+                        // 2. Set PriorityClass to Idle with atomic rollback on failure
+                        try
+                        {
+                            proc.PriorityClass = ProcessPriorityClass.Idle;
+                        }
+                        catch
+                        {
+                            // Roll back EcoQoS if priority modification failed
+                            state.StateMask = 0;
+                            SetProcessInformation(hProc, ProcessPowerThrottling, ref state, size);
+                            return false;
+                        }
+
+                        _throttledProcesses[pid] = new ThrottledProcessIdentity(pid, startTime, originalPriority);
+                        return true;
+                    }
+                    finally
+                    {
+                        CloseHandle(hProc);
+                    }
+                }
+                else
+                {
+                    // Disabling / Reverting
+                    if (!_throttledProcesses.TryGetValue(pid, out var identity))
+                    {
+                        return false;
+                    }
+
+                    // Verify PID hasn't been recycled by Windows
+                    if (startTime != identity.StartTime)
+                    {
+                        _throttledProcesses.Remove(pid);
+                        return false;
+                    }
+
+                    IntPtr hProc = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+                    if (hProc == IntPtr.Zero) return false;
+
+                    try
+                    {
+                        var state = new PROCESS_POWER_THROTTLING_STATE
+                        {
+                            Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                            ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+                            StateMask = 0
+                        };
+
+                        uint size = (uint)Marshal.SizeOf(typeof(PROCESS_POWER_THROTTLING_STATE));
+                        bool ecoOk = SetProcessInformation(hProc, ProcessPowerThrottling, ref state, size);
+
+                        try
+                        {
+                            proc.PriorityClass = identity.OriginalPriority;
+                        }
+                        catch { }
+
+                        _throttledProcesses.Remove(pid);
+                        return ecoOk;
+                    }
+                    finally
+                    {
+                        CloseHandle(hProc);
+                    }
+                }
+            }
         }
     }
 
@@ -127,7 +199,7 @@ public class EcoQoSService
             {
                 try
                 {
-                    if (excludeSet.Contains(proc.Id) || _throttledPids.Contains(proc.Id))
+                    if (excludeSet.Contains(proc.Id) || _throttledProcesses.ContainsKey(proc.Id))
                         continue;
 
                     string name = proc.ProcessName;
@@ -138,7 +210,6 @@ public class EcoQoSService
                     {
                         if (SetProcessEcoQoS(proc.Id, true))
                         {
-                            _throttledPids.Add(proc.Id);
                             throttledCount++;
                         }
                     }
@@ -159,18 +230,18 @@ public class EcoQoSService
         int revertedCount = 0;
         lock (_lock)
         {
-            foreach (int pid in _throttledPids.ToList())
+            foreach (var identity in _throttledProcesses.Values.ToList())
             {
                 try
                 {
-                    if (SetProcessEcoQoS(pid, false))
+                    if (SetProcessEcoQoS(identity.Pid, false))
                     {
                         revertedCount++;
                     }
                 }
                 catch { }
             }
-            _throttledPids.Clear();
+            _throttledProcesses.Clear();
         }
         return revertedCount;
     }
@@ -179,7 +250,7 @@ public class EcoQoSService
     {
         lock (_lock)
         {
-            return _throttledPids.ToList();
+            return _throttledProcesses.Keys.ToList();
         }
     }
 }
