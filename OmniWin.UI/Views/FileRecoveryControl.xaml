@@ -1,0 +1,211 @@
+<UserControl x:Class="OmniWin.UI.Views.FileRecoveryControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="750" d:DesignWidth="1050"
+             Foreground="{DynamicResource TextPrimary}"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="0,12,0,0">
+        <TabControl x:Name="TcRecovery">
+
+            <!-- ========================================================= -->
+            <!-- TAB 1: PAPELERA FORENSE ($Recycle.Bin)                    -->
+            <!-- ========================================================= -->
+            <TabItem Header="🗑️ Papelera Forense ($Recycle.Bin)">
+                <Grid Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header Card -->
+                    <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Recuperación Forense de Papelera ($Recycle.Bin)" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                    <Border Background="#064E3B" CornerRadius="4" Margin="10,0,0,0" Padding="8,2" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TxtRecycleCountBadge" Text="0 ARCHIVOS" FontSize="10.5" FontWeight="Bold" Foreground="#34D399" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Inspecciona directamente las cabeceras $I de metadatos NTFS y rescata el contenido original de los archivos $R eliminados con sus nombres y fechas originales."
+                                           FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBox x:Name="TxtSearchRecycle" Width="180" Padding="8,5" Margin="0,0,8,0" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" TextChanged="TxtSearchRecycle_TextChanged" ToolTip="Buscar archivo por nombre o extensión..." />
+                                <Button x:Name="BtnScanRecycle" Content="🔄 Escanear Papelera" Click="BtnScanRecycle_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
+                                <Button x:Name="BtnRestoreSelected" Content="📥 Restaurar Archivo" Click="BtnRestoreSelected_Click" Background="#10B981" Foreground="White" Padding="14,6" FontSize="12" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- DataGrid -->
+                    <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <DataGrid x:Name="DgRecycleItems" AutoGenerateColumns="False" IsReadOnly="True"
+                                  Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                  Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre Original" Binding="{Binding FileName}" Width="280" />
+                                <DataGridTextColumn Header="Ruta de Origen" Binding="{Binding OriginalPath}" Width="320" />
+                                <DataGridTextColumn Header="Ext" Binding="{Binding Extension}" Width="60" />
+                                <DataGridTextColumn Header="Tamaño (KB)" Binding="{Binding FileSizeBytes, StringFormat={}{0:N0}}" Width="110" />
+                                <DataGridTextColumn Header="Fecha Eliminación" Binding="{Binding DeletedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="150" />
+                                <DataGridTemplateColumn Header="Disponible" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Left"
+                                                    Background="{Binding IsContentAvailable, Converter={x:Null}}">
+                                                <TextBlock Text="{Binding IsContentAvailable, StringFormat={}{0}}" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- Status Footer -->
+                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                        <TextBlock x:Name="TxtRecycleStatus" Text="Listo. Haz clic en 'Escanear Papelera' para iniciar el análisis forense." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ========================================================= -->
+            <!-- TAB 2: COPIAS DE VOLUMEN (VSS / PREVIOUS VERSIONS)       -->
+            <!-- ========================================================= -->
+            <TabItem Header="📸 Copias de Volumen (VSS)">
+                <Grid Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header Card -->
+                    <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Instantáneas Volume Shadow Copy (VSS)" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Explora puntos de restauración e instantáneas de volumen para rescatar versiones anteriores de archivos sobrescritos o corruptos."
+                                           FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnScanShadows" Content="🔄 Consultar Copias VSS" Click="BtnScanShadows_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Shadows DataGrid -->
+                    <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                        <DataGrid x:Name="DgShadowCopies" AutoGenerateColumns="False" IsReadOnly="True"
+                                  Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                  Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID de Instantánea" Binding="{Binding ShadowCopyId}" Width="280" />
+                                <DataGridTextColumn Header="Volumen Original" Binding="{Binding OriginalVolume}" Width="120" />
+                                <DataGridTextColumn Header="Fecha de Creación" Binding="{Binding CreatedAtUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" Width="180" />
+                                <DataGridTextColumn Header="Ruta Interna VSS" Binding="{Binding ShadowVolumeName}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- Status Footer -->
+                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                        <TextBlock x:Name="TxtVssStatus" Text="Consulta las instantáneas activas del sistema operativo." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ========================================================= -->
+            <!-- TAB 3: DEEP BYTE CARVING (FIRMAS MÁGICAS)                 -->
+            <!-- ========================================================= -->
+            <TabItem Header="🔬 Deep Byte Carving">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                    <StackPanel>
+                        <!-- Carving Config Card -->
+                        <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Recuperación Profunda por Firmas Mágicas (Deep Carving)" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Escanea streams binarios, volcados de memoria o archivos de disco sector por sector buscando firmas mágicas de cabecera y pie de formato (JPG, PNG, PDF, ZIP)."
+                                           FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,14" />
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Archivo o Imagen:" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBox Grid.Column="1" x:Name="TxtCarveSource" Padding="8,6" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" FontSize="12" />
+                                    <Button Grid.Column="2" x:Name="BtnBrowseSource" Content="📁 Examinar..." Click="BtnBrowseSource_Click" Style="{DynamicResource SecondaryButton}" Margin="8,0,0,0" Padding="10,6" FontSize="11" />
+                                </Grid>
+
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Carpeta de Salida:" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                    <TextBox Grid.Column="1" x:Name="TxtCarveDest" Padding="8,6" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" FontSize="12" />
+                                    <Button Grid.Column="2" x:Name="BtnBrowseDest" Content="📁 Seleccionar..." Click="BtnBrowseDest_Click" Style="{DynamicResource SecondaryButton}" Margin="8,0,0,0" Padding="10,6" FontSize="11" />
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <TextBlock Text="Formatos:" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,16,0" />
+                                    <CheckBox x:Name="ChkCarveJpg" Content="Imágenes JPG" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                    <CheckBox x:Name="ChkCarvePng" Content="Imágenes PNG" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                    <CheckBox x:Name="ChkCarvePdf" Content="Documentos PDF" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                    <CheckBox x:Name="ChkCarveZip" Content="Archivos ZIP / Office" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <Button x:Name="BtnStartCarving" Content="🚀 Iniciar Deep Byte Carving" Click="BtnStartCarving_Click" Background="#2563EB" Foreground="White" Padding="16,8" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Carved Results DataGrid -->
+                        <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="ARCHIVOS TALLADOS RECUPERADOS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+
+                                <DataGrid x:Name="DgCarvedResults" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="280"
+                                          Background="Transparent" BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                          Foreground="{DynamicResource TextPrimary}" RowBackground="Transparent">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Tipo" Binding="{Binding FileType}" Width="80" />
+                                        <DataGridTextColumn Header="Offset del Stream" Binding="{Binding StreamOffset, StringFormat={}0x{0:X8}}" Width="140" />
+                                        <DataGridTextColumn Header="Tamaño (Bytes)" Binding="{Binding FileSizeBytes, StringFormat={}{0:N0}}" Width="130" />
+                                        <DataGridTextColumn Header="Archivo Guardado" Binding="{Binding FilePath}" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                                    <TextBlock x:Name="TxtCarvingStatus" Text="Selecciona un archivo o imagen para comenzar el tallado binario." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</UserControl>

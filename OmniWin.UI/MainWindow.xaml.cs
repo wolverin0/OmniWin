@@ -316,6 +316,7 @@ public partial class MainWindow : Window
         _navMap[19] = NavBtn19;
         _navMap[20] = NavBtn20;
         _navMap[21] = NavBtn21;
+        _navMap[22] = NavBtn22;
 
         UpdateNavHighlight(MainTabs.SelectedIndex);
     }

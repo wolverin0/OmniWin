@@ -17,6 +17,8 @@ namespace OmniWin.UI.Views;
 public partial class ProcessExplorerControl : UserControl
 {
     private readonly ProcessDeepDiagService _diagService = new();
+    private readonly ProcessIntelligenceService _intelService = new();
+    private string _currentVirusTotalUrl = "";
 
     private readonly ObservableCollection<ProcessTreeNode> _displayedProcesses = new();
     private List<ProcessTreeNode> _allFlattenedTree = new();
@@ -226,11 +228,53 @@ public partial class ProcessExplorerControl : UserControl
                 _threads.Add(th);
             }
 
+            // 5. Inteligencia y Seguridad de Procesos
+            string procName = _currentSelectedProc?.Name ?? m.Name;
+            string procPath = _currentSelectedProc?.FilePath ?? string.Empty;
+            var intel = _intelService.EvaluateProcessIntelligence(pid, procName, procPath, m.WorkingSetMB);
+            TxtIntelCategory.Text = intel.Category.ToString();
+            TxtIntelVendor.Text = intel.Company;
+            TxtIntelDescription.Text = intel.Description;
+            TxtIntelRole.Text = intel.RoleAndInfluence;
+            TxtIntelImpact.Text = intel.ImpactDetails;
+            TxtIntelSecurityVerdict.Text = intel.SecurityVerdict;
+            TxtIntelSigner.Text = $"Firmante: {intel.SignerName ?? "No disponible"} | Hash SHA-256: {(string.IsNullOrEmpty(intel.Sha256Hash) ? "N/D" : intel.Sha256Hash)}";
+            _currentVirusTotalUrl = intel.OnlineLookupUrl;
+
+            if (intel.SafetyImpact == ProcessSafetyImpact.Never)
+            {
+                BrdSafetyBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(127, 29, 29));
+                TxtIntelSafety.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(248, 113, 113));
+                TxtIntelSafety.Text = "¡NUNCA CERRAR (BSOD)!";
+            }
+            else if (intel.SafetyImpact == ProcessSafetyImpact.Careful)
+            {
+                BrdSafetyBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(120, 53, 15));
+                TxtIntelSafety.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(251, 191, 36));
+                TxtIntelSafety.Text = "Cerrar con precaución";
+            }
+            else
+            {
+                BrdSafetyBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(6, 78, 59));
+                TxtIntelSafety.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(52, 211, 153));
+                TxtIntelSafety.Text = "Seguro de cerrar";
+            }
+
+            BrdThreatBadge.Visibility = intel.ThreatLevel == ProcessThreatLevel.CriticalMasquerading ? Visibility.Visible : Visibility.Collapsed;
+
             TxtDiagFooterStatus.Text = $"Diagnóstico completo para {result.metrics.Name} (PID {pid}): {_allModules.Count} DLLs, {result.tcp.Count} sockets, {m.ThreadCount} hilos.";
         }
         catch (Exception ex)
         {
             TxtDiagFooterStatus.Text = $"Error al inspeccionar PID {pid}: {ex.Message}";
+        }
+    }
+
+    private void BtnVirusTotalLookup_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_currentVirusTotalUrl))
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_currentVirusTotalUrl) { UseShellExecute = true }); } catch { }
         }
     }
 

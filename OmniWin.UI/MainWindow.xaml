@@ -72,6 +72,7 @@
                             <Button x:Name="NavBtn15" Tag="15" Content="🔋  Energía &amp; CPU" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn4" Tag="4" Content="🧹  Limpieza de Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn16" Tag="16" Content="💾  Espacio en Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn22" Tag="22" Content="♻️  Recuperación Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn5" Tag="5" Content="🛠️  Tweaks &amp; Debloat" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn7" Tag="7" Content="⚙️  Mantenimiento" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn8" Tag="8" Content="🩹  Consola Reparación" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
@@ -690,6 +691,11 @@
             <!-- TAB 21: DNS SEGURO & BLOQUEADOR HOSTS -->
             <TabItem Header="🌐 DNS Seguro &amp; HOSTS">
                 <views:DnsSecurityControl />
+            </TabItem>
+
+            <!-- TAB 22: RECUPERACIÓN FORENSE & UNDELETE -->
+            <TabItem Header="♻️ Recuperación">
+                <views:FileRecoveryControl />
             </TabItem>
         </TabControl>
 
