@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Linq;
+using OmniWin.Core.Services;
 using OmniWin.UI;
 using OmniWin.UI.Services;
 using OmniWin.UI.Views;
@@ -130,11 +131,11 @@ public class TabNavigationVisualTests
             }
         }
 
-        // All 29 tabs must be present without duplicates
-        Assert.Equal(29, allTabIndices.Count);
-        Assert.Equal(29, allTabIndices.Distinct().Count());
+        // All 30 tabs (0 to 29) must be present without duplicates
+        Assert.Equal(30, allTabIndices.Count);
+        Assert.Equal(30, allTabIndices.Distinct().Count());
 
-        for (int i = 0; i < 29; i++)
+        for (int i = 0; i < 30; i++)
         {
             var mapping = HubNavigationRegistry.FindByTabIndex(i);
             Assert.NotNull(mapping);
@@ -242,12 +243,12 @@ public class TabNavigationVisualTests
             Directory.CreateDirectory(reportsDir);
             RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-6Hub-Storage.png"));
 
-            // Switch to Hub 1 (Rendimiento & Gaming) -> 4 sub items
+            // Switch to Hub 1 (Rendimiento & Gaming) -> 5 sub items (including Rig Hologram & RGB)
             mainWin.NavHub1.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             mainWin.UpdateLayout();
 
             Assert.Equal(3, mainWin.MainTabs.SelectedIndex); // Tab 3 is RAM
-            Assert.Equal(4, mainWin.HubSubNavPanel.Children.Count);
+            Assert.Equal(5, mainWin.HubSubNavPanel.Children.Count);
             RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-6Hub-Performance.png"));
 
             mainWin.Close();
@@ -339,6 +340,61 @@ public class TabNavigationVisualTests
             var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
             Directory.CreateDirectory(reportsDir);
             RenderAndSave(window, Path.Combine(reportsDir, "PrivacyShield-Resolved.png"));
+
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void RigVisualizerControl_Renders_HologramAndAiRender()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var rigControl = new RigVisualizerControl();
+            var window = new Window
+            {
+                Width = 1050,
+                Height = 750,
+                Content = rigControl,
+                Background = new SolidColorBrush(Color.FromRgb(0x07, 0x09, 0x0E)),
+                WindowStyle = WindowStyle.None
+            };
+
+            window.Show();
+            window.UpdateLayout();
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+
+            // 1. Render Interactive Holographic Blueprint
+            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-Hologram.png"));
+            Assert.Equal(Visibility.Visible, rigControl.PnlHologramView.Visibility);
+            Assert.Equal(Visibility.Collapsed, rigControl.PnlAiRenderView.Visibility);
+
+            // 2. Switch to AI Photorealistic Battlestation Render
+            rigControl.BtnModeAiRender.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.UpdateLayout();
+            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-AiRender.png"));
+            Assert.Equal(Visibility.Visible, rigControl.PnlAiRenderView.Visibility);
+            Assert.Equal(Visibility.Collapsed, rigControl.PnlHologramView.Visibility);
+
+            // 3. Test OpenRGB and ProcessEfficiency
+            Assert.NotNull(OpenRgbClientService.Instance.Devices);
+            var trim = ProcessEfficiencyService.TrimWorkingSet();
+            Assert.True(trim.Success);
 
             window.Close();
         });

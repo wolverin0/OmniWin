@@ -97,6 +97,9 @@ public class GameProfilerService : IDisposable
     public void Stop() => StopMonitoring();
 
     public bool IsRunning => _cts != null;
+    private int _pollingIntervalMs = 2000;
+
+    public void SetThrottleInterval(int intervalMs) => _pollingIntervalMs = Math.Max(1000, intervalMs);
 
     private async Task PollingLoopAsync(CancellationToken ct)
     {
@@ -105,7 +108,7 @@ public class GameProfilerService : IDisposable
             try
             {
                 CheckRunningProcesses();
-                await Task.Delay(2000, ct);
+                await Task.Delay(_pollingIntervalMs, ct);
             }
             catch (TaskCanceledException) { break; }
             catch { }

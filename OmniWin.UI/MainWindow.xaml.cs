@@ -262,7 +262,15 @@ public partial class MainWindow : Window
         {
             _trayService = new SystemTrayService(this);
             _trayService.Initialize();
-            _trayService.OnOpenDashboardRequested += () => Dispatcher.Invoke(() => { MainTabs.SelectedIndex = 0; });
+            _trayService.OnOpenDashboardRequested += () => Dispatcher.Invoke(() =>
+            {
+                ExitEcoMode();
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+                Focus();
+                MainTabs.SelectedIndex = 0;
+            });
             _trayService.OnQuickPurgeRequested += () => Dispatcher.Invoke(ExecutePurge);
             _trayService.OnToggleOverlayRequested += () => Dispatcher.Invoke(ToggleOverlay);
             _trayService.OnToggleWidgetRequested += () => Dispatcher.Invoke(ToggleTrafficWidget);
@@ -270,10 +278,18 @@ public partial class MainWindow : Window
 
             StateChanged += (s, ev) =>
             {
-                if (WindowState == WindowState.Minimized && AppSettingsService.Instance.Settings.MinimizeToTray)
+                if (WindowState == WindowState.Minimized)
                 {
-                    Hide();
-                    _trayService?.ShowNotification("OmniWin", "OmniWin continúa ejecutándose en la bandeja del sistema.");
+                    EnterEcoMode();
+                    if (AppSettingsService.Instance.Settings.MinimizeToTray)
+                    {
+                        Hide();
+                        _trayService?.ShowNotification("OmniWin", "OmniWin continúa en segundo plano en Modo Eco (~50 MB RAM).");
+                    }
+                }
+                else if (WindowState == WindowState.Normal || WindowState == WindowState.Maximized)
+                {
+                    ExitEcoMode();
                 }
             };
             App.Log("SystemTrayService initialized in MainWindow.");
@@ -294,6 +310,40 @@ public partial class MainWindow : Window
         }
 
         App.Log("MainWindow_Loaded: completed.");
+    }
+
+    private void EnterEcoMode()
+    {
+        App.Log("Entering Eco Mode (Window minimized/hidden)...");
+        try
+        {
+            _timer?.Stop();
+            GameProfilerService.Instance.SetThrottleInterval(4000);
+            var trimResult = ProcessEfficiencyService.TrimWorkingSet();
+            if (trimResult.Success)
+            {
+                App.Log($"[ECO_MODE] Working Set trimmed from {trimResult.BeforeMB:N1} MB to {trimResult.AfterMB:N1} MB ({trimResult.ReductionPercent:N1}% freed).");
+            }
+        }
+        catch (Exception ex)
+        {
+            App.Log($"[ECO_MODE_ERROR] {ex.Message}");
+        }
+    }
+
+    private void ExitEcoMode()
+    {
+        App.Log("Exiting Eco Mode (Window restored)...");
+        try
+        {
+            GameProfilerService.Instance.SetThrottleInterval(2000);
+            _timer?.Start();
+            RefreshDashboard();
+        }
+        catch (Exception ex)
+        {
+            App.Log($"[EXIT_ECO_MODE_ERROR] {ex.Message}");
+        }
     }
 
     private Button[] _hubButtons = Array.Empty<Button>();
@@ -415,6 +465,7 @@ public partial class MainWindow : Window
         26 => ("🚀 Migrador de Juegos & Apps (Junctions)", "Mueve carpetas pesadas a otra unidad de disco y crea un enlace simbólico Junction transparente sin romper rutas ni configuraciones."),
         27 => ("🌐 Red QoS, Puertos & Mantenimiento Idle", "Limita el ancho de banda por proceso, diagnostica y libera puertos en conflicto y programa mantenimiento inteligente en inactividad."),
         28 => ("📸 Fondos 4K de Windows Spotlight & Bing", "Descubre y extrae fotografías ultra-HD ocultas en la caché de pantalla de bloqueo y aplícalas como fondo de pantalla con un clic."),
+        29 => ("🌈 Visualizador Holográfico de PC & OpenRGB", "Esquema interactivo de componentes en tiempo real, render fotorrealista IA y sincronización universal RGB."),
         _ => ("OmniWin", "Panel de Control y Optimización de Windows")
     };
 

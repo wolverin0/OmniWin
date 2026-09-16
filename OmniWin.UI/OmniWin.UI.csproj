@@ -18,6 +18,9 @@
   <ItemGroup>
     <Resource Include="Assets\omniwin.ico" />
     <Resource Include="Assets\omniwin.png" />
+    <Resource Include="Assets\rig_render.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

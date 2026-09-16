@@ -19,13 +19,14 @@ public static class HubNavigationRegistry
             new HubSubItem(18, "OmniCompanion", "📱")
         }),
 
-        // Hub 1: Rendimiento & Gaming (4 herramientas de optimización activa)
+        // Hub 1: Rendimiento & Gaming (5 herramientas de optimización activa y estética)
         new HubDefinition(1, "Rendimiento & Gaming", "⚡", new[]
         {
             new HubSubItem(3, "Memoria RAM", "⚡"),
             new HubSubItem(19, "Game Profiler", "🎮"),
             new HubSubItem(15, "Energía & CPU", "🔋"),
-            new HubSubItem(13, "Mezclador Audio", "🎧")
+            new HubSubItem(13, "Mezclador Audio", "🎧"),
+            new HubSubItem(29, "Rig Hologram & RGB", "🌈")
         }),
 
         // Hub 2: Almacenamiento & Archivos (7 herramientas de disco y rescate)

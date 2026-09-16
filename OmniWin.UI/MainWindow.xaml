@@ -763,6 +763,11 @@
             <TabItem Header="📸 Fondos 4K">
                 <views:SpotlightWallpaperControl />
             </TabItem>
+
+            <!-- TAB 29: RIG HOLOGRÁFICO & OPENRGB -->
+            <TabItem Header="🌈 Rig Hologram &amp; RGB">
+                <views:RigVisualizerControl />
+            </TabItem>
         </TabControl>
 
         <!-- Status Bar -->
