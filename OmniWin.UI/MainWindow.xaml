@@ -72,6 +72,7 @@
                             <Button x:Name="NavBtn15" Tag="15" Content="🔋  Energía &amp; CPU" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn4" Tag="4" Content="🧹  Limpieza de Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn16" Tag="16" Content="💾  Espacio en Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn23" Tag="23" Content="🗂️  Deduplicador Zero-Copy" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn22" Tag="22" Content="♻️  Recuperación Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn5" Tag="5" Content="🛠️  Tweaks &amp; Debloat" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn7" Tag="7" Content="⚙️  Mantenimiento" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
@@ -83,11 +84,13 @@
                             <Button x:Name="NavBtn20" Tag="20" Content="🛡️  Cortafuegos Visual" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn21" Tag="21" Content="🔒  DNS Seguro &amp; HOSTS" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn10" Tag="10" Content="🔒  Desbloqueo Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn24" Tag="24" Content="🔌  Expulsor USB &amp; Flash" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn11" Tag="11" Content="🚀  Inicio de Windows" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn13" Tag="13" Content="🎧  Mezclador de Audio" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
 
                             <!-- CATEGORY 4: SEGURIDAD & AGENTE IA -->
                             <TextBlock Text="SEGURIDAD &amp; AGENTE IA" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="12,14,0,4" />
+                            <Button x:Name="NavBtn25" Tag="25" Content="🛡️  Privacidad &amp; Anti-Espía" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn14" Tag="14" Content="🛡️  Reglas Defender ASR" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn17" Tag="17" Content="✈️  Caja Negra &amp; BSOD" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn6" Tag="6" Content="📦  Software &amp; Drivers" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
@@ -152,7 +155,7 @@
                             <Border Background="#062E21" BorderBrush="#0A4835" BorderThickness="1" CornerRadius="6" Padding="10,5" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse Width="6" Height="6" Fill="{StaticResource Emerald}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="MCP Activo (28 tools)" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Emerald}" VerticalAlignment="Center" />
+                                    <TextBlock Text="MCP Activo (44 tools)" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Emerald}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -602,7 +605,7 @@
                 <Border Background="{StaticResource CardDark}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="24" Margin="0,12,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel MaxWidth="800" HorizontalAlignment="Left">
-                            <TextBlock Text="Servidor MCP de Control para Agentes IA (28 Herramientas)" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,6" />
+                            <TextBlock Text="Servidor MCP de Control para Agentes IA (44 Herramientas)" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,6" />
                             <TextBlock Text="Permite que LLMs como Claude, Antigravity, Cursor y ChatGPT ejecuten diagnósticos, purgas de memoria, limpieza WinSxS, desbloqueo de archivos y optimizaciones de forma completamente autónoma."
                                        TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,16" />
 
@@ -628,7 +631,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="CATÁLOGO DE 28 HERRAMIENTAS ACTIVAS:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8" />
+                            <TextBlock Text="CATÁLOGO DE 44 HERRAMIENTAS ACTIVAS:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8" />
                             <TextBlock Text="• win_get_system_health — Telemetría en vivo (CPU, GPU, RAM, Almacenamiento, Red)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_purge_ram — Purga instantánea de Standby List y Working Sets con API nativa NT" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_analyze_disk_bloat &amp; win_clean_disk — Análisis y limpieza de temporales" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
@@ -643,6 +646,12 @@
                             <TextBlock Text="• win_list_processes &amp; win_kill_process — Gestión avanzada de procesos" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_list_startup_items &amp; win_toggle_startup_item — Control de autoruns" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_list_tweaks &amp; win_apply_tweak — Optimización con VSS Restore Points" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_duplicate_manager — Deduplicación Zero-Copy en 3 fases mediante Hardlinks NTFS" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_usb_doctor — Expulsión segura forzada de USB, diagnóstico de locks y test de memoria falsa" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_privacy_shield — Auditoría transaccional de telemetría, Recall AI y Bing Start con WAL" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_battery_health — Salud de batería, degradación, ciclos y consumo en Watts" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_ransomware_canary — Señuelos canarios y congelamiento de procesos con NtSuspendProcess" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_context_menu — Toggle de menú clásico Windows 11 y reinicio de Explorer" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -696,6 +705,21 @@
             <!-- TAB 22: RECUPERACIÓN FORENSE & UNDELETE -->
             <TabItem Header="♻️ Recuperación">
                 <views:FileRecoveryControl />
+            </TabItem>
+
+            <!-- TAB 23: DEDUPLICADOR ZERO-COPY (HARDLINKS) -->
+            <TabItem Header="🗂️ Deduplicador">
+                <views:DeduplicationControl />
+            </TabItem>
+
+            <!-- TAB 24: EXPULSOR USB & DOCTOR FLASH -->
+            <TabItem Header="🔌 Expulsor USB">
+                <views:UsbDoctorControl />
+            </TabItem>
+
+            <!-- TAB 25: PRIVACIDAD & ANTI-ESPÍA -->
+            <TabItem Header="🛡️ Privacidad">
+                <views:PrivacyShieldControl />
             </TabItem>
         </TabControl>
 

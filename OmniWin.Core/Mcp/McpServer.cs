@@ -672,6 +672,7 @@ public class McpServer
             }
         });
 
+        McpPhase28Tools.RegisterTools(tools);
         return tools;
     }
 
@@ -682,6 +683,11 @@ public class McpServer
 
         try
         {
+            if (await McpPhase28Tools.TryExecuteToolAsync(toolName, args, content))
+            {
+                return new JsonObject { ["content"] = content, ["isError"] = false };
+            }
+
             switch (toolName)
             {
                 case "win_get_system_health":

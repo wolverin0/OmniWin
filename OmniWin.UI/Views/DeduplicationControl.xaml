@@ -1,0 +1,124 @@
+<UserControl x:Class="OmniWin.UI.Views.DeduplicationControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="750" d:DesignWidth="1000"
+             Foreground="{DynamicResource TextPrimary}"
+             FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <!-- Top Hero Header -->
+            <RowDefinition Height="Auto" />
+            <!-- Main Content Area (Duplicate Groups) -->
+            <RowDefinition Height="*" />
+            <!-- Status Footer -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Header & Scan Options -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+            <StackPanel>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Background="#1E1B4B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                <TextBlock x:Name="TxtWastedSpaceBadge" Text="0 MB RECUPERABLES" FontSize="11" FontWeight="Bold" Foreground="#818CF8" />
+                            </Border>
+                            <TextBlock Text="Deduplicador Inteligente con Zero-Copy (Enlaces Duros NTFS)" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                        </StackPanel>
+                        <TextBlock Text="Encuentra archivos idénticos mediante SHA-256 y los reemplaza por Hardlinks: recuperas espacio físico en disco sin perder los archivos de sus carpetas." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnHardlinkAll" Content="🔗 Reemplazar por Hardlinks (Zero-Copy)" Click="BtnHardlinkAll_Click" Background="#2563EB" Foreground="White" Margin="0,0,8,0" Padding="14,6" FontSize="12" ToolTip="Ahorra 100% del espacio en disco sin borrar ningún archivo" />
+                        <Button x:Name="BtnDeleteAllDupes" Content="🗑️ Enviar Duplicados a Papelera" Click="BtnDeleteAllDupes_Click" Background="#DC2626" Foreground="White" Padding="14,6" FontSize="12" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Search Inputs Bar -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox x:Name="TxtTargetFolder" Text="" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="12" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="📁 Explorar..." Click="BtnBrowseFolder_Click" Style="{DynamicResource SecondaryButton}" Margin="6,0,10,0" Padding="12,6" FontSize="12" VerticalAlignment="Center" />
+
+                    <ComboBox Grid.Column="2" x:Name="CbMinSize" SelectedIndex="0" Margin="0,0,10,0" VerticalAlignment="Center" Background="#090D18">
+                        <ComboBoxItem Content="Mayor a 100 KB" Tag="102400" />
+                        <ComboBoxItem Content="Mayor a 1 MB" Tag="1048576" />
+                        <ComboBoxItem Content="Mayor a 10 MB" Tag="10485760" />
+                        <ComboBoxItem Content="Mayor a 50 MB" Tag="52428800" />
+                    </ComboBox>
+
+                    <Button Grid.Column="3" x:Name="BtnStartScan" Content="🔍 Escanear Duplicados" Click="BtnStartScan_Click" Background="#10B981" Foreground="White" Padding="16,6" FontSize="12" VerticalAlignment="Center" />
+                </Grid>
+
+                <ProgressBar x:Name="PbScan" Height="4" Margin="0,10,0,0" Foreground="#10B981" Visibility="Collapsed" IsIndeterminate="True" />
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area: Groups of Duplicates -->
+        <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="GRUPOS DE ARCHIVOS CON CONTENIDO EXACTAMENTE IDÉNTICO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+
+                <ListBox Grid.Row="1" x:Name="LbDuplicateGroups" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Group Header -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="📁 " FontSize="13" />
+                                            <TextBlock Text="{Binding FileSizeFormatted, StringFormat='Tamaño: {0}'}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+                                            <TextBlock Text="{Binding WastedFormatted, StringFormat=' • Desperdicio: {0}'}" FontWeight="SemiBold" FontSize="12.5" Foreground="#F59E0B" Margin="4,0,0,0" />
+                                            <TextBlock Text="{Binding ShaShort, StringFormat=' • Hash: {0}'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Group Files List -->
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding FilePaths}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StringFormat='   -> {0}'}" FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,2" TextTrimming="CharacterEllipsis" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <!-- Status Footer -->
+        <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+            <TextBlock x:Name="TxtDeduplicateStatus" Text="Selecciona una carpeta y haz clic en 'Escanear Duplicados' para comenzar." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+        </Border>
+    </Grid>
+</UserControl>

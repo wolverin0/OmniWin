@@ -128,7 +128,28 @@ public class Program
 
             case "contextmenu":
             case "ctx":
-                HandleContextMenu(args);
+                Phase28Commands.HandleContextMenu(args);
+                break;
+
+            case "duplicate":
+            case "dup":
+                await Phase28Commands.HandleDuplicateAsync(args);
+                break;
+
+            case "usb":
+                await Phase28Commands.HandleUsbAsync(args);
+                break;
+
+            case "privacy":
+                Phase28Commands.HandlePrivacy(args);
+                break;
+
+            case "battery":
+                Phase28Commands.HandleBattery(args);
+                break;
+
+            case "canary":
+                Phase28Commands.HandleCanary(args);
                 break;
 
             case "intel":
@@ -187,8 +208,12 @@ public class Program
         Console.WriteLine("  security                                   Auditoría de Antivirus, UAC y eventos BSOD");
         Console.WriteLine("  locks <ruta_archivo>                       Identifica procesos que bloquean un archivo");
         Console.WriteLine("  unlock <ruta_archivo>                      Termina procesos bloqueadores y libera el archivo");
-        Console.WriteLine("  services [--bloat|--optimize]              Lista o desactiva servicios de telemetría");
-        Console.WriteLine("  contextmenu                                Lista extensiones de clic derecho en Windows");
+        Console.WriteLine("  duplicate [--path <dir>] [--hardlink|--delete] Deduplicador con Zero-Copy NTFS");
+        Console.WriteLine("  usb [--list] [--eject <x:>] [--test-fake]  Expulsor seguro y test de pendrives falsos");
+        Console.WriteLine("  privacy [--audit] [--profile rec|strict|gamer] Centro de privacidad y anti-telemetría");
+        Console.WriteLine("  battery [--status] [--extreme-saver on|off] Reporte de degradación de batería y Watts");
+        Console.WriteLine("  canary [--status|--start|--stop]           Trampas señuelo contra ransomware en tiempo real");
+        Console.WriteLine("  contextmenu [--classic on|off]             Menú clásico de Windows 10 y limpiador de shell");
         Console.WriteLine("  mcp                                        Inicia servidor MCP stdio para agentes IA\n");
     }
 

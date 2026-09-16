@@ -299,6 +299,77 @@
                 </StackPanel>
             </Border>
 
+            <!-- 5. DOCTOR DE BATERÍA, CONSUMO & DEGRADACIÓN (LAPTOPS & PORTÁTILES) -->
+            <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,16,0,0">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="🔋 Doctor de Batería &amp; Consumo en Tiempo Real" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                                <Border Background="#064E3B" CornerRadius="4" Padding="6,1" Margin="10,0,0,0">
+                                    <TextBlock x:Name="TxtBatteryHealthBadge" Text="100% SALUD" FontSize="9.5" FontWeight="Bold" Foreground="#34D399" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Monitoreo de degradación química de celdas, ciclos de carga y consumo instantáneo en Watts para laptops y portátiles (ROG Ally, Legion Go, Steam Deck)." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnToggleExtremeSaver" Content="🍃 Ahorro Extremo" Click="BtnToggleExtremeSaver_Click" Background="#059669" Foreground="White" Padding="12,6" FontSize="11.5" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Cell 1: Nivel de Carga -->
+                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="ESTADO DE CARGA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtBatteryChargeLevel" Text="100% • Conectado" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,2" />
+                                <TextBlock x:Name="TxtBatteryEstimatedTime" Text="Alimentación por CA" FontSize="11" Foreground="#38BDF8" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Cell 2: Salud y Degradación -->
+                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="SALUD DE CELDAS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtBatteryHealthPercent" Text="100.0% Salud" FontSize="15" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,2" />
+                                <TextBlock x:Name="TxtBatteryWearPercent" Text="Desgaste: 0.0%" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Cell 3: Capacidad Real vs Diseño -->
+                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="CAPACIDAD (mWh)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtBatteryCapacityReal" Text="-- / -- mWh" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,2" />
+                                <TextBlock x:Name="TxtBatteryCycles" Text="Ciclos: --" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Cell 4: Consumo / Descarga en Watts -->
+                        <Border Grid.Column="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="8,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="POTENCIA INSTANTÁNEA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="TxtBatteryDischargeWatts" Text="0.00 W" FontSize="15" FontWeight="Bold" Foreground="#F59E0B" Margin="0,4,0,2" />
+                                <TextBlock x:Name="TxtBatteryDeviceModel" Text="Batería Estándar" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

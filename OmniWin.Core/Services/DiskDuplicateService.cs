@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,4 +157,175 @@ public class DiskDuplicateService
         byte[] hash = sha256.ComputeHash(fs);
         return Convert.ToHexString(hash);
     }
+
+    #region NTFS Hardlinks (Zero-Copy Deduplication) & Deletion
+
+    [DllImport("kernel32.dll", EntryPoint = "CreateHardLinkW", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct SHFILEOPSTRUCT
+    {
+        public IntPtr hwnd;
+        public uint wFunc;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string pFrom;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? pTo;
+        public ushort fFlags;
+        public bool fAnyOperationsAborted;
+        public IntPtr hNameMappings;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? lpszProgressTitle;
+    }
+
+    private const uint FO_DELETE = 0x0003;
+    private const ushort FOF_ALLOWUNDO = 0x0040;
+    private const ushort FOF_NOCONFIRMATION = 0x0010;
+    private const ushort FOF_SILENT = 0x0004;
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
+
+    /// <summary>
+    /// Reemplaza un archivo duplicado por un Enlace Duro (Hardlink) NTFS apuntando al archivo primario.
+    /// Ambos archivos siguen existiendo para el usuario y aplicaciones, pero comparten exactamente los mismos bloques físicos en disco.
+    /// Requiere que ambos archivos residan en el mismo volumen/partición NTFS.
+    /// </summary>
+    public DeduplicationResult ReplaceWithHardLink(string duplicatePath, string sourcePath)
+    {
+        if (!File.Exists(duplicatePath))
+            return new DeduplicationResult { Success = false, Message = $"El archivo duplicado '{duplicatePath}' no existe." };
+
+        if (!File.Exists(sourcePath))
+            return new DeduplicationResult { Success = false, Message = $"El archivo primario '{sourcePath}' no existe." };
+
+        string rootDup = Path.GetPathRoot(Path.GetFullPath(duplicatePath)) ?? string.Empty;
+        string rootSrc = Path.GetPathRoot(Path.GetFullPath(sourcePath)) ?? string.Empty;
+
+        if (!rootDup.Equals(rootSrc, StringComparison.OrdinalIgnoreCase))
+        {
+            return new DeduplicationResult
+            {
+                Success = false,
+                Message = $"No se puede crear un Hardlink entre distintos volúmenes ({rootDup} vs {rootSrc}). NTFS exige el mismo volumen."
+            };
+        }
+
+        try
+        {
+            var fi = new FileInfo(duplicatePath);
+            long savedBytes = fi.Length;
+            string tempBackup = duplicatePath + ".omni_tmp";
+
+            // Renombrar temporalmente el duplicado
+            File.Move(duplicatePath, tempBackup);
+
+            bool linkCreated = CreateHardLink(duplicatePath, sourcePath, IntPtr.Zero);
+            if (linkCreated)
+            {
+                // Hardlink creado exitosamente, eliminar el backup temporal
+                File.Delete(tempBackup);
+                return new DeduplicationResult
+                {
+                    Success = true,
+                    BytesSaved = savedBytes,
+                    FilesProcessed = 1,
+                    Message = $"Zero-Copy Hardlink creado con éxito. Recuperados {savedBytes / (1024.0 * 1024.0):N2} MB sin perder el archivo."
+                };
+            }
+            else
+            {
+                // Falló, restaurar el archivo original
+                int err = Marshal.GetLastWin32Error();
+                File.Move(tempBackup, duplicatePath);
+                return new DeduplicationResult
+                {
+                    Success = false,
+                    Message = $"Error de Windows al crear Hardlink (Código Win32 {err}). Archivo original preservado."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new DeduplicationResult { Success = false, Message = $"Excepción al procesar Hardlink: {ex.Message}" };
+        }
+    }
+
+    /// <summary>
+    /// Deduplica automáticamente un grupo reemplazando todos los duplicados por Hardlinks al primario.
+    /// </summary>
+    public DeduplicationResult DeduplicateGroupWithHardLinks(DuplicateFileGroup group, string primaryPath)
+    {
+        long totalSaved = 0;
+        int count = 0;
+        var errors = new List<string>();
+
+        foreach (var file in group.FilePaths)
+        {
+            if (file.Equals(primaryPath, StringComparison.OrdinalIgnoreCase)) continue;
+
+            var res = ReplaceWithHardLink(file, primaryPath);
+            if (res.Success)
+            {
+                totalSaved += res.BytesSaved;
+                count++;
+            }
+            else
+            {
+                errors.Add(res.Message);
+            }
+        }
+
+        return new DeduplicationResult
+        {
+            Success = count > 0 || errors.Count == 0,
+            FilesProcessed = count,
+            BytesSaved = totalSaved,
+            Message = $"Procesados {count} archivo(s). Espacio físico liberado: {totalSaved / (1024.0 * 1024.0):N2} MB." +
+                      (errors.Count > 0 ? $" ({errors.Count} errores detectados)" : "")
+        };
+    }
+
+    /// <summary>
+    /// Elimina un archivo duplicado (permanentemente o enviándolo a la Papelera de Reciclaje).
+    /// </summary>
+    public bool DeleteDuplicateFile(string filePath, bool sendToRecycleBin = true)
+    {
+        if (!File.Exists(filePath)) return false;
+
+        try
+        {
+            if (sendToRecycleBin)
+            {
+                var shf = new SHFILEOPSTRUCT
+                {
+                    wFunc = FO_DELETE,
+                    pFrom = filePath + '\0' + '\0',
+                    fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT
+                };
+                int ret = SHFileOperation(ref shf);
+                return ret == 0;
+            }
+            else
+            {
+                File.Delete(filePath);
+                return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    #endregion
+}
+
+public class DeduplicationResult
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public long BytesSaved { get; set; }
+    public int FilesProcessed { get; set; }
 }

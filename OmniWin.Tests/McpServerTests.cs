@@ -8,12 +8,12 @@ namespace OmniWin.Tests;
 public class McpServerTests
 {
     [Fact]
-    public void GetToolsList_ReturnsAll35Tools()
+    public void GetToolsList_ReturnsAll44Tools()
     {
         var tools = McpServer.GetToolsList();
 
         Assert.NotNull(tools);
-        Assert.True(tools.Count >= 35, $"Expected at least 35 tools, found {tools.Count}");
+        Assert.True(tools.Count >= 44, $"Expected at least 44 tools, found {tools.Count}");
     }
 
     [Theory]
@@ -52,6 +52,15 @@ public class McpServerTests
     [InlineData("win_msi_doctor")]
     [InlineData("win_launcher_hibernator")]
     [InlineData("win_experiment_engine")]
+    [InlineData("win_driver_center")]
+    [InlineData("win_process_intel")]
+    [InlineData("win_file_recovery")]
+    [InlineData("win_duplicate_manager")]
+    [InlineData("win_usb_doctor")]
+    [InlineData("win_privacy_shield")]
+    [InlineData("win_battery_health")]
+    [InlineData("win_ransomware_canary")]
+    [InlineData("win_context_menu")]
     public void GetToolsList_ContainsExpectedTool(string expectedToolName)
     {
         var tools = McpServer.GetToolsList();

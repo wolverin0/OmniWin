@@ -14,11 +14,13 @@ public partial class PowerCpuManagerControl : UserControl
     private readonly PowerService _powerService = new();
     private readonly CpuOptimizationService _cpuService = CpuOptimizationService.Instance;
     private readonly UniversalGpuService _gpuService = UniversalGpuService.Instance;
+    private readonly BatteryHealthService _batteryService = new();
 
     private List<PowerSchemeInfo> _schemes = new();
     private CpuDetails? _cpuDetails;
     private string _activeSchemeGuid = string.Empty;
     private string _activeSchemeName = string.Empty;
+    private bool _isExtremeSaverActive = false;
 
     public PowerCpuManagerControl()
     {
@@ -84,6 +86,9 @@ public partial class PowerCpuManagerControl : UserControl
             // 5. Cargar GPUs Universales (NVIDIA, AMD Radeon SAM, Intel)
             var gpus = await Task.Run(() => _gpuService.GetInstalledGpus());
             IcGpus.ItemsSource = gpus;
+
+            // 6. Cargar Diagnóstico de Batería
+            RefreshBatteryReport();
         }
         catch (Exception ex)
         {
@@ -213,5 +218,52 @@ public partial class PowerCpuManagerControl : UserControl
         await Task.Run(() => _cpuService.ApplyEcoSilentCpuTuning());
         TxtApplyFeedback.Text = "✔ Perfil Silencio CPU activo (Tope 99% y EPP 80%).";
         await RefreshAllAsync();
+    }
+
+    private void RefreshBatteryReport()
+    {
+        try
+        {
+            var rep = _batteryService.GetBatteryReport();
+            if (!rep.HasBattery)
+            {
+                TxtBatteryHealthBadge.Text = "CORRIENTE AC";
+                TxtBatteryChargeLevel.Text = "Alimentación Fija";
+                TxtBatteryEstimatedTime.Text = "Sin batería (PC Escritorio)";
+                TxtBatteryHealthPercent.Text = "N/A";
+                TxtBatteryWearPercent.Text = "Dispositivo estático";
+                TxtBatteryCapacityReal.Text = "Red Eléctrica";
+                TxtBatteryCycles.Text = "Ciclos: 0";
+                TxtBatteryDischargeWatts.Text = "0.00 W";
+                TxtBatteryDeviceModel.Text = "Fuente de Alimentación";
+                return;
+            }
+
+            TxtBatteryHealthBadge.Text = $"{rep.HealthPercent:N0}% SALUD";
+            TxtBatteryChargeLevel.Text = $"{rep.ChargePercent}% • {(rep.IsPluggedIn ? "Conectado" : "Batería")}";
+            TxtBatteryEstimatedTime.Text = rep.EstimatedTimeRemaining.HasValue
+                ? $"{rep.EstimatedTimeRemaining.Value.Hours}h {rep.EstimatedTimeRemaining.Value.Minutes}m restantes"
+                : (rep.IsCharging ? "Cargando..." : "Calculando tiempo...");
+
+            TxtBatteryHealthPercent.Text = $"{rep.HealthPercent:N1}% Salud";
+            TxtBatteryWearPercent.Text = $"Desgaste: {rep.WearLevelPercent:N1}%";
+            TxtBatteryCapacityReal.Text = $"{rep.FullChargeCapacityMWh:N0} / {rep.DesignCapacityMWh:N0} mWh";
+            TxtBatteryCycles.Text = rep.CycleCount > 0 ? $"Ciclos: {rep.CycleCount}" : "Ciclos: N/D";
+            TxtBatteryDischargeWatts.Text = $"{rep.CurrentDischargeRateWatts:N2} W";
+            TxtBatteryDeviceModel.Text = $"{rep.DeviceName} ({rep.Chemistry})";
+        }
+        catch { }
+    }
+
+    private void BtnToggleExtremeSaver_Click(object sender, RoutedEventArgs e)
+    {
+        _isExtremeSaverActive = !_isExtremeSaverActive;
+        bool ok = _batteryService.ApplyExtremeBatterySaver(_isExtremeSaverActive);
+        if (ok)
+        {
+            BtnToggleExtremeSaver.Content = _isExtremeSaverActive ? "⚡ Restaurar Normal" : "🍃 Ahorro Extremo";
+            BtnToggleExtremeSaver.Background = _isExtremeSaverActive ? new SolidColorBrush(Color.FromRgb(217, 119, 6)) : new SolidColorBrush(Color.FromRgb(5, 150, 105));
+            TxtApplyFeedback.Text = _isExtremeSaverActive ? "✔ Modo Ahorro Extremo activado." : "✔ Modo de energía normal restablecido.";
+        }
     }
 }

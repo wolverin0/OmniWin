@@ -317,6 +317,9 @@ public partial class MainWindow : Window
         _navMap[20] = NavBtn20;
         _navMap[21] = NavBtn21;
         _navMap[22] = NavBtn22;
+        _navMap[23] = NavBtn23;
+        _navMap[24] = NavBtn24;
+        _navMap[25] = NavBtn25;
 
         UpdateNavHighlight(MainTabs.SelectedIndex);
     }
@@ -367,7 +370,7 @@ public partial class MainWindow : Window
         9 => ("🌐 Diagnóstico de Red & Sockets", "Auditoría de seguridad, prueba de latencia DNS y reseteo de Winsock/DNS."),
         10 => ("🔒 Desbloqueador de Archivos", "Identificación y liberación de archivos bloqueados mediante Windows Restart Manager."),
         11 => ("🚀 Arranque & Servicios", "Control de elementos de inicio y desactivación segura de telemetría de Windows."),
-        12 => ("🤖 Servidor IA / MCP", "Servidor de 28 herramientas para Claude, Antigravity y Cursor con auto-registro."),
+        12 => ("🤖 Servidor IA / MCP", "Servidor de 44 herramientas para Claude, Antigravity y Cursor con auto-registro."),
         13 => ("🎧 Mezclador de Audio Nativo", "Control de volumen independiente por aplicación y muting vía CoreAudio."),
         14 => ("🛡️ Microsoft Defender ASR", "Gestión de las 16 reglas de Attack Surface Reduction para mitigación en kernel."),
         15 => ("🔋 Energía, CPU & Multi-GPU", "Administración de planes de energía, Core Parking, EPP, scheduler de P/E-Cores y soporte universal AMD/Intel/NVIDIA."),
@@ -377,6 +380,10 @@ public partial class MainWindow : Window
         19 => ("🎮 Auto-Game & App Profiler", "Optimización automática para juegos y suites pesadas: Afinidad P-Cores, Timer 0.5ms y purga de RAM."),
         20 => ("🛡️ Cortafuegos Visual & Sockets", "Monitoreo de conexiones TCP mediante tabla MIB iphlpapi.dll y bloqueo de tráfico en 1-clic."),
         21 => ("🌐 DNS Seguro (DoH) & HOSTS", "Benchmark de latencia entre servidores DNS mundiales y bloqueo masivo de 60.000+ dominios en HOSTS."),
+        22 => ("♻️ Recuperación Forense & Undelete", "Escaneo de clusters NTFS y firmas hexadecimales profundas para restaurar archivos borrados."),
+        23 => ("🗂️ Deduplicador Zero-Copy (Hardlinks)", "Deduplicación en 3 fases: hashing MD5/SHA256 y unificación mediante hardlinks NTFS sin duplicar espacio."),
+        24 => ("🔌 Expulsor USB & Doctor Flash", "Diagnóstico de locks en medios extraíbles, expulsión forzada segura y test de integridad contra memorias falsas."),
+        25 => ("🛡️ Privacidad & Anti-Espía", "Auditoría transaccional de telemetría de Windows, Recall AI, Bing Start y diagnósticos con reversión WAL."),
         _ => ("OmniWin", "Panel de Control y Optimización de Windows")
     };
 
@@ -389,7 +396,8 @@ public partial class MainWindow : Window
                 "01_dashboard", "02_telemetria_live", "03_forense_procesos", "04_ram", "05_disco",
                 "06_tweaks_debloat", "07_software", "08_mantenimiento", "09_reparacion_console",
                 "10_red", "11_desbloqueo", "12_inicio", "13_ia_mcp", "14_mezclador_audio", "15_asr_defender", "16_energia_cpu",
-                "17_espacio_disco", "18_caja_negra_bsod", "19_omnicompanion", "20_game_profiler", "21_firewall_monitor", "22_dns_security"
+                "17_espacio_disco", "18_caja_negra_bsod", "19_omnicompanion", "20_game_profiler", "21_firewall_monitor", "22_dns_security",
+                "23_file_recovery", "24_deduplicator", "25_usb_doctor", "26_privacy_shield"
             ];
 
             int originalIndex = MainTabs.SelectedIndex;
