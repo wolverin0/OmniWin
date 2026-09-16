@@ -26,6 +26,9 @@ public class McpServer
     private readonly FileLockService _fileLockService = new();
     private readonly WindowsServiceService _windowsServiceService = new();
     private readonly ContextMenuService _contextMenuService = new();
+    private readonly DriverCenterService _driverCenterService = DriverCenterService.Instance;
+    private readonly ProcessIntelligenceService _processIntelligenceService = new();
+    private readonly FileRecoveryService _fileRecoveryService = new();
     private HardwareService? _hardwareService;
 
     public async Task RunAsync()
@@ -613,6 +616,62 @@ public class McpServer
             }
         });
 
+        // 36. win_driver_center
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_driver_center",
+            ["description"] = "Centro oficial y seguro de controladores de Windows. Permite enumerar dispositivos/drivers categorizados (GPU, Audio, Red, Bluetooth), realizar backup/exportación OEM de 1 clic con manifiesto, restaurar drivers, consultar actualizaciones oficiales WHQL de Microsoft Update Catalog y NVIDIA, y verificar firmas Authenticode nativas.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "enumerate", "backup", "restore", "check_updates", "verify_signature", "history" }, ["description"] = "Acción a ejecutar" },
+                    ["backup_path"] = new JsonObject { ["type"] = "string", ["description"] = "Ruta de carpeta destino para el respaldo de controladores (opcional)" },
+                    ["restore_path"] = new JsonObject { ["type"] = "string", ["description"] = "Ruta de carpeta origen que contiene los archivos INF a restaurar" },
+                    ["file_path"] = new JsonObject { ["type"] = "string", ["description"] = "Ruta del binario, instalador o driver para verificar su firma Authenticode" }
+                },
+                ["required"] = new JsonArray { "action" }
+            }
+        });
+
+        // 37. win_process_intel
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_process_intel",
+            ["description"] = "Monitor de inteligencia y seguridad de procesos de Windows. Proporciona explicaciones humanas en español ('¿Qué es?', '¿Para qué sirve?', '¿Es seguro terminarlo?'), categorización, detección de suplantación/malware (masquerading) y verificación de firma digital.",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "audit", "explain" }, ["description"] = "Acción: 'audit' (auditar todos los procesos activos) o 'explain' (explicar un proceso específico)" },
+                    ["process_name"] = new JsonObject { ["type"] = "string", ["description"] = "Nombre del proceso a explicar (ej. 'svchost.exe', 'dwm.exe', 'discord.exe')" },
+                    ["top_memory"] = new JsonObject { ["type"] = "integer", ["description"] = "Cantidad de procesos con mayor consumo de RAM a listar (por defecto 15)" }
+                },
+                ["required"] = new JsonArray { "action" }
+            }
+        });
+
+        // 38. win_file_recovery
+        tools.Add(new JsonObject
+        {
+            ["name"] = "win_file_recovery",
+            ["description"] = "Motor de recuperación forense de archivos. Incluye: Nivel 1) Análisis y recuperación forense de Papelera ($Recycle.Bin/$I/$R con timestamps y nombres originales), Nivel 2) Exploración de copias de seguridad de volumen (Volume Shadow Copies / VSS 'Previous Versions'), y Nivel 3) Deep Carving por firmas mágicas (JPG, PNG, PDF, ZIP).",
+            ["inputSchema"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["action"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray { "recycle_bin", "restore_recycle", "shadow_copies", "carve" }, ["description"] = "Acción de recuperación a ejecutar" },
+                    ["item_id"] = new JsonObject { ["type"] = "string", ["description"] = "Identificador o nombre de archivo de papelera ($I/$R token) para restaurar" },
+                    ["destination_path"] = new JsonObject { ["type"] = "string", ["description"] = "Carpeta de destino para los archivos recuperados" },
+                    ["source_file_or_image"] = new JsonObject { ["type"] = "string", ["description"] = "Ruta de archivo o imagen en bruto para realizar deep carving" }
+                },
+                ["required"] = new JsonArray { "action" }
+            }
+        });
+
         return tools;
     }
 
@@ -917,6 +976,107 @@ public class McpServer
 
                         var report = await OmniExperimentEngine.Instance.RunExperimentAsync(targetTweak, baseSec, treatSec, autoRev);
                         content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    break;
+
+                case "win_driver_center":
+                    string drvAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "enumerate";
+                    if (drvAction == "backup")
+                    {
+                        string bkPath = args["backup_path"]?.GetValue<string>() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OmniWin_Driver_Backup");
+                        var bkResult = await _driverCenterService.BackupAllDriversAsync(bkPath);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(bkResult, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (drvAction == "restore")
+                    {
+                        string restPath = args["restore_path"]?.GetValue<string>() ?? "";
+                        var restResult = await _driverCenterService.RestoreDriversAsync(restPath);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(restResult, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (drvAction == "check_updates")
+                    {
+                        var wuUpdates = await _driverCenterService.CheckWindowsUpdateDriversAsync();
+                        var nvdUpdate = await _driverCenterService.CheckNvidiaDriverUpdateAsync();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(new { official_windows_updates = wuUpdates, official_nvidia_update = nvdUpdate }, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (drvAction == "verify_signature")
+                    {
+                        string fPath = args["file_path"]?.GetValue<string>() ?? "";
+                        var sig = DriverCenterService.VerifyFileSignature(fPath);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(sig, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (drvAction == "history")
+                    {
+                        var hist = _driverCenterService.GetDriverHistory();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(hist, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else
+                    {
+                        var allDrivers = await _driverCenterService.EnumerateDriversAsync();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(allDrivers, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    break;
+
+                case "win_process_intel":
+                    string pIntelAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "audit";
+                    if (pIntelAction == "explain")
+                    {
+                        string pName = args["process_name"]?.GetValue<string>() ?? "";
+                        var pDef = _processIntelligenceService.GetProcessInfo(pName);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(pDef, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else
+                    {
+                        int topMem = args["top_memory"]?.GetValue<int>() ?? 15;
+                        var audit = await _processIntelligenceService.AuditRunningProcessesAsync(topMem);
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(audit, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    break;
+
+                case "win_file_recovery":
+                    string recAction = args["action"]?.GetValue<string>()?.ToLowerInvariant() ?? "recycle_bin";
+                    if (recAction == "restore_recycle")
+                    {
+                        string itemId = args["item_id"]?.GetValue<string>() ?? "";
+                        string targetDir = args["destination_path"]?.GetValue<string>() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OmniWin_Recovered");
+                        var rbItems = await _fileRecoveryService.EnumerateRecycleBinAsync();
+                        var targetItem = rbItems.FirstOrDefault(i => i.Id.Equals(itemId, StringComparison.OrdinalIgnoreCase) || i.RFilePath.Contains(itemId, StringComparison.OrdinalIgnoreCase) || i.FileName.Equals(itemId, StringComparison.OrdinalIgnoreCase));
+                        if (targetItem == null)
+                        {
+                            isError = true;
+                            content.Add(new JsonObject { ["type"] = "text", ["text"] = $"No se encontró el elemento en papelera con ID '{itemId}'." });
+                        }
+                        else
+                        {
+                            bool ok = await _fileRecoveryService.RestoreRecycleBinItemAsync(targetItem, targetDir);
+                            content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(new { success = ok, restored_file = targetItem.FileName, destination = targetDir }) });
+                        }
+                    }
+                    else if (recAction == "shadow_copies")
+                    {
+                        var shadows = await _fileRecoveryService.GetShadowCopiesAsync();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(shadows, new JsonSerializerOptions { WriteIndented = true }) });
+                    }
+                    else if (recAction == "carve")
+                    {
+                        string srcImg = args["source_file_or_image"]?.GetValue<string>() ?? "";
+                        string targetDir = args["destination_path"]?.GetValue<string>() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OmniWin_Carved");
+                        if (!File.Exists(srcImg))
+                        {
+                            isError = true;
+                            content.Add(new JsonObject { ["type"] = "text", ["text"] = $"Archivo/imagen origen no existe: {srcImg}" });
+                        }
+                        else
+                        {
+                            using var fs = File.OpenRead(srcImg);
+                            var carveRes = await _fileRecoveryService.CarveFilesAsync(fs, targetDir);
+                            content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(carveRes, new JsonSerializerOptions { WriteIndented = true }) });
+                        }
+                    }
+                    else
+                    {
+                        var rbItems = await _fileRecoveryService.EnumerateRecycleBinAsync();
+                        content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonSerializer.Serialize(rbItems, new JsonSerializerOptions { WriteIndented = true }) });
                     }
                     break;
 

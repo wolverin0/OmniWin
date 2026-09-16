@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using OmniWin.Cli.Commands;
 using OmniWin.Core.Services;
 
 namespace OmniWin.Cli;
@@ -74,7 +75,7 @@ public class Program
                 break;
 
             case "drivers":
-                await HandleDriversAsync();
+                await Phase27Commands.HandleDriversAsync(args);
                 break;
 
             case "power":
@@ -83,7 +84,14 @@ public class Program
 
             case "process":
             case "procs":
-                HandleProcesses(args);
+                if (args.Contains("--intel"))
+                {
+                    await Phase27Commands.HandleIntelAsync(args);
+                }
+                else
+                {
+                    HandleProcesses(args);
+                }
                 break;
 
             case "startup":
@@ -123,6 +131,16 @@ public class Program
                 HandleContextMenu(args);
                 break;
 
+            case "intel":
+            case "inspect":
+                await Phase27Commands.HandleIntelAsync(args);
+                break;
+
+            case "recover":
+            case "recovery":
+                await Phase27Commands.HandleRecoveryAsync(args);
+                break;
+
             case "mcp":
                 var mcp = new OmniWin.Core.Mcp.McpServer();
                 await mcp.RunAsync();
@@ -158,9 +176,11 @@ public class Program
         Console.WriteLine("  sfc                                        Comprueba y repara archivos corruptos de Windows");
         Console.WriteLine("  apps                                       Lista programas desactualizados (WinGet)");
         Console.WriteLine("  upgrade                                    Actualiza todos los programas obsoletos");
-        Console.WriteLine("  drivers                                    Lista controladores OEM del DriverStore");
+        Console.WriteLine("  drivers [--backup|--restore|--check|--verify] Centro oficial y seguro de controladores");
         Console.WriteLine("  power [--ultimate|--timer]                 Planes de energía y temporizador de 0.5ms");
-        Console.WriteLine("  process [--top N] [--kill <pid>]           Lista procesos o termina uno");
+        Console.WriteLine("  process [--top N] [--kill <pid>] [--intel] Lista procesos o audita con inteligencia");
+        Console.WriteLine("  intel [nombre.exe]                         Monitor de inteligencia y seguridad de procesos");
+        Console.WriteLine("  recover [--recycle|--shadow|--carve]       Recuperación forense de archivos y deep undelete");
         Console.WriteLine("  startup [--toggle ...]                     Lista o administra inicio de Windows");
         Console.WriteLine("  tweak [--apply|--rollback <id>]            Lista o aplica optimizaciones del sistema");
         Console.WriteLine("  net [target|heal]                          Diagnóstico de red o reparación completa de pila");
@@ -346,24 +366,7 @@ public class Program
         Console.WriteLine(res);
     }
 
-    private static async Task HandleDriversAsync()
-    {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("Consultando controladores OEM en el DriverStore...");
-        Console.ResetColor();
 
-        var drivers = await _driverService.GetOemDriversAsync();
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"\nControladores de terceros encontrados: {drivers.Count}\n");
-        Console.ResetColor();
-        Console.WriteLine($"{"PUBLICADO",-12} {"CLASE",-18} {"PROVEEDOR",-22} {"ARCHIVO ORIGINAL",-25} {"VERSIÓN"}");
-        Console.WriteLine(new string('-', 95));
-
-        foreach (var d in drivers.Take(30))
-        {
-            Console.WriteLine($"{d.PublishedName,-12} {d.ClassName,-18} {d.Provider,-22} {d.OriginalName,-25} {d.DateAndVersion}");
-        }
-    }
 
     private static async Task HandlePowerAsync(string[] args)
     {

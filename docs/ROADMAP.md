@@ -451,14 +451,53 @@ Tecnología base: **C# .NET 9 (Single-File)** + **WPF / Direct3D** (Estilo Optim
 
 ---
 
-### Fase 27: Telemetría de Verdad Terreno & Forense de Kernel (En Desarrollo)
-- [ ] **27.1 Proveedor PresentMon Nativo (`PresentMonProvider`)**:
-  - Captura real de frametimes y latencia de presentación GPU/Display sin DLL hooks invasivos.
-- [ ] **27.2 Proveedor Kernel ETW (`KernelEtwProvider`)**:
-  - Medición directa de tiempo de ejecución DPC (Deferred Procedure Calls) e ISR (Interrupt Service Routines) mediante Event Tracing for Windows.
-- [ ] **27.3 Proveedor Storage ETW (`StorageEtwProvider`)**:
-  - Latencia de I/O de disco, colas de lectura/escritura NVMe y correlación con tirones de streaming.
-- [ ] **27.4 Diagnóstico y Correlación WHEA / TDR (`KernelHealthService`)**:
-  - Monitoreo en tiempo real de eventos WHEA-Logger y reinicios del controlador de pantalla (GPU TDR ID 4101).
-- [ ] **27.5 Formato de Volcado Forense `.omniwintrace`**:
-  - Exportación de sesiones completas de telemetría y diagnósticos forenses para análisis offline.
+### Fase 27: Driver Intelligence, File Recovery & Process Security Ecosystem (Completado)
+
+#### 27.1 Gestor de Controladores & Fuentes Oficiales (`DriverCenterService`, `AuthenticodeVerifier`)
+- [x] **Auditoría Exhaustiva de Controladores & Hardware**:
+  - Detección y categorización de dispositivos principales (GPU, Audio, Red LAN/Wi-Fi, Bluetooth, Chipset, Almacenamiento) con versión actual, fecha de release, archivo INF y proveedor.
+- [x] **Backup y Exportación en 1 Clic**:
+  - Exportación de todos los drivers OEM instalados con `pnputil /export-driver * <destino>` y generación de manifiesto de respaldo (`driver_backup_manifest.json`).
+- [x] **Restauración Autónoma de Controladores**:
+  - Instalación masiva de controladores respaldados mediante `pnputil /add-driver *.inf /install`.
+- [x] **Canal Oficial 1: APIs Directas de Fabricantes (GPU NVIDIA)**:
+  - Consulta a CDN oficial de NVIDIA para versión instalada y descarga directa oficial sin adware.
+- [x] **Canal Oficial 2: Windows Update API (COM `IUpdateSearcher`)**:
+  - Consulta nativa directa a los servidores de Microsoft Update para listar drivers WHQL certificados pendientes sin intermediarios.
+- [x] **Validación Criptográfica Nativa (`AuthenticodeVerifier` / `WinVerifyTrust`)**:
+  - Verificación estricta de firma digital Authenticode y certificados X.509 antes de cualquier instalación para garantizar autenticidad oficial.
+- [x] **Historial de Actualizaciones de Drivers**:
+  - Registro persistente de versiones previas y actuales (`driver_history.json`).
+
+#### 27.2 Monitor de Inteligencia & Seguridad de Procesos (`ProcessIntelligenceService`)
+- [x] **Verificación Criptográfica de Firmas Authenticode & CatRoot**:
+  - Auditoría de firma digital de ejecutables activos mediante `WinVerifyTrust` y reconocimiento de catálogos CatRoot de Windows.
+- [x] **Base de Conocimiento Local Integrada (Explicador de Procesos en Español)**:
+  - Diccionario offline de procesos esenciales y comunes con descripción clara: empresa, función real, impacto de terminarlo y rutas obligatorias.
+- [x] **Detección de Suplantación / Masquerading Malware**:
+  - Validación de rutas legítimas de procesos críticos (`svchost.exe`, `csrss.exe`, `lsass.exe`) alertando de inmediato si se ejecutan desde rutas no autorizadas.
+- [x] **Reputación por Hash SHA-256 & VirusTotal**:
+  - Huella SHA-256 de ejecutables sospechosos y enlace de análisis en VirusTotal.
+
+#### 27.3 Motor de Recuperación de Archivos & Deep Undelete (`FileRecoveryService`)
+- [x] **Nivel 1: Forense de Papelera de Reciclaje ($Recycle.Bin)**:
+  - Parseo de archivos de metadatos `$I...` (versión 1 y 2 de Windows 10/11) y mapeo con `$R...` para listar y recuperar archivos con nombres y timestamps originales.
+- [x] **Nivel 2: Explorador de Copias de Sombra de Volumen (VSS)**:
+  - Inspección de instantáneas de volumen para recuperar versiones previas (`Previous Versions`).
+- [x] **Nivel 3: Deep Byte Carving por Firmas Mágicas**:
+  - Recuperación sobre streams y volúmenes por cabeceras y pies mágicos para JPG (`FF D8 FF`), PNG (`89 50 4E 47` / `IEND`), PDF (`%PDF-` / `%%EOF`) y ZIP (`PK\x03\x04`).
+
+#### 27.4 Interfaces de Control: CLI & MCP Tools
+- [x] CLI `omni drivers [--backup|--restore|--check|--verify|--history]`
+- [x] CLI `omni intel [nombre.exe]` & `omni process --intel`
+- [x] CLI `omni recover [--recycle|--restore-recycle|--shadow|--carve]`
+- [x] MCP Tools: `win_driver_center`, `win_process_intel`, `win_file_recovery` (totalizando 38 herramientas de control autónomo).
+
+---
+
+### Fase 28: Telemetría de Kernel Profunda & Hardware Avanzado (Investigación Futura)
+- [ ] **28.1 Proveedor PresentMon Nativo (`PresentMonProvider`)**
+- [ ] **28.2 Proveedor Kernel ETW (`KernelEtwProvider`)**
+- [ ] **28.3 Proveedor Storage ETW (`StorageEtwProvider`)**
+- [ ] **28.4 Diagnóstico y Correlación WHEA / TDR (`KernelHealthService`)**
+
