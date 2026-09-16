@@ -59,6 +59,59 @@ public class Phase28EcosystemTests : IDisposable
     }
 
     [Fact]
+    public async Task DiskDuplicate_FindDuplicatesAcrossMultipleRoots()
+    {
+        var dupService = DiskDuplicateService.Instance;
+
+        string rootA = Path.Combine(_testTempDir, "FolderA");
+        string rootB = Path.Combine(_testTempDir, "FolderB");
+        Directory.CreateDirectory(rootA);
+        Directory.CreateDirectory(rootB);
+
+        string fileA = Path.Combine(rootA, "test_file_a.dat");
+        string fileB = Path.Combine(rootB, "test_file_b.dat");
+        byte[] data = new byte[1024 * 64];
+        new Random(99).NextBytes(data);
+
+        await File.WriteAllBytesAsync(fileA, data);
+        await File.WriteAllBytesAsync(fileB, data);
+
+        var duplicates = await dupService.FindDuplicatesAsync(new[] { rootA, rootB }, minSizeBytes: 1024);
+        Assert.NotEmpty(duplicates);
+        Assert.Contains(duplicates, g => g.FilePaths.Contains(fileA) && g.FilePaths.Contains(fileB));
+    }
+
+    [Fact]
+    public async Task DiskDuplicate_VolumeAwareDeduplication()
+    {
+        var dupService = DiskDuplicateService.Instance;
+
+        string f1 = Path.Combine(_testTempDir, "vol_test_1.bin");
+        string f2 = Path.Combine(_testTempDir, "vol_test_2.bin");
+        string f3 = Path.Combine(_testTempDir, "vol_test_3.bin");
+        byte[] data = new byte[1024 * 32];
+        new Random(123).NextBytes(data);
+
+        await File.WriteAllBytesAsync(f1, data);
+        await File.WriteAllBytesAsync(f2, data);
+        await File.WriteAllBytesAsync(f3, data);
+
+        var group = new DuplicateFileGroup
+        {
+            FileSizeBytes = data.Length,
+            Sha256Hash = "dummy",
+            FilePaths = new System.Collections.Generic.List<string> { f1, f2, f3 }
+        };
+
+        var result = dupService.DeduplicateGroupVolumeAware(group, preferredMasterPath: f1);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.FilesProcessed);
+        Assert.True(File.Exists(f1));
+        Assert.True(File.Exists(f2));
+        Assert.True(File.Exists(f3));
+    }
+
+    [Fact]
     public void UsbDoctor_EnumeratesDrives_AndHandlesNormalization()
     {
         var usbService = new UsbDoctorService();

@@ -9,61 +9,127 @@
              FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
              Loaded="UserControl_Loaded">
 
-    <Grid Margin="0,12,0,0">
+    <Grid Margin="0,8,0,0">
         <Grid.RowDefinitions>
-            <!-- Top Hero Header -->
+            <!-- Top Controls & Targets Card -->
             <RowDefinition Height="Auto" />
-            <!-- Main Content Area (Duplicate Groups) -->
+            <!-- Results Area -->
             <RowDefinition Height="*" />
             <!-- Status Footer -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top Header & Scan Options -->
-        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+        <!-- Top Header & Scope Selection -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
             <StackPanel>
-                <Grid Margin="0,0,0,14">
+                <!-- Title & Action Bar -->
+                <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Border Background="#1E1B4B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
                                 <TextBlock x:Name="TxtWastedSpaceBadge" Text="0 MB RECUPERABLES" FontSize="11" FontWeight="Bold" Foreground="#818CF8" />
                             </Border>
-                            <TextBlock Text="Deduplicador Inteligente con Zero-Copy (Enlaces Duros NTFS)" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock Text="Deduplicador Inteligente Zero-Copy (Multi-Disco)" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                         </StackPanel>
-                        <TextBlock Text="Encuentra archivos idénticos mediante SHA-256 y los reemplaza por Hardlinks: recuperas espacio físico en disco sin perder los archivos de sus carpetas." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+                        <TextBlock Text="Escanea múltiples discos o carpetas arbitrarias. Reemplaza duplicados por Enlaces Duros NTFS: recuperas espacio físico en disco sin alterar tus archivos ni carpetas." FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button x:Name="BtnHardlinkAll" Content="🔗 Reemplazar por Hardlinks (Zero-Copy)" Click="BtnHardlinkAll_Click" Background="#2563EB" Foreground="White" Margin="0,0,8,0" Padding="14,6" FontSize="12" ToolTip="Ahorra 100% del espacio en disco sin borrar ningún archivo" />
+                        <Button x:Name="BtnHardlinkAll" Content="🔗 Reemplazar por Hardlinks (Zero-Copy)" Click="BtnHardlinkAll_Click" Background="#2563EB" Foreground="White" Margin="0,0,8,0" Padding="14,6" FontSize="12" ToolTip="Convierte copias idénticas en enlaces duros en cada volumen, recuperando espacio real sin borrar archivos" />
                         <Button x:Name="BtnDeleteAllDupes" Content="🗑️ Enviar Duplicados a Papelera" Click="BtnDeleteAllDupes_Click" Background="#DC2626" Foreground="White" Padding="14,6" FontSize="12" />
                     </StackPanel>
                 </Grid>
 
-                <!-- Search Inputs Bar -->
+                <!-- Target Selection Header -->
+                <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="🎯 ÁMBITO DE ESCANEO:" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" VerticalAlignment="Center" Margin="0,0,12,0" />
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnSelectAllDrives" Content="💾 Todos los Discos" Click="BtnSelectAllDrives_Click" Background="#1E293B" Foreground="#38BDF8" BorderBrush="#334155" BorderThickness="1" Padding="10,4" FontSize="11" Margin="0,0,6,0" Cursor="Hand" ToolTip="Agrega automáticamente todas las unidades fijas del sistema" />
+                                <ItemsControl x:Name="IcAvailableDrives">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding DisplayLabel}" Tag="{Binding RootPath}" Click="BtnToggleDrive_Click" Background="#0F172A" Foreground="{DynamicResource TextSecondary}" BorderBrush="#1E293B" BorderThickness="1" Padding="8,4" FontSize="11" Margin="0,0,6,0" Cursor="Hand" ToolTip="{Binding TooltipText}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnAddFolder" Content="📁 + Agregar Carpeta..." Click="BtnAddFolder_Click" Background="#1E293B" Foreground="{DynamicResource TextPrimary}" BorderBrush="#334155" BorderThickness="1" Padding="10,4" FontSize="11" Margin="0,0,6,0" Cursor="Hand" />
+                                <Button x:Name="BtnClearTargets" Content="🧹 Limpiar" Click="BtnClearTargets_Click" Background="#1E293B" Foreground="#EF4444" BorderBrush="#334155" BorderThickness="1" Padding="8,4" FontSize="11" Cursor="Hand" ToolTip="Quitar todos los objetivos de escaneo" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Selected Targets Chips -->
+                        <Border Background="#060911" BorderBrush="#162035" BorderThickness="1" CornerRadius="4" Padding="8" MinHeight="36">
+                            <Grid>
+                                <TextBlock x:Name="TxtEmptyTargetsPrompt" Text="Ningún objetivo seleccionado. Haz clic en 'Todos los Discos', elige unidades arriba, o agrega carpetas." FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="4,0" Visibility="Collapsed" />
+                                <ItemsControl x:Name="IcSelectedTargets">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#131D33" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="4" Padding="8,3" Margin="0,2,6,2">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Icon}" FontSize="11" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding DisplayPath}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                                    <Button Content="✕" Tag="{Binding Path}" Click="BtnRemoveTarget_Click" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Margin="6,0,0,0" Padding="3,0" FontSize="11" Cursor="Hand" ToolTip="Quitar este objetivo" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Filter & Scan Trigger Bar -->
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="180" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="160" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBox x:Name="TxtTargetFolder" Text="" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="12" VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Content="📁 Explorar..." Click="BtnBrowseFolder_Click" Style="{DynamicResource SecondaryButton}" Margin="6,0,10,0" Padding="12,6" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Text="Tamaño mínimo:" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0" />
 
-                    <ComboBox Grid.Column="2" x:Name="CbMinSize" SelectedIndex="0" Margin="0,0,10,0" VerticalAlignment="Center" Background="#090D18">
+                    <ComboBox Grid.Column="1" x:Name="CbMinSize" SelectedIndex="1" Margin="0,0,10,0" VerticalAlignment="Center" Background="#090D18">
                         <ComboBoxItem Content="Mayor a 100 KB" Tag="102400" />
                         <ComboBoxItem Content="Mayor a 1 MB" Tag="1048576" />
                         <ComboBoxItem Content="Mayor a 10 MB" Tag="10485760" />
                         <ComboBoxItem Content="Mayor a 50 MB" Tag="52428800" />
+                        <ComboBoxItem Content="Mayor a 100 MB" Tag="104857600" />
                     </ComboBox>
 
-                    <Button Grid.Column="3" x:Name="BtnStartScan" Content="🔍 Escanear Duplicados" Click="BtnStartScan_Click" Background="#10B981" Foreground="White" Padding="16,6" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" x:Name="TxtTargetCountSummary" Text="1 objetivo(s) listos para escanear" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+
+                    <Button Grid.Column="3" x:Name="BtnCancelScan" Content="⏹️ Cancelar" Click="BtnCancelScan_Click" Background="#DC2626" Foreground="White" Padding="14,6" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" />
+                    <Button Grid.Column="4" x:Name="BtnStartScan" Content="🔍 Escanear Duplicados" Click="BtnStartScan_Click" Background="#10B981" Foreground="White" Padding="18,6" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </Grid>
 
                 <ProgressBar x:Name="PbScan" Height="4" Margin="0,10,0,0" Foreground="#10B981" Visibility="Collapsed" IsIndeterminate="True" />
@@ -78,12 +144,19 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="GRUPOS DE ARCHIVOS CON CONTENIDO EXACTAMENTE IDÉNTICO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="GRUPOS DE ARCHIVOS CON CONTENIDO EXACTAMENTE IDÉNTICO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" x:Name="TxtGroupCountSummary" Text="0 grupos" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                </Grid>
 
                 <ListBox Grid.Row="1" x:Name="LbDuplicateGroups" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
+                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -96,15 +169,23 @@
                                             <TextBlock Text="📁 " FontSize="13" />
                                             <TextBlock Text="{Binding FileSizeFormatted, StringFormat='Tamaño: {0}'}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextPrimary}" />
                                             <TextBlock Text="{Binding WastedFormatted, StringFormat=' • Desperdicio: {0}'}" FontWeight="SemiBold" FontSize="12.5" Foreground="#F59E0B" Margin="4,0,0,0" />
+                                            <Border Background="#1E293B" CornerRadius="3" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FileCountText}" FontSize="10.5" FontWeight="Bold" Foreground="#38BDF8" />
+                                            </Border>
                                             <TextBlock Text="{Binding ShaShort, StringFormat=' • Hash: {0}'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="8,0,0,0" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Grid>
 
                                     <!-- Group Files List -->
-                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding FilePaths}">
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding Files}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StringFormat='   -> {0}'}" FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,2" TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding VolumeBadge}" FontSize="10.5" FontWeight="Bold" Foreground="#38BDF8" />
+                                                    </Border>
+                                                    <TextBlock Text="{Binding FullPath}" FontSize="11.5" Foreground="#CBD5E1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -117,8 +198,8 @@
         </Border>
 
         <!-- Status Footer -->
-        <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
-            <TextBlock x:Name="TxtDeduplicateStatus" Text="Selecciona una carpeta y haz clic en 'Escanear Duplicados' para comenzar." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
+        <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,10,0,0">
+            <TextBlock x:Name="TxtDeduplicateStatus" Text="Selecciona discos o carpetas y haz clic en 'Escanear Duplicados' para comenzar." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
         </Border>
     </Grid>
 </UserControl>

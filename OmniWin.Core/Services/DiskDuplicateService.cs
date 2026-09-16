@@ -21,8 +21,17 @@ public class DiskDuplicateService
 {
     public static DiskDuplicateService Instance { get; } = new();
 
-    public async Task<List<DuplicateFileGroup>> FindDuplicatesAsync(
+    public Task<List<DuplicateFileGroup>> FindDuplicatesAsync(
         string rootDirectory, 
+        long minSizeBytes = 1024, 
+        IProgress<(int scanned, int foundGroups)>? progress = null,
+        CancellationToken ct = default)
+    {
+        return FindDuplicatesAsync(new[] { rootDirectory }, minSizeBytes, progress, ct);
+    }
+
+    public async Task<List<DuplicateFileGroup>> FindDuplicatesAsync(
+        IEnumerable<string> rootDirectories, 
         long minSizeBytes = 1024, 
         IProgress<(int scanned, int foundGroups)>? progress = null,
         CancellationToken ct = default)
@@ -30,49 +39,54 @@ public class DiskDuplicateService
         return await Task.Run(() =>
         {
             var results = new List<DuplicateFileGroup>();
-            if (!Directory.Exists(rootDirectory)) return results;
+            var validRoots = rootDirectories.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (validRoots.Count == 0) return results;
 
-            // Phase 1: Enumerate and group by file size
+            // Phase 1: Enumerate and group by file size across all specified roots
             var filesBySize = new Dictionary<long, List<string>>();
             int totalScanned = 0;
 
-            try
+            var enumOptions = new EnumerationOptions
             {
-                var enumOptions = new EnumerationOptions
-                {
-                    IgnoreInaccessible = true,
-                    RecurseSubdirectories = true,
-                    AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.System
-                };
+                IgnoreInaccessible = true,
+                RecurseSubdirectories = true,
+                AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.System
+            };
 
-                foreach (var file in Directory.EnumerateFiles(rootDirectory, "*.*", enumOptions))
+            foreach (var root in validRoots)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
                 {
-                    ct.ThrowIfCancellationRequested();
-                    totalScanned++;
-
-                    try
+                    foreach (var file in Directory.EnumerateFiles(root, "*.*", enumOptions))
                     {
-                        var fi = new FileInfo(file);
-                        if (fi.Length >= minSizeBytes)
+                        ct.ThrowIfCancellationRequested();
+                        totalScanned++;
+
+                        try
                         {
-                            if (!filesBySize.TryGetValue(fi.Length, out var list))
+                            var fi = new FileInfo(file);
+                            if (fi.Length >= minSizeBytes)
                             {
-                                list = new List<string>();
-                                filesBySize[fi.Length] = list;
+                                if (!filesBySize.TryGetValue(fi.Length, out var list))
+                                {
+                                    list = new List<string>();
+                                    filesBySize[fi.Length] = list;
+                                }
+                                list.Add(file);
                             }
-                            list.Add(file);
+                        }
+                        catch { }
+
+                        if (totalScanned % 100 == 0)
+                        {
+                            progress?.Report((totalScanned, results.Count));
                         }
                     }
-                    catch { }
-
-                    if (totalScanned % 100 == 0)
-                    {
-                        progress?.Report((totalScanned, results.Count));
-                    }
                 }
+                catch (OperationCanceledException) { throw; }
+                catch { }
             }
-            catch (OperationCanceledException) { throw; }
-            catch { }
 
             // Filter out unique sizes (size groups with only 1 file have 0 duplicates)
             var candidateGroups = filesBySize.Where(kv => kv.Value.Count > 1).ToList();
@@ -253,27 +267,48 @@ public class DiskDuplicateService
     }
 
     /// <summary>
-    /// Deduplica automáticamente un grupo reemplazando todos los duplicados por Hardlinks al primario.
+    /// Deduplica automáticamente un grupo agrupando los archivos por volumen/disco.
+    /// Para cada volumen que tenga 2 o más copias idénticas, se conserva una y las demás se reemplazan por Hardlinks NTFS (Zero-Copy).
+    /// Si dos archivos idénticos están en discos distintos (ej: C: y D:), no se pueden enlazar entre sí porque NTFS no admite hardlinks inter-volumen.
     /// </summary>
-    public DeduplicationResult DeduplicateGroupWithHardLinks(DuplicateFileGroup group, string primaryPath)
+    public DeduplicationResult DeduplicateGroupVolumeAware(DuplicateFileGroup group, string? preferredMasterPath = null)
     {
         long totalSaved = 0;
         int count = 0;
         var errors = new List<string>();
 
-        foreach (var file in group.FilePaths)
-        {
-            if (file.Equals(primaryPath, StringComparison.OrdinalIgnoreCase)) continue;
+        // Agrupar por volumen (C:\, D:\, etc.)
+        var volumeGroups = group.FilePaths
+            .GroupBy(f => Path.GetPathRoot(Path.GetFullPath(f)) ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
-            var res = ReplaceWithHardLink(file, primaryPath);
-            if (res.Success)
+        foreach (var volGroup in volumeGroups)
+        {
+            var filesInVol = volGroup.ToList();
+            if (filesInVol.Count <= 1)
             {
-                totalSaved += res.BytesSaved;
-                count++;
+                // Solo hay un archivo en este volumen; no hay duplicados intra-volumen para enlazar
+                continue;
             }
-            else
+
+            // Seleccionar el archivo maestro para este volumen
+            string master = (preferredMasterPath != null && filesInVol.Contains(preferredMasterPath, StringComparer.OrdinalIgnoreCase))
+                ? preferredMasterPath
+                : filesInVol[0];
+
+            foreach (var file in filesInVol)
             {
-                errors.Add(res.Message);
+                if (file.Equals(master, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var res = ReplaceWithHardLink(file, master);
+                if (res.Success)
+                {
+                    totalSaved += res.BytesSaved;
+                    count++;
+                }
+                else
+                {
+                    errors.Add(res.Message);
+                }
             }
         }
 
@@ -282,9 +317,17 @@ public class DiskDuplicateService
             Success = count > 0 || errors.Count == 0,
             FilesProcessed = count,
             BytesSaved = totalSaved,
-            Message = $"Procesados {count} archivo(s). Espacio físico liberado: {totalSaved / (1024.0 * 1024.0):N2} MB." +
-                      (errors.Count > 0 ? $" ({errors.Count} errores detectados)" : "")
+            Message = $"Procesados {count} archivo(s) intra-volumen. Espacio físico liberado: {totalSaved / (1024.0 * 1024.0):N2} MB." +
+                      (errors.Count > 0 ? $" ({errors.Count} advertencias/errores)" : "")
         };
+    }
+
+    /// <summary>
+    /// Deduplica automáticamente un grupo reemplazando todos los duplicados por Hardlinks al primario (con soporte multi-volumen seguro).
+    /// </summary>
+    public DeduplicationResult DeduplicateGroupWithHardLinks(DuplicateFileGroup group, string primaryPath)
+    {
+        return DeduplicateGroupVolumeAware(group, primaryPath);
     }
 
     /// <summary>

@@ -254,6 +254,96 @@ public class TabNavigationVisualTests
         });
     }
 
+    [Fact]
+    public void DeduplicationControl_Renders_MultiTargetScopeAndDriveChips()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var dedupControl = new DeduplicationControl();
+            var window = new Window
+            {
+                Width = 1050,
+                Height = 750,
+                Content = dedupControl,
+                Background = new SolidColorBrush(Color.FromRgb(0x07, 0x09, 0x0E)),
+                WindowStyle = WindowStyle.None
+            };
+
+            window.Show();
+            window.UpdateLayout();
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+
+            // Render Deduplicator Control with multi-target scope and drives
+            RenderAndSave(window, Path.Combine(reportsDir, "Deduplicator-MultiDrive-Scope.png"));
+
+            Assert.NotNull(dedupControl.BtnSelectAllDrives);
+            Assert.NotNull(dedupControl.BtnAddFolder);
+            Assert.NotNull(dedupControl.BtnStartScan);
+
+            // Test clicking "Todos los Discos"
+            dedupControl.BtnSelectAllDrives.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.UpdateLayout();
+            RenderAndSave(window, Path.Combine(reportsDir, "Deduplicator-AllDrives-Selected.png"));
+
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void PrivacyShieldControl_RendersWithoutException()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var privacyControl = new PrivacyShieldControl();
+            var window = new Window
+            {
+                Width = 1050,
+                Height = 750,
+                Content = privacyControl,
+                Background = new SolidColorBrush(Color.FromRgb(0x07, 0x09, 0x0E)),
+                WindowStyle = WindowStyle.None
+            };
+
+            // This verifies the BoolToVis / StatusBackground crash is permanently resolved!
+            window.Show();
+            window.UpdateLayout();
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+            RenderAndSave(window, Path.Combine(reportsDir, "PrivacyShield-Resolved.png"));
+
+            window.Close();
+        });
+    }
+
     private static void RenderAndSave(Window window, string filePath)
     {
         var width = (int)window.ActualWidth;

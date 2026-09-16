@@ -59,7 +59,7 @@
                                 <DataGridTemplateColumn Header="Protección" Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Background="{Binding IsProtected, Converter={StaticResource BoolToVis}}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                            <Border Background="{Binding StatusBackground}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
                                                 <TextBlock Text="{Binding IsProtectedText}" FontWeight="Bold" FontSize="11" Foreground="{Binding StatusColor}" />
                                             </Border>
                                         </DataTemplate>

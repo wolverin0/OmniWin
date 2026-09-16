@@ -20,6 +20,7 @@ public class PrivacySettingUiItem
 
     public string IsProtectedText => IsProtected ? "PROTEGIDO ✔" : "EXPUESTO ⚠️";
     public Brush StatusColor => IsProtected ? new SolidColorBrush(Color.FromRgb(52, 211, 153)) : new SolidColorBrush(Color.FromRgb(251, 191, 36));
+    public Brush StatusBackground => IsProtected ? new SolidColorBrush(Color.FromRgb(6, 78, 59)) : new SolidColorBrush(Color.FromRgb(120, 53, 15));
     public string ActionButtonText => IsProtected ? "Revertir" : "Bloquear";
     public Brush ActionButtonBackground => IsProtected ? new SolidColorBrush(Color.FromRgb(55, 65, 81)) : new SolidColorBrush(Color.FromRgb(5, 150, 105));
 }

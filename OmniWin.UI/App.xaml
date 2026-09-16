@@ -46,6 +46,8 @@
         <SolidColorBrush x:Key="TextMuted" Color="{StaticResource TextMutedColor}" />
         <SolidColorBrush x:Key="TextSubtle" Color="{StaticResource TextSubtleColor}" />
 
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
         <!-- Global TextBlock Contrast & Typography Defaults -->
         <Style TargetType="{x:Type TextBlock}">
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
