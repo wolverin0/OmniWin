@@ -673,6 +673,7 @@ public class McpServer
         });
 
         McpPhase28Tools.RegisterTools(tools);
+        McpPhase29Tools.RegisterTools(tools);
         return tools;
     }
 
@@ -684,6 +685,11 @@ public class McpServer
         try
         {
             if (await McpPhase28Tools.TryExecuteToolAsync(toolName, args, content))
+            {
+                return new JsonObject { ["content"] = content, ["isError"] = false };
+            }
+
+            if (await McpPhase29Tools.TryExecuteToolAsync(toolName, args, content))
             {
                 return new JsonObject { ["content"] = content, ["isError"] = false };
             }

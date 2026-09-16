@@ -8,12 +8,12 @@ namespace OmniWin.Tests;
 public class McpServerTests
 {
     [Fact]
-    public void GetToolsList_ReturnsAll44Tools()
+    public void GetToolsList_ReturnsAll49Tools()
     {
         var tools = McpServer.GetToolsList();
 
         Assert.NotNull(tools);
-        Assert.True(tools.Count >= 44, $"Expected at least 44 tools, found {tools.Count}");
+        Assert.True(tools.Count >= 49, $"Expected at least 49 tools, found {tools.Count}");
     }
 
     [Theory]
@@ -61,6 +61,11 @@ public class McpServerTests
     [InlineData("win_battery_health")]
     [InlineData("win_ransomware_canary")]
     [InlineData("win_context_menu")]
+    [InlineData("win_app_migration")]
+    [InlineData("win_network_qos")]
+    [InlineData("win_idle_maintenance")]
+    [InlineData("win_spotlight_wallpapers")]
+    [InlineData("win_port_conflict")]
     public void GetToolsList_ContainsExpectedTool(string expectedToolName)
     {
         var tools = McpServer.GetToolsList();

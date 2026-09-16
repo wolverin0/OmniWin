@@ -152,6 +152,29 @@ public class Program
                 Phase28Commands.HandleCanary(args);
                 break;
 
+            case "migrate":
+            case "appmove":
+                await Phase29Commands.HandleMigrateAsync(args);
+                break;
+
+            case "qos":
+            case "limit":
+                await Phase29Commands.HandleQosAsync(args);
+                break;
+
+            case "idle":
+                await Phase29Commands.HandleIdleAsync(args);
+                break;
+
+            case "spotlight":
+                await Phase29Commands.HandleSpotlightAsync(args);
+                break;
+
+            case "port":
+            case "ports":
+                await Phase29Commands.HandlePortAsync(args);
+                break;
+
             case "intel":
             case "inspect":
                 await Phase27Commands.HandleIntelAsync(args);
@@ -214,6 +237,11 @@ public class Program
         Console.WriteLine("  battery [--status] [--extreme-saver on|off] Reporte de degradación de batería y Watts");
         Console.WriteLine("  canary [--status|--start|--stop]           Trampas señuelo contra ransomware en tiempo real");
         Console.WriteLine("  contextmenu [--classic on|off]             Menú clásico de Windows 10 y limpiador de shell");
+        Console.WriteLine("  migrate [--source <dir>] [--target <dir>]  Mueve juegos/apps a otro disco con Junctions NTFS");
+        Console.WriteLine("  qos [--app <exe>] [--limit <kbps>]         Limita ancho de banda por proceso (Gaming Preset)");
+        Console.WriteLine("  idle [--status|--run|--start]              Mantenimiento inteligente en inactividad (Re-Trim, RAM)");
+        Console.WriteLine("  spotlight [--scan|--export|--set-wallpaper] Extrae fondos 4K de Windows Spotlight y Bing");
+        Console.WriteLine("  port [<puerto>] [--list|--kill <puerto>]   Diagnóstico y liberación de puertos en conflicto");
         Console.WriteLine("  mcp                                        Inicia servidor MCP stdio para agentes IA\n");
     }
 

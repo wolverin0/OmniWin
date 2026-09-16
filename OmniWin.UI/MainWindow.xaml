@@ -73,6 +73,7 @@
                             <Button x:Name="NavBtn4" Tag="4" Content="🧹  Limpieza de Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn16" Tag="16" Content="💾  Espacio en Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn23" Tag="23" Content="🗂️  Deduplicador Zero-Copy" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn26" Tag="26" Content="🚀  Migrador Apps &amp; Juegos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn22" Tag="22" Content="♻️  Recuperación Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn5" Tag="5" Content="🛠️  Tweaks &amp; Debloat" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn7" Tag="7" Content="⚙️  Mantenimiento" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
@@ -83,6 +84,7 @@
                             <Button x:Name="NavBtn9" Tag="9" Content="🌐  Red &amp; Sockets" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn20" Tag="20" Content="🛡️  Cortafuegos Visual" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn21" Tag="21" Content="🔒  DNS Seguro &amp; HOSTS" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn27" Tag="27" Content="🌐  Red QoS, Puertos &amp; Idle" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn10" Tag="10" Content="🔒  Desbloqueo Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn24" Tag="24" Content="🔌  Expulsor USB &amp; Flash" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn11" Tag="11" Content="🚀  Inicio de Windows" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
@@ -95,6 +97,7 @@
                             <Button x:Name="NavBtn17" Tag="17" Content="✈️  Caja Negra &amp; BSOD" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn6" Tag="6" Content="📦  Software &amp; Drivers" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                             <Button x:Name="NavBtn12" Tag="12" Content="🤖  Servidor IA / MCP" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <Button x:Name="NavBtn28" Tag="28" Content="📸  Fondos 4K Spotlight" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
                         </StackPanel>
                     </ScrollViewer>
 
@@ -155,7 +158,7 @@
                             <Border Background="#062E21" BorderBrush="#0A4835" BorderThickness="1" CornerRadius="6" Padding="10,5" Margin="0,0,8,0">
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse Width="6" Height="6" Fill="{StaticResource Emerald}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="MCP Activo (44 tools)" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Emerald}" VerticalAlignment="Center" />
+                                    <TextBlock Text="MCP Activo (49 tools)" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Emerald}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -631,7 +634,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="CATÁLOGO DE 44 HERRAMIENTAS ACTIVAS:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8" />
+                            <TextBlock Text="CATÁLOGO DE 49 HERRAMIENTAS ACTIVAS:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8" />
                             <TextBlock Text="• win_get_system_health — Telemetría en vivo (CPU, GPU, RAM, Almacenamiento, Red)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_purge_ram — Purga instantánea de Standby List y Working Sets con API nativa NT" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_analyze_disk_bloat &amp; win_clean_disk — Análisis y limpieza de temporales" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
@@ -652,6 +655,11 @@
                             <TextBlock Text="• win_battery_health — Salud de batería, degradación, ciclos y consumo en Watts" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_ransomware_canary — Señuelos canarios y congelamiento de procesos con NtSuspendProcess" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                             <TextBlock Text="• win_context_menu — Toggle de menú clásico Windows 11 y reinicio de Explorer" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_app_migration — Migrador de juegos y apps entre unidades con enlaces Junction NTFS" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_network_qos — Limitador de ancho de banda por proceso (Gaming preset y control KB/s)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_idle_maintenance — Mantenimiento inteligente en inactividad (Re-Trim SSD, RAM y temporales)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_spotlight_wallpapers — Extractor y aplicador de fondos 4K de Windows Spotlight y Bing" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
+                            <TextBlock Text="• win_port_conflict — Detección instantánea y liberación de puertos de red en conflicto" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4" />
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -720,6 +728,21 @@
             <!-- TAB 25: PRIVACIDAD & ANTI-ESPÍA -->
             <TabItem Header="🛡️ Privacidad">
                 <views:PrivacyShieldControl />
+            </TabItem>
+
+            <!-- TAB 26: MIGRADOR DE APPS & JUEGOS -->
+            <TabItem Header="🚀 Migrador">
+                <views:AppMigrationControl />
+            </TabItem>
+
+            <!-- TAB 27: RED QOS, PUERTOS & IDLE -->
+            <TabItem Header="🌐 Red QoS &amp; Puertos">
+                <views:NetworkQosControl />
+            </TabItem>
+
+            <!-- TAB 28: FONDOS SPOTLIGHT 4K -->
+            <TabItem Header="📸 Fondos 4K">
+                <views:SpotlightWallpaperControl />
             </TabItem>
         </TabControl>
 

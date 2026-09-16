@@ -320,6 +320,9 @@ public partial class MainWindow : Window
         _navMap[23] = NavBtn23;
         _navMap[24] = NavBtn24;
         _navMap[25] = NavBtn25;
+        _navMap[26] = NavBtn26;
+        _navMap[27] = NavBtn27;
+        _navMap[28] = NavBtn28;
 
         UpdateNavHighlight(MainTabs.SelectedIndex);
     }
@@ -370,7 +373,7 @@ public partial class MainWindow : Window
         9 => ("🌐 Diagnóstico de Red & Sockets", "Auditoría de seguridad, prueba de latencia DNS y reseteo de Winsock/DNS."),
         10 => ("🔒 Desbloqueador de Archivos", "Identificación y liberación de archivos bloqueados mediante Windows Restart Manager."),
         11 => ("🚀 Arranque & Servicios", "Control de elementos de inicio y desactivación segura de telemetría de Windows."),
-        12 => ("🤖 Servidor IA / MCP", "Servidor de 44 herramientas para Claude, Antigravity y Cursor con auto-registro."),
+        12 => ("🤖 Servidor IA / MCP", "Servidor de 49 herramientas para Claude, Antigravity y Cursor con auto-registro."),
         13 => ("🎧 Mezclador de Audio Nativo", "Control de volumen independiente por aplicación y muting vía CoreAudio."),
         14 => ("🛡️ Microsoft Defender ASR", "Gestión de las 16 reglas de Attack Surface Reduction para mitigación en kernel."),
         15 => ("🔋 Energía, CPU & Multi-GPU", "Administración de planes de energía, Core Parking, EPP, scheduler de P/E-Cores y soporte universal AMD/Intel/NVIDIA."),
@@ -384,6 +387,9 @@ public partial class MainWindow : Window
         23 => ("🗂️ Deduplicador Zero-Copy (Hardlinks)", "Deduplicación en 3 fases: hashing MD5/SHA256 y unificación mediante hardlinks NTFS sin duplicar espacio."),
         24 => ("🔌 Expulsor USB & Doctor Flash", "Diagnóstico de locks en medios extraíbles, expulsión forzada segura y test de integridad contra memorias falsas."),
         25 => ("🛡️ Privacidad & Anti-Espía", "Auditoría transaccional de telemetría de Windows, Recall AI, Bing Start y diagnósticos con reversión WAL."),
+        26 => ("🚀 Migrador de Juegos & Apps (Junctions)", "Mueve carpetas pesadas a otra unidad de disco y crea un enlace simbólico Junction transparente sin romper rutas ni configuraciones."),
+        27 => ("🌐 Red QoS, Puertos & Mantenimiento Idle", "Limita el ancho de banda por proceso, diagnostica y libera puertos en conflicto y programa mantenimiento inteligente en inactividad."),
+        28 => ("📸 Fondos 4K de Windows Spotlight & Bing", "Descubre y extrae fotografías ultra-HD ocultas en la caché de pantalla de bloqueo y aplícalas como fondo de pantalla con un clic."),
         _ => ("OmniWin", "Panel de Control y Optimización de Windows")
     };
 
@@ -397,7 +403,8 @@ public partial class MainWindow : Window
                 "06_tweaks_debloat", "07_software", "08_mantenimiento", "09_reparacion_console",
                 "10_red", "11_desbloqueo", "12_inicio", "13_ia_mcp", "14_mezclador_audio", "15_asr_defender", "16_energia_cpu",
                 "17_espacio_disco", "18_caja_negra_bsod", "19_omnicompanion", "20_game_profiler", "21_firewall_monitor", "22_dns_security",
-                "23_file_recovery", "24_deduplicator", "25_usb_doctor", "26_privacy_shield"
+                "23_file_recovery", "24_deduplicator", "25_usb_doctor", "26_privacy_shield",
+                "27_app_migration", "28_network_qos_ports", "29_spotlight_wallpapers"
             ];
 
             int originalIndex = MainTabs.SelectedIndex;
