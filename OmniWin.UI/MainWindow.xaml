@@ -11,6 +11,42 @@
         Foreground="{StaticResource TextPrimary}"
         FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
 
+    <Window.Resources>
+        <!-- Horizontal Hub Sub-Navigation Pill Button Style -->
+        <Style x:Key="SubNavPill" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#121A2D" />
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SubNavPillActive" TargetType="{x:Type Button}" BasedOn="{StaticResource SubNavPill}">
+            <Setter Property="Background" Value="#162B46" />
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <!-- Two-Column Master Layout: Left Sidebar + Main Stage -->
         <Grid>
@@ -55,49 +91,16 @@
                         </Grid>
                     </Border>
 
-                    <!-- Navigation Items List -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,8,6,8">
+                    <!-- Navigation Items List (6 Main Hubs) -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="8,10,8,10">
                         <StackPanel>
-                            <!-- CATEGORY 1: MONITOREO & HARDWARE -->
-                            <TextBlock Text="MONITOREO &amp; HARDWARE" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="12,6,0,4" />
-                            <Button x:Name="NavBtn0" Tag="0" Content="📊  Dashboard" Style="{StaticResource NavButtonActive}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn1" Tag="1" Content="📈  Telemetría &amp; Live" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn18" Tag="18" Content="📱  OmniCompanion Móvil" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn2" Tag="2" Content="🔍  Forense Procesos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-
-                            <!-- CATEGORY 2: RENDIMIENTO & OPTIMIZACIÓN -->
-                            <TextBlock Text="RENDIMIENTO &amp; LATENCIA" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="12,14,0,4" />
-                            <Button x:Name="NavBtn3" Tag="3" Content="⚡  Memoria RAM" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn19" Tag="19" Content="🎮  Game &amp; App Profiler" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn15" Tag="15" Content="🔋  Energía &amp; CPU" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn4" Tag="4" Content="🧹  Limpieza de Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn16" Tag="16" Content="💾  Espacio en Disco" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn23" Tag="23" Content="🗂️  Deduplicador Zero-Copy" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn26" Tag="26" Content="🚀  Migrador Apps &amp; Juegos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn22" Tag="22" Content="♻️  Recuperación Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn5" Tag="5" Content="🛠️  Tweaks &amp; Debloat" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn7" Tag="7" Content="⚙️  Mantenimiento" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn8" Tag="8" Content="🩹  Consola Reparación" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-
-                            <!-- CATEGORY 3: CONECTIVIDAD & SISTEMA -->
-                            <TextBlock Text="CONECTIVIDAD &amp; SISTEMA" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="12,14,0,4" />
-                            <Button x:Name="NavBtn9" Tag="9" Content="🌐  Red &amp; Sockets" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn20" Tag="20" Content="🛡️  Cortafuegos Visual" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn21" Tag="21" Content="🔒  DNS Seguro &amp; HOSTS" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn27" Tag="27" Content="🌐  Red QoS, Puertos &amp; Idle" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn10" Tag="10" Content="🔒  Desbloqueo Archivos" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn24" Tag="24" Content="🔌  Expulsor USB &amp; Flash" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn11" Tag="11" Content="🚀  Inicio de Windows" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn13" Tag="13" Content="🎧  Mezclador de Audio" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-
-                            <!-- CATEGORY 4: SEGURIDAD & AGENTE IA -->
-                            <TextBlock Text="SEGURIDAD &amp; AGENTE IA" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="12,14,0,4" />
-                            <Button x:Name="NavBtn25" Tag="25" Content="🛡️  Privacidad &amp; Anti-Espía" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn14" Tag="14" Content="🛡️  Reglas Defender ASR" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn17" Tag="17" Content="✈️  Caja Negra &amp; BSOD" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn6" Tag="6" Content="📦  Software &amp; Drivers" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn12" Tag="12" Content="🤖  Servidor IA / MCP" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
-                            <Button x:Name="NavBtn28" Tag="28" Content="📸  Fondos 4K Spotlight" Style="{StaticResource NavButton}" Click="NavBtn_Click" />
+                            <TextBlock Text="CENTROS DE CONTROL" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSubtle}" Margin="10,6,0,8" />
+                            <Button x:Name="NavHub0" Tag="0" Content="📊  Visión General" Style="{StaticResource NavButtonActive}" Click="NavHub_Click" Margin="0,0,0,3" />
+                            <Button x:Name="NavHub1" Tag="1" Content="⚡  Rendimiento &amp; Gaming" Style="{StaticResource NavButton}" Click="NavHub_Click" Margin="0,0,0,3" />
+                            <Button x:Name="NavHub2" Tag="2" Content="💾  Almacenamiento" Style="{StaticResource NavButton}" Click="NavHub_Click" Margin="0,0,0,3" />
+                            <Button x:Name="NavHub3" Tag="3" Content="🌐  Red &amp; Conectividad" Style="{StaticResource NavButton}" Click="NavHub_Click" Margin="0,0,0,3" />
+                            <Button x:Name="NavHub4" Tag="4" Content="🛡️  Seguridad &amp; Privacidad" Style="{StaticResource NavButton}" Click="NavHub_Click" Margin="0,0,0,3" />
+                            <Button x:Name="NavHub5" Tag="5" Content="⚙️  Sistema &amp; Herramientas" Style="{StaticResource NavButton}" Click="NavHub_Click" Margin="0,0,0,3" />
                         </StackPanel>
                     </ScrollViewer>
 
@@ -105,7 +108,7 @@
                     <Border Grid.Row="2" Padding="12,10" BorderBrush="{StaticResource CardBorder}" BorderThickness="0,1,0,0">
                         <StackPanel>
                             <!-- Admin Status Chip -->
-                            <Border x:Name="BadgeAdmin" Background="#062E21" BorderBrush="#0A4835" BorderThickness="1" CornerRadius="6" Padding="8,5" Margin="0,0,0,6" Cursor="Hand" MouseDown="BadgeAdmin_MouseDown" ToolTip="Haz clic para reiniciar con privilegios de Administrador">
+                            <Border x:Name="BadgeAdmin" Background="#062E21" BorderBrush="#0A4835" BorderThickness="1" CornerRadius="6" Padding="8,5" Margin="0,0,0,8" Cursor="Hand" MouseDown="BadgeAdmin_MouseDown" ToolTip="Haz clic para reiniciar con privilegios de Administrador">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -118,8 +121,15 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Onboarding Button -->
-                            <Button x:Name="BtnOpenWizard" Content="🧭 Guía / Onboarding" Click="BtnOpenWizard_Click" Style="{StaticResource SecondaryButton}" Padding="8,5" FontSize="11" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                            <!-- Guided Tuning Wizard & Welcome Tour Action Buttons -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="BtnOpenWizard" Content="🧭 Asistente" Click="BtnOpenWizard_Click" Style="{StaticResource SecondaryButton}" Padding="4,6" FontSize="10.5" Margin="0,0,3,0" ToolTip="Asistente de Optimización Guiada (7 pasos)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                                <Button x:Name="BtnOpenTour" Grid.Column="1" Content="💡 Tour" Click="BtnOpenTour_Click" Style="{StaticResource SecondaryButton}" Padding="4,6" FontSize="10.5" Margin="3,0,0,0" ToolTip="Tour de Bienvenida y Atajos Globales" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -131,6 +141,8 @@
             <Grid Grid.Column="1" Margin="18,14,18,14">
                 <Grid.RowDefinitions>
                     <!-- Top Breadcrumb & Actions Bar -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Hub Sub-Navigation Horizontal Strip -->
                     <RowDefinition Height="Auto" />
                     <!-- Tab Pages Content (Borderless) -->
                     <RowDefinition Height="*" />
@@ -186,8 +198,15 @@
                     </Grid>
                 </Border>
 
+                <!-- Hub Sub-Navigation Horizontal Pill Strip -->
+                <Border Grid.Row="1" x:Name="HubSubNavStrip" Margin="0,0,0,10" Padding="4" Background="#0A0E17" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="HubSubNavPanel" Orientation="Horizontal" />
+                    </ScrollViewer>
+                </Border>
+
                 <!-- Tab Pages Content (Borderless TabControl, TabItems act as Pages) -->
-                <TabControl Grid.Row="1" x:Name="MainTabs" Background="Transparent" BorderThickness="0" Padding="0" SelectionChanged="MainTabs_SelectionChanged">
+                <TabControl Grid.Row="2" x:Name="MainTabs" SelectedIndex="0" Background="Transparent" BorderThickness="0" Padding="0" SelectionChanged="MainTabs_SelectionChanged">
                     <TabControl.Template>
                         <ControlTemplate TargetType="{x:Type TabControl}">
                             <ContentPresenter ContentSource="SelectedContent" Margin="{TemplateBinding Padding}" />
@@ -747,7 +766,7 @@
         </TabControl>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Margin="0,12,0,0" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{StaticResource CardBorder}">
+        <Border Grid.Row="3" Margin="0,12,0,0" Padding="0,8,0,0" BorderThickness="0,1,0,0" BorderBrush="{StaticResource CardBorder}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -760,7 +779,12 @@
         </Grid>
     </Grid>
 
-    <!-- Fullscreen Glassmorphism Onboarding Overlay -->
+    <!-- Fullscreen Glassmorphism Welcome Tour Overlay -->
+    <Grid x:Name="WelcomeTourOverlay" Visibility="Collapsed" Background="#D9050811">
+        <views:WelcomeTourControl x:Name="TourControl" HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </Grid>
+
+    <!-- Fullscreen Glassmorphism Guided Optimization Wizard Overlay -->
     <Grid x:Name="OnboardingOverlay" Visibility="Collapsed" Background="#D9050811">
         <views:OnboardingWizardControl x:Name="WizardControl" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </Grid>

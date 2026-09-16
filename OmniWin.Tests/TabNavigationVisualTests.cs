@@ -5,7 +5,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Linq;
 using OmniWin.UI;
+using OmniWin.UI.Services;
 using OmniWin.UI.Views;
 using Xunit;
 
@@ -109,6 +111,146 @@ public class TabNavigationVisualTests
             Assert.Equal(p2Initial.Y, p2After.Y, 1.0);
             Assert.Equal(p3Initial.Y, p3After.Y, 1.0);
             Assert.True(Math.Abs(p2After.Y - p3After.Y) <= 5.0, $"Tabs are not on the same horizontal row: p2={p2After.Y}, p3={p3After.Y}");
+        });
+    }
+
+    [Fact]
+    public void HubNavigationRegistry_All29Tabs_MappedToHubsWithoutDuplicates()
+    {
+        Assert.Equal(6, HubNavigationRegistry.Hubs.Length);
+
+        var allTabIndices = new System.Collections.Generic.List<int>();
+        foreach (var hub in HubNavigationRegistry.Hubs)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(hub.Title));
+            Assert.NotEmpty(hub.SubItems);
+            foreach (var sub in hub.SubItems)
+            {
+                allTabIndices.Add(sub.TabIndex);
+            }
+        }
+
+        // All 29 tabs must be present without duplicates
+        Assert.Equal(29, allTabIndices.Count);
+        Assert.Equal(29, allTabIndices.Distinct().Count());
+
+        for (int i = 0; i < 29; i++)
+        {
+            var mapping = HubNavigationRegistry.FindByTabIndex(i);
+            Assert.NotNull(mapping);
+            Assert.Equal(i, mapping.Value.SubItem.TabIndex);
+            Assert.InRange(mapping.Value.Hub.HubIndex, 0, 5);
+        }
+    }
+
+    [Fact]
+    public void WelcomeTourControl_InstantiatesAndRendersAllSlides()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var tourControl = new WelcomeTourControl();
+            var window = new Window
+            {
+                Width = 900,
+                Height = 650,
+                Content = tourControl,
+                Background = new SolidColorBrush(Color.FromRgb(0x07, 0x09, 0x0E)),
+                WindowStyle = WindowStyle.None
+            };
+
+            window.Show();
+            window.UpdateLayout();
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+
+            // Render Slide 1
+            RenderAndSave(window, Path.Combine(reportsDir, "WelcomeTour-Slide1.png"));
+            Assert.Equal(Visibility.Visible, tourControl.Slide1.Visibility);
+
+            // Transition to Slide 2
+            var btnNext = tourControl.BtnNext;
+            btnNext.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.UpdateLayout();
+            RenderAndSave(window, Path.Combine(reportsDir, "WelcomeTour-Slide2.png"));
+            Assert.Equal(Visibility.Visible, tourControl.Slide2.Visibility);
+
+            // Transition to Slide 3
+            btnNext.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.UpdateLayout();
+            RenderAndSave(window, Path.Combine(reportsDir, "WelcomeTour-Slide3.png"));
+            Assert.Equal(Visibility.Visible, tourControl.Slide3.Visibility);
+
+            bool completedFired = false;
+            tourControl.OnTourFinished += () => completedFired = true;
+            tourControl.BtnGoDashboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.True(completedFired);
+
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void MainWindow_HubNavigation_SwitchesHubsAndPopulatesPills()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var mainWin = new MainWindow();
+            mainWin.Show();
+            mainWin.OnboardingOverlay.Visibility = Visibility.Collapsed;
+            mainWin.WelcomeTourOverlay.Visibility = Visibility.Collapsed;
+            mainWin.UpdateLayout();
+
+            // Hub 0 (Visión General) is selected by default -> 4 sub items
+            Assert.Equal(0, mainWin.MainTabs.SelectedIndex);
+            Assert.Equal(4, mainWin.HubSubNavPanel.Children.Count);
+
+            // Switch to Hub 2 (Almacenamiento & Archivos) -> 7 sub items
+            mainWin.NavHub2.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            mainWin.UpdateLayout();
+
+            Assert.Equal(16, mainWin.MainTabs.SelectedIndex); // Tab 16 is Disk Space
+            Assert.Equal(7, mainWin.HubSubNavPanel.Children.Count);
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+            RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-6Hub-Storage.png"));
+
+            // Switch to Hub 1 (Rendimiento & Gaming) -> 4 sub items
+            mainWin.NavHub1.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            mainWin.UpdateLayout();
+
+            Assert.Equal(3, mainWin.MainTabs.SelectedIndex); // Tab 3 is RAM
+            Assert.Equal(4, mainWin.HubSubNavPanel.Children.Count);
+            RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-6Hub-Performance.png"));
+
+            mainWin.Close();
         });
     }
 

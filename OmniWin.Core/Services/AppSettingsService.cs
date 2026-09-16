@@ -7,6 +7,7 @@ namespace OmniWin.Core.Services;
 public class AppSettingsModel
 {
     public bool OnboardingCompleted { get; set; } = false;
+    public bool WelcomeTourCompleted { get; set; } = false;
     public string SelectedProfile { get; set; } = "Desktop";
     public string Language { get; set; } = "es";
     public bool MinimizeToTray { get; set; } = true;

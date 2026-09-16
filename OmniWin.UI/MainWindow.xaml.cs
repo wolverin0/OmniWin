@@ -113,6 +113,8 @@ public partial class MainWindow : Window
         // Tweaks are now hosted inside TweaksDebloatControl
 
         WizardControl.OnWizardCompleted += OnWizardCompletedHandler;
+        TourControl.OnTourFinished += OnTourFinishedHandler;
+        TourControl.OnLaunchWizardRequested += OnLaunchWizardRequestedHandler;
         Loaded += MainWindow_Loaded;
         App.Log("MainWindow constructor: completed.");
     }
@@ -233,7 +235,11 @@ public partial class MainWindow : Window
             }
         }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
-        if (Views.OnboardingWizardControl.ShouldShowOnboarding())
+        if (Views.WelcomeTourControl.ShouldShowTour())
+        {
+            ShowWelcomeTour();
+        }
+        else if (Views.OnboardingWizardControl.ShouldShowOnboarding())
         {
             ShowOnboardingWizard();
         }
@@ -290,48 +296,32 @@ public partial class MainWindow : Window
         App.Log("MainWindow_Loaded: completed.");
     }
 
-    private readonly Dictionary<int, Button> _navMap = new();
+    private Button[] _hubButtons = Array.Empty<Button>();
 
     private void InitNavigation()
     {
-        _navMap[0] = NavBtn0;
-        _navMap[1] = NavBtn1;
-        _navMap[2] = NavBtn2;
-        _navMap[3] = NavBtn3;
-        _navMap[4] = NavBtn4;
-        _navMap[5] = NavBtn5;
-        _navMap[6] = NavBtn6;
-        _navMap[7] = NavBtn7;
-        _navMap[8] = NavBtn8;
-        _navMap[9] = NavBtn9;
-        _navMap[10] = NavBtn10;
-        _navMap[11] = NavBtn11;
-        _navMap[12] = NavBtn12;
-        _navMap[13] = NavBtn13;
-        _navMap[14] = NavBtn14;
-        _navMap[15] = NavBtn15;
-        _navMap[16] = NavBtn16;
-        _navMap[17] = NavBtn17;
-        _navMap[18] = NavBtn18;
-        _navMap[19] = NavBtn19;
-        _navMap[20] = NavBtn20;
-        _navMap[21] = NavBtn21;
-        _navMap[22] = NavBtn22;
-        _navMap[23] = NavBtn23;
-        _navMap[24] = NavBtn24;
-        _navMap[25] = NavBtn25;
-        _navMap[26] = NavBtn26;
-        _navMap[27] = NavBtn27;
-        _navMap[28] = NavBtn28;
-
+        _hubButtons = new[] { NavHub0, NavHub1, NavHub2, NavHub3, NavHub4, NavHub5 };
+        if (MainTabs.SelectedIndex < 0) MainTabs.SelectedIndex = 0;
         UpdateNavHighlight(MainTabs.SelectedIndex);
     }
 
-    private void NavBtn_Click(object sender, RoutedEventArgs e)
+    private void NavHub_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int index))
+        if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int hubIndex))
         {
-            MainTabs.SelectedIndex = index;
+            if (hubIndex >= 0 && hubIndex < HubNavigationRegistry.Hubs.Length)
+            {
+                var hub = HubNavigationRegistry.Hubs[hubIndex];
+                var mapping = HubNavigationRegistry.FindByTabIndex(MainTabs.SelectedIndex);
+                if (mapping?.Hub.HubIndex != hubIndex)
+                {
+                    MainTabs.SelectedIndex = hub.SubItems[0].TabIndex;
+                }
+                else
+                {
+                    UpdateNavHighlight(MainTabs.SelectedIndex);
+                }
+            }
         }
     }
 
@@ -345,18 +335,53 @@ public partial class MainWindow : Window
 
     private void UpdateNavHighlight(int activeIndex)
     {
-        if (_navMap.Count == 0) return;
+        if (_hubButtons.Length == 0) return;
 
-        foreach (var kvp in _navMap)
+        var mapping = HubNavigationRegistry.FindByTabIndex(activeIndex);
+        int activeHubIndex = mapping?.Hub.HubIndex ?? 0;
+
+        for (int i = 0; i < _hubButtons.Length; i++)
         {
-            if (kvp.Value == null) continue;
-            bool isActive = (kvp.Key == activeIndex);
-            kvp.Value.Style = (Style)FindResource(isActive ? "NavButtonActive" : "NavButton");
+            if (_hubButtons[i] == null) continue;
+            bool isActive = (i == activeHubIndex);
+            _hubButtons[i].Style = (Style)FindResource(isActive ? "NavButtonActive" : "NavButton");
         }
+
+        RenderSubNavPills(activeHubIndex, activeIndex);
 
         var (title, desc) = GetTabHeaderInfo(activeIndex);
         if (TxtActiveSectionTitle != null) TxtActiveSectionTitle.Text = title;
         if (TxtActiveSectionDesc != null) TxtActiveSectionDesc.Text = desc;
+    }
+
+    private void RenderSubNavPills(int activeHubIndex, int activeTabIndex)
+    {
+        if (HubSubNavPanel == null) return;
+        HubSubNavPanel.Children.Clear();
+
+        if (activeHubIndex < 0 || activeHubIndex >= HubNavigationRegistry.Hubs.Length) return;
+        var hub = HubNavigationRegistry.Hubs[activeHubIndex];
+
+        foreach (var sub in hub.SubItems)
+        {
+            bool isSelected = (sub.TabIndex == activeTabIndex);
+            var pillBtn = new Button
+            {
+                Content = $"{sub.Icon}  {sub.Label}",
+                Tag = sub.TabIndex,
+                Style = (Style)FindResource(isSelected ? "SubNavPillActive" : "SubNavPill")
+            };
+
+            pillBtn.Click += (s, ev) =>
+            {
+                if (s is Button b && int.TryParse(b.Tag?.ToString(), out int targetIndex))
+                {
+                    MainTabs.SelectedIndex = targetIndex;
+                }
+            };
+
+            HubSubNavPanel.Children.Add(pillBtn);
+        }
     }
 
     private static (string Title, string Desc) GetTabHeaderInfo(int index) => index switch
@@ -491,6 +516,28 @@ public partial class MainWindow : Window
                 SecurityHelper.RestartAsAdministrator();
             }
         }
+    }
+
+    private void BtnOpenTour_Click(object sender, RoutedEventArgs e)
+    {
+        ShowWelcomeTour();
+    }
+
+    private void ShowWelcomeTour()
+    {
+        TourControl.ResetToFirstSlide();
+        WelcomeTourOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void OnTourFinishedHandler()
+    {
+        WelcomeTourOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnLaunchWizardRequestedHandler()
+    {
+        WelcomeTourOverlay.Visibility = Visibility.Collapsed;
+        ShowOnboardingWizard();
     }
 
     private void BtnOpenWizard_Click(object sender, RoutedEventArgs e)
