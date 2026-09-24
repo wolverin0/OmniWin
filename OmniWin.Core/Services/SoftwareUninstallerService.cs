@@ -32,6 +32,14 @@ public class AppLeftoversResult
     public long TotalBytesRecoverable { get; set; }
 }
 
+public class UninstallerLaunchResult
+{
+    public bool Success { get; set; }
+    public bool ExeNotFound { get; set; }
+    public string ExecutablePath { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+}
+
 public class SoftwareUninstallerService
 {
     public static SoftwareUninstallerService Instance { get; } = new();
@@ -132,7 +140,14 @@ public class SoftwareUninstallerService
         }
     }
 
-    public async Task<bool> LaunchUninstallerAsync(InstalledDesktopApp app, bool quiet = false)
+    private static readonly HashSet<string> IgnoredWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Professional", "Community", "Edition", "Repack", "Setup", "Installer", "Sitego",
+        "Windows", "Microsoft", "Version", "Build", "Release", "Desktop", "Portable",
+        "Update", "Client", "Tool", "Tools", "Software", "System", "Application"
+    };
+
+    public async Task<UninstallerLaunchResult> LaunchUninstallerExAsync(InstalledDesktopApp app, bool quiet = false)
     {
         return await Task.Run(() =>
         {
@@ -140,7 +155,14 @@ public class SoftwareUninstallerService
                 ? app.QuietUninstallString
                 : app.UninstallString;
 
-            if (string.IsNullOrWhiteSpace(cmd)) return false;
+            if (string.IsNullOrWhiteSpace(cmd))
+            {
+                return new UninstallerLaunchResult
+                {
+                    Success = false,
+                    ErrorMessage = "No hay comando de desinstalación registrado para esta aplicación."
+                };
+            }
 
             try
             {
@@ -174,6 +196,22 @@ public class SoftwareUninstallerService
                     }
                 }
 
+                // Check if uninstaller executable exists on disk (unless it's a standard system binary)
+                bool isSystemBinary = exe.Contains("msiexec", StringComparison.OrdinalIgnoreCase) ||
+                                     exe.Contains("cmd", StringComparison.OrdinalIgnoreCase) ||
+                                     exe.Contains("powershell", StringComparison.OrdinalIgnoreCase);
+
+                if (!isSystemBinary && !File.Exists(exe))
+                {
+                    return new UninstallerLaunchResult
+                    {
+                        Success = false,
+                        ExeNotFound = true,
+                        ExecutablePath = exe,
+                        ErrorMessage = $"El ejecutable de desinstalación no existe en el disco:\n{exe}"
+                    };
+                }
+
                 // If quiet was requested but only standard msiexec string exists, append /quiet
                 if (quiet && exe.Contains("msiexec", StringComparison.OrdinalIgnoreCase) && !args.Contains("/quiet", StringComparison.OrdinalIgnoreCase))
                 {
@@ -189,23 +227,85 @@ public class SoftwareUninstallerService
 
                 using var p = Process.Start(psi);
                 p?.WaitForExit();
-                return true;
+                return new UninstallerLaunchResult { Success = true, ExecutablePath = exe };
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[LaunchUninstaller Error]: {ex.Message}");
-                return false;
+                return new UninstallerLaunchResult
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
             }
         });
+    }
+
+    public async Task<bool> LaunchUninstallerAsync(InstalledDesktopApp app, bool quiet = false)
+    {
+        var res = await LaunchUninstallerExAsync(app, quiet);
+        return res.Success;
+    }
+
+    public bool ForceRemoveAppRegistryEntry(InstalledDesktopApp app)
+    {
+        try
+        {
+            string regKey = app.RegistryKeyPath;
+            if (string.IsNullOrWhiteSpace(regKey)) return false;
+
+            if (regKey.StartsWith("HKEY_CURRENT_USER\\", StringComparison.OrdinalIgnoreCase))
+            {
+                string sub = regKey.Substring("HKEY_CURRENT_USER\\".Length);
+                int lastSlash = sub.LastIndexOf('\\');
+                if (lastSlash > 0)
+                {
+                    using var pKey = Registry.CurrentUser.OpenSubKey(sub.Substring(0, lastSlash), true);
+                    pKey?.DeleteSubKeyTree(sub.Substring(lastSlash + 1), false);
+                    return true;
+                }
+            }
+            else if (regKey.StartsWith("HKEY_LOCAL_MACHINE\\", StringComparison.OrdinalIgnoreCase))
+            {
+                string sub = regKey.Substring("HKEY_LOCAL_MACHINE\\".Length);
+                int lastSlash = sub.LastIndexOf('\\');
+                if (lastSlash > 0)
+                {
+                    using var pKey = Registry.LocalMachine.OpenSubKey(sub.Substring(0, lastSlash), true);
+                    pKey?.DeleteSubKeyTree(sub.Substring(lastSlash + 1), false);
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ForceRemoveAppRegistryEntry Error]: {ex.Message}");
+        }
+        return false;
     }
 
     public AppLeftoversResult ScanLeftovers(InstalledDesktopApp app)
     {
         var result = new AppLeftoversResult { AppName = app.DisplayName };
-        string sanitizedName = Regex.Replace(app.DisplayName, @"[^a-zA-Z0-9]", "");
-        if (sanitizedName.Length < 3) return result;
 
-        // Check common AppData and ProgramData paths
+        // 1. Gather search keywords from DisplayName and Publisher
+        var keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var words = Regex.Split(app.DisplayName, @"[^\w\d]+")
+            .Where(w => w.Length >= 4 && !IgnoredWords.Contains(w));
+        foreach (var w in words) keywords.Add(w);
+
+        if (!string.IsNullOrWhiteSpace(app.Publisher) && app.Publisher.Length >= 4 && !IgnoredWords.Contains(app.Publisher))
+        {
+            keywords.Add(app.Publisher);
+        }
+
+        // If install location exists, add it directly
+        if (!string.IsNullOrWhiteSpace(app.InstallLocation) && Directory.Exists(app.InstallLocation))
+        {
+            result.LeftoverDirectories.Add(app.InstallLocation);
+        }
+
+        // 2. Check common AppData and ProgramData paths
         var roots = new[]
         {
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -224,18 +324,19 @@ public class SoftwareUninstallerService
                 foreach (var dir in Directory.GetDirectories(rootDir))
                 {
                     string dirName = Path.GetFileName(dir);
-                    if (dirName.Equals(app.DisplayName, StringComparison.OrdinalIgnoreCase) ||
-                        dirName.Contains(app.DisplayName, StringComparison.OrdinalIgnoreCase) ||
-                        (app.Publisher.Length > 3 && dirName.Equals(app.Publisher, StringComparison.OrdinalIgnoreCase)))
+                    if (keywords.Any(k => dirName.Contains(k, StringComparison.OrdinalIgnoreCase)))
                     {
-                        result.LeftoverDirectories.Add(dir);
+                        if (!result.LeftoverDirectories.Contains(dir))
+                        {
+                            result.LeftoverDirectories.Add(dir);
+                        }
                     }
                 }
             }
             catch { }
         }
 
-        // Check Registry Software keys
+        // 3. Check Registry Software keys
         var regRoots = new[]
         {
             (Registry.CurrentUser, @"Software"),
@@ -252,15 +353,26 @@ public class SoftwareUninstallerService
 
                 foreach (var sub in key.GetSubKeyNames())
                 {
-                    if (sub.Equals(app.DisplayName, StringComparison.OrdinalIgnoreCase) ||
-                        sub.Contains(app.DisplayName, StringComparison.OrdinalIgnoreCase) ||
-                        (app.Publisher.Length > 3 && sub.Equals(app.Publisher, StringComparison.OrdinalIgnoreCase)))
+                    if (keywords.Any(k => sub.Contains(k, StringComparison.OrdinalIgnoreCase)))
                     {
-                        result.LeftoverRegistryKeys.Add($"{hive.Name}\\{path}\\{sub}");
+                        string fullPath = $"{hive.Name}\\{path}\\{sub}";
+                        if (!result.LeftoverRegistryKeys.Contains(fullPath))
+                        {
+                            result.LeftoverRegistryKeys.Add(fullPath);
+                        }
                     }
                 }
             }
             catch { }
+        }
+
+        // 4. Also check if the app's own uninstall registry entry is an orphan
+        if (!string.IsNullOrWhiteSpace(app.RegistryKeyPath))
+        {
+            if (!result.LeftoverRegistryKeys.Contains(app.RegistryKeyPath))
+            {
+                result.LeftoverRegistryKeys.Add(app.RegistryKeyPath);
+            }
         }
 
         return result;

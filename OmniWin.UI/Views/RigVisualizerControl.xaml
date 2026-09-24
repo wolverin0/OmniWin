@@ -37,8 +37,8 @@
 
                 <!-- View Switcher -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BtnModeHologram" Content="📐 Blueprint Holográfico" Click="BtnModeHologram_Click" Background="#2563EB" Foreground="White" Padding="12,6" FontSize="11.5" Margin="0,0,6,0" Cursor="Hand" />
-                    <Button x:Name="BtnModeAiRender" Content="📸 Retrato Fotorrealista IA" Click="BtnModeAiRender_Click" Background="#1E293B" Foreground="{DynamicResource TextPrimary}" BorderBrush="#334155" BorderThickness="1" Padding="12,6" FontSize="11.5" Cursor="Hand" />
+                    <Button x:Name="BtnModeRealisticRig" Content="🖥️ Gabinete Gaming (RGB Live)" Click="BtnModeAiRender_Click" Style="{DynamicResource PrimaryButton}" Padding="12,6" FontSize="11.5" Margin="0,0,6,0" Cursor="Hand" />
+                    <Button x:Name="BtnModeHologram" Content="📐 Blueprint Holográfico" Click="BtnModeHologram_Click" Background="#1E293B" Foreground="{DynamicResource TextPrimary}" BorderBrush="#334155" BorderThickness="1" Padding="12,6" FontSize="11.5" Cursor="Hand" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -56,7 +56,7 @@
             <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,12,0">
                 <Grid>
                     <!-- Mode A: Interactive Holographic Blueprint -->
-                    <Border x:Name="PnlHologramView" Background="#060911" BorderBrush="#162035" BorderThickness="1" CornerRadius="8" Padding="18">
+                    <Border x:Name="PnlHologramView" Visibility="Collapsed" Background="#060911" BorderBrush="#162035" BorderThickness="1" CornerRadius="8" Padding="18">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -143,10 +143,10 @@
                                             </StackPanel>
                                             <!-- GPU Fans Indicator -->
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Border Width="38" Height="38" CornerRadius="19" Background="#090D18" BorderBrush="#334155" BorderThickness="1.5" Margin="0,0,6,0">
+                                                <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource CardDarkHover}" BorderBrush="#334155" BorderThickness="1.5" Margin="0,0,6,0">
                                                     <TextBlock Text="❄️" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
-                                                <Border Width="38" Height="38" CornerRadius="19" Background="#090D18" BorderBrush="#334155" BorderThickness="1.5">
+                                                <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource CardDarkHover}" BorderBrush="#334155" BorderThickness="1.5">
                                                     <TextBlock Text="❄️" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
                                             </StackPanel>
@@ -170,15 +170,143 @@
                         </Grid>
                     </Border>
 
-                    <!-- Mode B: Photorealistic AI Battlestation Portrait -->
-                    <Border x:Name="PnlAiRenderView" Visibility="Collapsed" Background="#030712" CornerRadius="8" ClipToBounds="True">
+                    <!-- Mode B: Photorealistic Interactive 3D Gaming Rig with Live ARGB Layers -->
+                    <Border x:Name="PnlInteractiveRigView" Visibility="Visible" Background="#030712" CornerRadius="8" ClipToBounds="True" BorderBrush="#162035" BorderThickness="1">
                         <Grid>
-                            <Image x:Name="ImgAiRender" Stretch="UniformToFill" />
-                            <Border VerticalAlignment="Bottom" Background="#CC090D18" Padding="14,10">
+                            <!-- 3D Transform Interactive Container (Zoom, Pan, Rotate, Perspectives) -->
+                            <Grid x:Name="RigInteractiveContainer" RenderTransformOrigin="0.5,0.5"
+                                  MouseWheel="RigContainer_MouseWheel"
+                                  MouseLeftButtonDown="RigContainer_MouseLeftButtonDown"
+                                  MouseLeftButtonUp="RigContainer_MouseLeftButtonUp"
+                                  MouseMove="RigContainer_MouseMove">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="RigScaleTransform" ScaleX="1.0" ScaleY="1.0" />
+                                        <RotateTransform x:Name="RigRotateTransform" Angle="0" />
+                                        <SkewTransform x:Name="RigSkewTransform" AngleX="0" AngleY="0" />
+                                        <TranslateTransform x:Name="RigTranslateTransform" X="0" Y="0" />
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
+
+                                <!-- Underlying Photorealistic Chassis Render -->
+                                <Image x:Name="ImgInteractiveRig" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                <!-- Interactive ARGB Lighting & Component Overlay (Aligned to 1000x562 16:9 Canvas) -->
+                                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas Width="1000" Height="562">
+                                        <!-- 1. AIO Liquid Cooler Pump Block (Live Temp OLED & Glowing RGB Ring) -->
+                                        <Border Canvas.Left="405" Canvas.Top="222" Width="84" Height="84" CornerRadius="42"
+                                                BorderThickness="3" BorderBrush="{Binding CurrentRgbBrush}"
+                                                Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="CPU">
+                                            <Border.ToolTip>
+                                                <ToolTip Content="Bomba Líquida AIO — Intel Core i9-14900K (Clic para diagnóstico)" />
+                                            </Border.ToolTip>
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="24" ShadowDepth="0" Opacity="0.95" />
+                                            </Border.Effect>
+                                            <Grid>
+                                                <Border Width="68" Height="68" CornerRadius="34" Background="#D5020617">
+                                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                        <TextBlock x:Name="TxtLiveCpuTempOnPump" Text="{Binding LiveCpuTempString}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="i9-14900K" FontSize="8.5" FontWeight="SemiBold" Foreground="#38BDF8" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- 2. DDR5 RGB Memory Banks (4 Modules with Dynamic Lightbars) -->
+                                        <Border Canvas.Left="486" Canvas.Top="166" Width="38" Height="126"
+                                                Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="RAM" Background="#11000000">
+                                            <Border.ToolTip>
+                                                <ToolTip Content="64 GB DDR5 RAM Banks (4 Módulos ARGB Sincronizados — Clic para detalles)" />
+                                            </Border.ToolTip>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Rectangle Width="5.5" Height="118" Margin="1.5,0" RadiusX="2" RadiusY="2" Fill="{Binding CurrentRgbBrush}">
+                                                    <Rectangle.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="16" ShadowDepth="0" Opacity="0.9" /></Rectangle.Effect>
+                                                </Rectangle>
+                                                <Rectangle Width="5.5" Height="118" Margin="1.5,0" RadiusX="2" RadiusY="2" Fill="{Binding CurrentRgbBrush}">
+                                                    <Rectangle.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="16" ShadowDepth="0" Opacity="0.9" /></Rectangle.Effect>
+                                                </Rectangle>
+                                                <Rectangle Width="5.5" Height="118" Margin="1.5,0" RadiusX="2" RadiusY="2" Fill="{Binding CurrentRgbBrush}">
+                                                    <Rectangle.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="16" ShadowDepth="0" Opacity="0.9" /></Rectangle.Effect>
+                                                </Rectangle>
+                                                <Rectangle Width="5.5" Height="118" Margin="1.5,0" RadiusX="2" RadiusY="2" Fill="{Binding CurrentRgbBrush}">
+                                                    <Rectangle.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="16" ShadowDepth="0" Opacity="0.9" /></Rectangle.Effect>
+                                                </Rectangle>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- 3. NVIDIA GeForce RTX 3080 (Lightbar & Temp Badge) -->
+                                        <Border Canvas.Left="285" Canvas.Top="310" Width="310" Height="52"
+                                                Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="GPU" Background="#08000000">
+                                            <Border.ToolTip>
+                                                <ToolTip Content="NVIDIA GeForce RTX 3080 (Ampere 10GB GDDR6X — Clic para diagnóstico)" />
+                                            </Border.ToolTip>
+                                            <Grid>
+                                                <!-- Top Edge Glowing Lightstrip -->
+                                                <Rectangle VerticalAlignment="Top" Height="3.5" RadiusX="1.5" RadiusY="1.5" Fill="{Binding CurrentRgbBrush}">
+                                                    <Rectangle.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="20" ShadowDepth="0" Opacity="0.95" /></Rectangle.Effect>
+                                                </Rectangle>
+                                                <!-- GeForce RTX Logo Badge -->
+                                                <Border HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" CornerRadius="3" Background="#CC030712" BorderBrush="{Binding CurrentRgbBrush}" BorderThickness="1" Padding="6,2">
+                                                    <TextBlock Text="GEFORCE RTX" FontSize="8.5" FontWeight="Bold" Foreground="{Binding CurrentRgbBrush}" />
+                                                </Border>
+                                                <!-- GPU Live Temp Badge -->
+                                                <Border HorizontalAlignment="Left" VerticalAlignment="Center" Margin="18,0,0,0" CornerRadius="3" Background="#CC030712" BorderBrush="#1E293B" BorderThickness="1" Padding="6,2">
+                                                    <TextBlock Text="{Binding LiveGpuTempString}" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- 4. Front & Side Intake ARGB Fans (3x Rings) -->
+                                        <Border Canvas.Left="645" Canvas.Top="156" Width="74" Height="74" CornerRadius="37" BorderThickness="2.5" BorderBrush="{Binding CurrentRgbBrush}" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="FANS">
+                                            <Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="26" ShadowDepth="0" Opacity="0.85" /></Border.Effect>
+                                        </Border>
+                                        <Border Canvas.Left="645" Canvas.Top="256" Width="74" Height="74" CornerRadius="37" BorderThickness="2.5" BorderBrush="{Binding CurrentRgbBrush}" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="FANS">
+                                            <Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="26" ShadowDepth="0" Opacity="0.85" /></Border.Effect>
+                                        </Border>
+                                        <Border Canvas.Left="645" Canvas.Top="356" Width="74" Height="74" CornerRadius="37" BorderThickness="2.5" BorderBrush="{Binding CurrentRgbBrush}" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="FANS">
+                                            <Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="26" ShadowDepth="0" Opacity="0.85" /></Border.Effect>
+                                        </Border>
+
+                                        <!-- 5. Rear & Top Radiator ARGB Fans -->
+                                        <Border Canvas.Left="272" Canvas.Top="156" Width="20" Height="80" CornerRadius="3" Background="{Binding CurrentRgbBrush}" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="FANS">
+                                            <Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="18" ShadowDepth="0" Opacity="0.85" /></Border.Effect>
+                                        </Border>
+                                        <StackPanel Canvas.Left="325" Canvas.Top="106" Orientation="Horizontal" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="FANS">
+                                            <Border Width="108" Height="14" CornerRadius="3" Background="{Binding CurrentRgbBrush}" Margin="0,0,10,0"><Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="15" ShadowDepth="0" Opacity="0.8" /></Border.Effect></Border>
+                                            <Border Width="108" Height="14" CornerRadius="3" Background="{Binding CurrentRgbBrush}" Margin="0,0,10,0"><Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="15" ShadowDepth="0" Opacity="0.8" /></Border.Effect></Border>
+                                            <Border Width="108" Height="14" CornerRadius="3" Background="{Binding CurrentRgbBrush}"><Border.Effect><DropShadowEffect Color="{Binding CurrentRgbColor}" BlurRadius="15" ShadowDepth="0" Opacity="0.8" /></Border.Effect></Border>
+                                        </StackPanel>
+
+                                        <!-- 6. Motherboard Z790 AORUS Shield Zone -->
+                                        <Border Canvas.Left="298" Canvas.Top="165" Width="74" Height="76" CornerRadius="4" Cursor="Hand" MouseLeftButtonUp="Component_Click" Tag="MOTHERBOARD" Background="#01000000">
+                                            <Border.ToolTip><ToolTip Content="Gigabyte Z790 AORUS PRO X (Clic para diagnóstico)" /></Border.ToolTip>
+                                        </Border>
+                                    </Canvas>
+                                </Viewbox>
+                            </Grid>
+
+                            <!-- Floating 3D Perspective Selector Toolbar -->
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0" Background="#DD0F172A" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="4">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="BtnPerspectiveIsometric" Content="🧭 Isométrica" Click="BtnPerspective_Click" Tag="Isometric" Background="#2563EB" Foreground="#FFFFFF" BorderThickness="0" Padding="8,4" FontSize="10" Margin="0,0,4,0" Cursor="Hand" />
+                                    <Button x:Name="BtnPerspectiveFront" Content="📐 Frontal" Click="BtnPerspective_Click" Tag="Front" Background="#1E293B" Foreground="#94A3B8" BorderThickness="0" Padding="8,4" FontSize="10" Margin="0,0,4,0" Cursor="Hand" />
+                                    <Button x:Name="BtnPerspectiveExploded" Content="🔍 Zoom Detalle" Click="BtnPerspective_Click" Tag="Zoom" Background="#1E293B" Foreground="#94A3B8" BorderThickness="0" Padding="8,4" FontSize="10" Margin="0,0,4,0" Cursor="Hand" />
+                                    <Button x:Name="BtnPerspectiveReset" Content="↺ Reset" Click="BtnPerspective_Click" Tag="Reset" Background="#1E293B" Foreground="#94A3B8" BorderThickness="0" Padding="6,4" FontSize="10" Cursor="Hand" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Bottom Glass Overlay Guide -->
+                            <Border VerticalAlignment="Bottom" Background="#DD090D18" Padding="14,8" BorderBrush="#162035" BorderThickness="0,1,0,0">
                                 <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="✨ RETRATO FOTORREALISTA GENERADO POR IA" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" />
-                                        <TextBlock Text="Renderizado fotorrealista de tu battlestation con Intel i9-14900K, RTX 3080, Z790 Aorus Pro X y 64GB DDR5." FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="✨ GABINETE INTERACTIVO EN VIVO" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,10,0" />
+                                        <TextBlock Text="Capas ARGB dinámicas sincronizadas • Rueda del ratón para Zoom • Arrastrar para rotar/mover" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <Border Width="12" Height="12" CornerRadius="6" Background="{Binding CurrentRgbBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="ARGB ACTIVO" FontSize="10" FontWeight="Bold" Foreground="{Binding CurrentRgbBrush}" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -201,7 +329,7 @@
                         <TextBlock x:Name="TxtInspectorTitle" Text="Intel Core i9-14900K" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4" />
                         <TextBlock x:Name="TxtInspectorSubtitle" Text="24 Núcleos (8 Rendimiento + 16 Eficiencia) • 32 Hilos" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
 
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10">
                             <StackPanel x:Name="PnlInspectorDetails">
                                 <TextBlock Text="• Reloj Actual: 5.7 - 5.8 GHz (Turbo Boost)" FontSize="11.5" Foreground="{DynamicResource TextPrimary}" Margin="0,1" />
                                 <TextBlock Text="• Temperatura de Paquete: 48°C (Rango Seguro)" FontSize="11.5" Foreground="#10B981" Margin="0,1" />
@@ -242,7 +370,7 @@
 
                             <!-- Dynamic Reactive Modes -->
                             <TextBlock Text="Modos Inteligentes:" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
-                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,10">
+                            <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,10">
                                 <StackPanel>
                                     <CheckBox x:Name="ChkThermalRgb" Content="🌡️ Reactivo a Temperatura CPU (Azul -> Verde -> Rojo)" Checked="ChkThermalRgb_Changed" Unchecked="ChkThermalRgb_Changed" Foreground="{DynamicResource TextPrimary}" FontSize="11" Margin="0,0,0,8" />
                                     <CheckBox x:Name="ChkGameAtmosphere" Content="🎮 Game Profile Sync (Cambio de luces al abrir juego)" IsChecked="True" Foreground="{DynamicResource TextPrimary}" FontSize="11" />
@@ -254,7 +382,7 @@
                             <ItemsControl x:Name="IcRgbDevices">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#090D18" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
+                                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />

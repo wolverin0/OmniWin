@@ -280,6 +280,7 @@ public class Program
                 Console.WriteLine($"\n[HARDWARE & TEMPERATURAS]");
                 Console.WriteLine($"  CPU: {tele.CpuName} | Carga: {tele.CpuLoadPercent:N1}% | Temp: {(tele.CpuTemperatureCelsius.HasValue ? $"{tele.CpuTemperatureCelsius:N0}°C" : "N/D")}");
                 Console.WriteLine($"  GPU: {tele.GpuName} | Carga: {tele.GpuLoadPercent:N1}% | Temp: {(tele.GpuTemperatureCelsius.HasValue ? $"{tele.GpuTemperatureCelsius:N0}°C" : "N/D")}");
+
             }
             catch { }
         }

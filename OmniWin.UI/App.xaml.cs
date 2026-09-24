@@ -18,6 +18,17 @@ public partial class App : Application
         catch { }
     }
 
+    private const string AppMutexName = @"Global\OmniWin_SingleInstance_AppMutex";
+    private static System.Threading.Mutex? _appMutex;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_RESTORE = 9;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
@@ -51,8 +62,52 @@ public partial class App : Application
             return;
         }
 
+        // Single-Instance Guard: prevent duplicate instances fighting over hardware sensors or companion port
+        bool createdNew = false;
+        try
+        {
+            _appMutex = new System.Threading.Mutex(true, AppMutexName, out createdNew);
+        }
+        catch (Exception ex)
+        {
+            Log($"Mutex creation warning: {ex.Message}");
+            createdNew = true;
+        }
+
+        bool isTestHost = AppDomain.CurrentDomain.FriendlyName.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                          AppDomain.CurrentDomain.FriendlyName.Contains("xunit", StringComparison.OrdinalIgnoreCase);
+
+        if (!createdNew && !e.Args.Contains("--multi-instance") && !isTestHost)
+        {
+            var currentPid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            var otherProc = System.Diagnostics.Process.GetProcessesByName("OmniWin")
+                .Concat(System.Diagnostics.Process.GetProcessesByName("OmniWin.UI"))
+                .FirstOrDefault(p => p.Id != currentPid);
+
+            if (otherProc != null)
+            {
+                Log($"Another instance of OmniWin (PID {otherProc.Id}) is already running. Focusing and exiting.");
+                try
+                {
+                    if (otherProc.MainWindowHandle != IntPtr.Zero)
+                    {
+                        ShowWindow(otherProc.MainWindowHandle, SW_RESTORE);
+                        SetForegroundWindow(otherProc.MainWindowHandle);
+                    }
+                }
+                catch { }
+
+                Shutdown(0);
+                return;
+            }
+            else
+            {
+                Log("Stale mutex detected without running process. Proceeding with startup.");
+            }
+        }
+
         // Automatically elevate to Administrator if started as standard user (unless in test mode)
-        if (!OmniWin.Core.Services.SecurityHelper.IsAdministrator() && !e.Args.Contains("--no-elevate"))
+        if (!OmniWin.Core.Services.SecurityHelper.IsAdministrator() && !e.Args.Contains("--no-elevate") && !isTestHost)
         {
             Log("Process is not running as Administrator. Triggering UAC elevation...");
             try
@@ -61,6 +116,8 @@ public partial class App : Application
                 if (OmniWin.Core.Services.SecurityHelper.RestartAsAdministrator(rawArgs))
                 {
                     Log("RestartAsAdministrator initiated. Exiting un-elevated process.");
+                    _appMutex?.Dispose();
+                    _appMutex = null;
                     return;
                 }
             }
@@ -72,7 +129,17 @@ public partial class App : Application
 
         base.OnStartup(e);
         this.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        this.Exit += (s, ev) => Log($"[EXIT] Application.Exit event fired with code {ev.ApplicationExitCode}");
+        this.Exit += (s, ev) =>
+        {
+            Log($"[EXIT] Application.Exit event fired with code {ev.ApplicationExitCode}");
+            try
+            {
+                _appMutex?.ReleaseMutex();
+                _appMutex?.Dispose();
+                _appMutex = null;
+            }
+            catch { }
+        };
 
         try
         {

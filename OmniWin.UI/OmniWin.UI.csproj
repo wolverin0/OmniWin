@@ -21,9 +21,16 @@
     <Resource Include="Assets\rig_render.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Assets\pc_rig_live.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="OmniWin.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 </Project>

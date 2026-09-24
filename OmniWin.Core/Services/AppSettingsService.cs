@@ -10,6 +10,7 @@ public class AppSettingsModel
     public bool WelcomeTourCompleted { get; set; } = false;
     public string SelectedProfile { get; set; } = "Desktop";
     public string Language { get; set; } = "es";
+    public string ThemeMode { get; set; } = "Dark"; // "Dark" or "Light"
     public bool MinimizeToTray { get; set; } = true;
     public bool TrafficWidgetVisible { get; set; } = false;
     public double? TrafficWidgetX { get; set; } = null;
@@ -19,6 +20,8 @@ public class AppSettingsModel
     public string PurgeHotkey { get; set; } = "Ctrl+Shift+P";
     public DateTime? LastOptimizationDate { get; set; } = null;
     public int TotalOptimizationsApplied { get; set; } = 0;
+    public string? PreferredCompanionIp { get; set; } = null;
+    public string? CompanionAuthToken { get; set; } = null;
 
     // Gaming Overlay HUD Configuration
     public int HudStyleIndex { get; set; } = 0; // 0 = RivaTunerText, 1 = GlassmorphicCard, 2 = CompactBar

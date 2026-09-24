@@ -77,6 +77,44 @@ public class PcieLinkInspector
         return report;
     }
 
+    public async Task<string> AuditDetailedBandwidthAsync()
+    {
+        return await Task.Run(() =>
+        {
+            var doctor = RunDoctorCheck();
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("════════════════════════════════════════════════════════════════════");
+            sb.AppendLine("           OMNIWIN — AUDITORÍA PROFUNDA DE BUS PCIE & ANCHO DE BANDA");
+            sb.AppendLine("════════════════════════════════════════════════════════════════════");
+            sb.AppendLine($"Fecha de auditoría: {DateTime.Now:g}");
+            sb.AppendLine($"Dispositivos analizados: {doctor.Devices.Count}");
+            sb.AppendLine($"Dispositivos con enlace degradado: {doctor.DegradedDevicesCount}\n");
+
+            foreach (var dev in doctor.Devices)
+            {
+                string icon = dev.IsDegraded ? "⚠ [DEGRADADO]" : "✔ [NOMINAL]";
+                sb.AppendLine($"{icon} {dev.DeviceClass.ToUpper()}: {dev.DeviceName}");
+                sb.AppendLine($"   • Ancho de Carriles: {dev.CurrentWidthString} (Capacidad física: {dev.MaxWidthString})");
+                sb.AppendLine($"   • Generación PCIe:  {dev.CurrentSpeedString} (Capacidad física: {dev.MaxSpeedString})");
+                sb.AppendLine($"   • Diagnóstico:       {dev.DiagnosticMessage}");
+
+                if (dev.IsDegraded && dev.DeviceClass == "GPU")
+                {
+                    sb.AppendLine("   💡 RECOMENDACIONES:");
+                    sb.AppendLine("      1. Ranura M.2 compartida: En chipsets Z690/Z790/B650, el slot M.2_2 o M.2_3 suele bifurcar el slot PCIe 1 de x16 a x8.");
+                    sb.AppendLine("      2. Cable Riser Vertical: Si usas soporte vertical, verifica que el cable sea PCIe 4.0/5.0 certificado.");
+                    sb.AppendLine("      3. Inserción en ranura: Limpia los contactos dorados con alcohol isopropílico y reinserta con firmeza.");
+                    sb.AppendLine("      4. Ahorro ASPM: En Windows, desactiva 'Link State Power Management' en Opciones de Energía si ocurre en reposo.");
+                }
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("════════════════════════════════════════════════════════════════════");
+            return sb.ToString();
+        });
+    }
+
     private List<PcieDeviceReport> InspectPnpClass(string pnpClass, string category)
     {
         var results = new List<PcieDeviceReport>();

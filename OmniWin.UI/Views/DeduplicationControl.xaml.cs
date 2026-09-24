@@ -208,6 +208,7 @@ public partial class DeduplicationControl : UserControl
     private void BtnCancelScan_Click(object sender, RoutedEventArgs e)
     {
         _scanCts?.Cancel();
+        ActiveTaskCoordinator.Instance.CancelTask("dedup_scan");
         TxtDeduplicateStatus.Text = "Cancelando escaneo...";
     }
 
@@ -233,12 +234,16 @@ public partial class DeduplicationControl : UserControl
             PbScan.Visibility = Visibility.Visible;
             TxtDeduplicateStatus.Text = $"Iniciando escaneo en {validTargets.Count} objetivo(s)...";
 
+            ActiveTaskCoordinator.Instance.StartTask("dedup_scan", "Deduplicador Zero-Copy", $"Escaneando {validTargets.Count} objetivo(s)...", hubIndex: 2, tabIndex: 6);
+
             _scanCts = new CancellationTokenSource();
             var progress = new Progress<(int scanned, int found)>(p =>
             {
                 Dispatcher.Invoke(() =>
                 {
-                    TxtDeduplicateStatus.Text = $"Archivos analizados: {p.scanned:N0} | Grupos duplicados detectados: {p.found:N0}...";
+                    string msg = $"Archivos analizados: {p.scanned:N0} | Duplicados: {p.found:N0}";
+                    TxtDeduplicateStatus.Text = msg;
+                    ActiveTaskCoordinator.Instance.UpdateProgress("dedup_scan", msg);
                 });
             });
 
@@ -262,14 +267,17 @@ public partial class DeduplicationControl : UserControl
             long totalWasted = _currentGroups.Sum(g => g.WastedBytes);
             TxtWastedSpaceBadge.Text = $"{totalWasted / (1024.0 * 1024.0):N1} MB RECUPERABLES";
             TxtDeduplicateStatus.Text = $"Escaneo completado: {_currentGroups.Count} grupos duplicados ({totalWasted / (1024.0 * 1024.0):N1} MB desperdiciados).";
+            ActiveTaskCoordinator.Instance.CompleteTask("dedup_scan", $"Finalizado: {_currentGroups.Count} grupos detectados");
         }
         catch (OperationCanceledException)
         {
             TxtDeduplicateStatus.Text = "Escaneo cancelado por el usuario.";
+            ActiveTaskCoordinator.Instance.CancelTask("dedup_scan");
         }
         catch (Exception ex)
         {
             TxtDeduplicateStatus.Text = $"Error durante el escaneo: {ex.Message}";
+            ActiveTaskCoordinator.Instance.CancelTask("dedup_scan");
         }
         finally
         {

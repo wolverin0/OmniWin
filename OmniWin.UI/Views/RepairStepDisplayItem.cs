@@ -111,12 +111,12 @@ public class RepairStepDisplayItem : INotifyPropertyChanged
                 break;
 
             case RepairStepStatus.Running:
-                StatusColor = FreezeBrush("#60A5FA");
-                StatusBg = FreezeBrush("#0C4A6E");
-                CardBackground = FreezeBrush("#0C182E");
-                CardBorderBrush = FreezeBrush("#0284C7");
-                NumberBadgeBg = FreezeBrush("#0284C7");
-                NumberBadgeFg = FreezeBrush("#FFFFFF");
+                StatusColor = FreezeBrush("#FAFAFA");
+                StatusBg = FreezeBrush("#27272A");
+                CardBackground = FreezeBrush("#18181B");
+                CardBorderBrush = FreezeBrush("#52525B");
+                NumberBadgeBg = FreezeBrush("#FAFAFA");
+                NumberBadgeFg = FreezeBrush("#09090B");
                 break;
 
             case RepairStepStatus.Completed:

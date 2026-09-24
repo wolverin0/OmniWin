@@ -14,6 +14,7 @@ public partial class CompanionServerControl : UserControl
 {
     private readonly CompanionServerService _server = CompanionServerService.Instance;
     private readonly DispatcherTimer _pollTimer = new();
+    private bool _isPopulatingAdapters;
 
     public CompanionServerControl()
     {
@@ -27,13 +28,47 @@ public partial class CompanionServerControl : UserControl
 
     private void CompanionServerControl_Loaded(object sender, RoutedEventArgs e)
     {
+        _server.OnNetworkChanged += Server_OnNetworkChanged;
+        LoadNetworkAdapters();
         RefreshUi();
         _pollTimer.Start();
     }
 
     private void CompanionServerControl_Unloaded(object sender, RoutedEventArgs e)
     {
+        _server.OnNetworkChanged -= Server_OnNetworkChanged;
         _pollTimer.Stop();
+    }
+
+    private void Server_OnNetworkChanged(string newIp)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            RefreshUi();
+        });
+    }
+
+    private void LoadNetworkAdapters()
+    {
+        _isPopulatingAdapters = true;
+        try
+        {
+            var adapters = CompanionServerService.GetAvailableNetworkAdapters();
+            CmbNetworkAdapters.ItemsSource = null;
+            CmbNetworkAdapters.ItemsSource = adapters;
+
+            var selected = adapters.FirstOrDefault(a => a.IpAddress == _server.LocalIp) ?? adapters.FirstOrDefault();
+            if (selected != null)
+            {
+                CmbNetworkAdapters.SelectedItem = selected;
+                TxtAdapterName.Text = $"{selected.Name} ({selected.InterfaceType})";
+            }
+        }
+        catch { }
+        finally
+        {
+            _isPopulatingAdapters = false;
+        }
     }
 
     private void RefreshUi()
@@ -145,5 +180,25 @@ public partial class CompanionServerControl : UserControl
             TxtFooter.Text = "¡Enlace copiado al portapapeles!";
         }
         catch { }
+    }
+
+    private void CmbNetworkAdapters_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isPopulatingAdapters) return;
+
+        if (CmbNetworkAdapters.SelectedItem is NetworkAdapterInfo selected)
+        {
+            _server.SetSelectedIp(selected.IpAddress);
+            TxtAdapterName.Text = $"{selected.Name} ({selected.InterfaceType})";
+            RefreshUi();
+            TxtFooter.Text = $"Red seleccionada: {selected.Name} ({selected.IpAddress}). Código QR actualizado.";
+        }
+    }
+
+    private void BtnRefreshAdapters_Click(object sender, RoutedEventArgs e)
+    {
+        LoadNetworkAdapters();
+        RefreshUi();
+        TxtFooter.Text = "Adaptadores de red re-escaneados exitosamente.";
     }
 }

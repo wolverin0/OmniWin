@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.SpotlightWallpaperControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.SpotlightWallpaperControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -39,7 +39,7 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="🔄 Actualizar" Click="BtnRefresh_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" Margin="0,0,8,0" />
-                    <Button x:Name="BtnExportAll" Content="📥 Exportar Todos a Imágenes" Click="BtnExportAll_Click" Background="#2563EB" Foreground="White" Padding="14,6" FontSize="12" FontWeight="Bold" Margin="0,0,8,0" />
+                    <Button x:Name="BtnExportAll" Content="📥 Exportar Todos a Imágenes" Click="BtnExportAll_Click" Style="{DynamicResource PrimaryButton}" Padding="14,6" FontSize="12" FontWeight="Bold" Margin="0,0,8,0" />
                     <Button Content="📁 Abrir Carpeta de Exportación" Click="BtnOpenExportFolder_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" />
                 </StackPanel>
             </Grid>

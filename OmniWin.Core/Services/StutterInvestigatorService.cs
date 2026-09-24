@@ -83,29 +83,84 @@ public class StutterInvestigatorService
         report.PeakFrameTimeMs = worstFrame.FrameTimeMs;
         report.LowestFps = lowestFps.Fps;
 
+        // Check if ETW or frame pacing captured an active 3D game rendering frames
+        bool isGameRendering = worstFrame.Fps > 5.0 && worstFrame.FrameTimeMs > 1.0;
+
+        if (!isGameRendering)
+        {
+            // Desktop & System Forensic Analysis
+            double jitter = KernelLatencyService.Instance.CurrentJitterUs;
+            var maxCpu = samples.Max(s => s.CpuLoadPercent);
+            var maxCpuTemp = samples.Max(s => s.CpuTempC);
+            var minRam = samples.Min(s => s.AvailableRamMb);
+
+            var topProcesses = new List<string>();
+            try
+            {
+                topProcesses = System.Diagnostics.Process.GetProcesses()
+                    .OrderByDescending(p => { try { return p.WorkingSet64; } catch { return 0L; } })
+                    .Take(4)
+                    .Select(p => $"{p.ProcessName} ({(p.WorkingSet64 / (1024 * 1024))} MB)")
+                    .ToList();
+            }
+            catch { }
+
+            string desktopCause;
+            if (jitter > 250.0)
+            {
+                desktopCause = "Latencia DPC / Interrupción de Controlador";
+                findings.Add($"Pico de latencia en kernel de {jitter:F0} µs (Jitter anormal). Posible retraso introducido por controladores de audio, red o GPU en el planificador.");
+            }
+            else if (maxCpu >= 85.0)
+            {
+                desktopCause = "Pico de Carga de CPU en Escritorio";
+                findings.Add($"Uso de procesador elevado ({maxCpu:F0}%). Procesos de mayor consumo: {string.Join(", ", topProcesses)}.");
+            }
+            else if (minRam < 1500)
+            {
+                desktopCause = "Presión de Memoria RAM";
+                findings.Add($"Memoria física disponible baja ({minRam} MB libres). Posible paginación en disco SSD.");
+            }
+            else if (maxCpuTemp >= 88.0)
+            {
+                desktopCause = "Temperatura Elevada de CPU";
+                findings.Add($"La temperatura del procesador alcanzó {maxCpuTemp:F0}°C durante el evento.");
+            }
+            else
+            {
+                desktopCause = "Sistema Estable (Sin juego 3D activo)";
+                findings.Add($"Telemetría de escritorio óptima: CPU {maxCpu:F0}%, Jitter de kernel {jitter:F0} µs y RAM libre {minRam} MB. Procesos activos: {string.Join(", ", topProcesses)}.");
+            }
+
+            report.ProbableCause = desktopCause;
+            report.CorrelatedFindings = findings;
+            report.Summary = $"{desktopCause}. {string.Join(" ", findings)}";
+            return report;
+        }
+
         var findings = new List<string>();
         string cause = "Stutter de Renderizado / Compilación de Shaders";
 
         // 1. Check Thermal Throttling
-        var maxCpuTemp = samples.Max(s => s.CpuTempC);
-        var maxGpuTemp = samples.Max(s => s.GpuTempC);
-        if (maxCpuTemp >= 90.0 || maxGpuTemp >= 86.0 || worstFrame.ThermalThrottling)
+        var maxCpuTemp3D = samples.Max(s => s.CpuTempC);
+        var maxGpuTemp3D = samples.Max(s => s.GpuTempC);
+        if (maxCpuTemp3D >= 90.0 || maxGpuTemp3D >= 86.0 || worstFrame.ThermalThrottling)
         {
             cause = "Throttling Térmico (CPU/GPU)";
-            findings.Add($"Temperatura máxima alcanzada: CPU {maxCpuTemp:F1}°C / GPU {maxGpuTemp:F1}°C. Los relojes de silicio bajaron de frecuencia para proteger el hardware.");
+            findings.Add($"Temperatura máxima alcanzada: CPU {maxCpuTemp3D:F1}°C / GPU {maxGpuTemp3D:F1}°C. Los relojes de silicio bajaron de frecuencia para proteger el hardware.");
         }
 
         // 2. Check RAM Exhaustion / Pagefault pressure
-        var minRam = samples.Min(s => s.AvailableRamMb);
-        if (minRam < 800)
+        var minRam3D = samples.Min(s => s.AvailableRamMb);
+        if (minRam3D < 800)
         {
             cause = "Presión Crítica de Memoria RAM / Hard Page Faults";
-            findings.Add($"Memoria RAM libre cayó a {minRam} MB. Windows tuvo que realizar paginación en disco (Pagefile) durante el cuadro.");
+            findings.Add($"Memoria RAM libre cayó a {minRam3D} MB. Windows tuvo que realizar paginación en disco (Pagefile) durante el cuadro.");
         }
 
         // 3. Check CPU 100% Saturation
-        var maxCpu = samples.Max(s => s.CpuLoadPercent);
-        if (maxCpu >= 98.0 && cause.StartsWith("Stutter de Renderizado"))
+        var maxCpu3D = samples.Max(s => s.CpuLoadPercent);
+        if (maxCpu3D >= 98.0 && cause.StartsWith("Stutter de Renderizado"))
         {
             cause = "Saturación de CPU / DPC Latency";
             findings.Add($"Carga de CPU al 100% durante el tirón. Procesos en segundo plano o DPC de controladores compitieron por los núcleos de renderizado.");
@@ -120,7 +175,7 @@ public class StutterInvestigatorService
 
         if (findings.Count == 0)
         {
-            findings.Add($"Frametime máximo registrado: {worstFrame.FrameTimeMs:F1} ms ({worstFrame.Fps:F0} FPS). CPU ({maxCpu:F0}%) y temperaturas ({maxCpuTemp:F0}°C) dentro de parámetros estables. Causas probables: carga asíncrona de shaders DirectX/Vulkan o streaming de texturas del motor del juego.");
+            findings.Add($"Frametime máximo registrado: {worstFrame.FrameTimeMs:F1} ms ({worstFrame.Fps:F0} FPS). CPU ({maxCpu3D:F0}%) y temperaturas ({maxCpuTemp3D:F0}°C) dentro de parámetros estables. Causas probables: carga asíncrona de shaders DirectX/Vulkan o streaming de texturas del motor del juego.");
         }
 
         report.ProbableCause = cause;

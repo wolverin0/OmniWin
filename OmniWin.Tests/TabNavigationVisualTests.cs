@@ -17,31 +17,8 @@ namespace OmniWin.Tests;
 [Collection("WpfVisualTests")]
 public class TabNavigationVisualTests
 {
-    private static readonly object _appLock = new();
-
-    private static void RunInSta(Action action)
-    {
-        Exception? threadEx = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex)
-            {
-                threadEx = ex;
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join(20000);
-
-        if (threadEx != null)
-        {
-            throw new AggregateException("STA thread failed", threadEx);
-        }
-    }
+    private static readonly object _appLock = WpfTestHelper.AppLock;
+    private static void RunInSta(Action action) => WpfTestHelper.Run(action);
 
     [Fact]
     public void TabControl_DoesNotSwapRows_AndMaintainsConsistentYPosition()
@@ -232,15 +209,16 @@ public class TabNavigationVisualTests
             Assert.Equal(0, mainWin.MainTabs.SelectedIndex);
             Assert.Equal(4, mainWin.HubSubNavPanel.Children.Count);
 
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+            RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-WinUI3-Dashboard.png"));
+
             // Switch to Hub 2 (Almacenamiento & Archivos) -> 7 sub items
             mainWin.NavHub2.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             mainWin.UpdateLayout();
 
             Assert.Equal(16, mainWin.MainTabs.SelectedIndex); // Tab 16 is Disk Space
             Assert.Equal(7, mainWin.HubSubNavPanel.Children.Count);
-
-            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
-            Directory.CreateDirectory(reportsDir);
             RenderAndSave(mainWin, Path.Combine(reportsDir, "MainWindow-6Hub-Storage.png"));
 
             // Switch to Hub 1 (Rendimiento & Gaming) -> 5 sub items (including Rig Hologram & RGB)
@@ -379,22 +357,79 @@ public class TabNavigationVisualTests
             var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
             Directory.CreateDirectory(reportsDir);
 
-            // 1. Render Interactive Holographic Blueprint
-            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-Hologram.png"));
-            Assert.Equal(Visibility.Visible, rigControl.PnlHologramView.Visibility);
-            Assert.Equal(Visibility.Collapsed, rigControl.PnlAiRenderView.Visibility);
-
-            // 2. Switch to AI Photorealistic Battlestation Render
-            rigControl.BtnModeAiRender.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            window.UpdateLayout();
-            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-AiRender.png"));
-            Assert.Equal(Visibility.Visible, rigControl.PnlAiRenderView.Visibility);
+            // 1. Initial Default View: Interactive Realistic Gaming Rig View
+            Assert.Equal(Visibility.Visible, rigControl.PnlInteractiveRigView.Visibility);
             Assert.Equal(Visibility.Collapsed, rigControl.PnlHologramView.Visibility);
+            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-AiRender.png"));
+
+            // 2. Switch to Holographic Blueprint View
+            rigControl.BtnModeHologram.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.UpdateLayout();
+            Assert.Equal(Visibility.Visible, rigControl.PnlHologramView.Visibility);
+            Assert.Equal(Visibility.Collapsed, rigControl.PnlInteractiveRigView.Visibility);
+            RenderAndSave(window, Path.Combine(reportsDir, "RigVisualizer-Hologram.png"));
 
             // 3. Test OpenRGB and ProcessEfficiency
             Assert.NotNull(OpenRgbClientService.Instance.Devices);
             var trim = ProcessEfficiencyService.TrimWorkingSet();
             Assert.True(trim.Success);
+
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void CompanionServerControl_Renders_NetworkSelectionAndQrCode()
+    {
+        RunInSta(() =>
+        {
+            lock (_appLock)
+            {
+                if (Application.Current == null)
+                {
+                    try
+                    {
+                        var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                        app.InitializeComponent();
+                    }
+                    catch { }
+                }
+            }
+
+            var companionControl = new CompanionServerControl();
+            var window = new Window
+            {
+                Width = 1050,
+                Height = 750,
+                Content = companionControl,
+                Background = new SolidColorBrush(Color.FromRgb(0x07, 0x09, 0x0E)),
+                WindowStyle = WindowStyle.None
+            };
+
+            window.Show();
+            window.UpdateLayout();
+
+            var reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+            Directory.CreateDirectory(reportsDir);
+
+            // Assert adapters are populated in the ComboBox
+            Assert.NotNull(companionControl.CmbNetworkAdapters.ItemsSource);
+            var adapters = companionControl.CmbNetworkAdapters.ItemsSource as System.Collections.Generic.List<NetworkAdapterInfo>;
+            Assert.NotNull(adapters);
+            Assert.NotEmpty(adapters);
+
+            // Capture initial render
+            RenderAndSave(window, Path.Combine(reportsDir, "CompanionServer-NetworkSelection.png"));
+
+            // Select next adapter if available and verify pairing URL updates
+            if (adapters.Count > 1)
+            {
+                companionControl.CmbNetworkAdapters.SelectedIndex = 1;
+                window.UpdateLayout();
+                var selected = adapters[1];
+                Assert.Contains(selected.IpAddress, companionControl.TxtPairingUrl.Text);
+                RenderAndSave(window, Path.Combine(reportsDir, "CompanionServer-SecondaryNetwork.png"));
+            }
 
             window.Close();
         });

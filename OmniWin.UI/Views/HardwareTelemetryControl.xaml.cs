@@ -46,10 +46,11 @@ public partial class HardwareTelemetryControl : UserControl
             try
             {
                 _metricsExporter.Start(9182);
+                SetFeedbackNotice(string.Empty);
             }
             catch (Exception ex)
             {
-                TxtActionFeedback.Text = $"Puerto en uso: {ex.Message}";
+                SetFeedbackNotice($"Puerto 9182 en conflicto con otro servicio: {ex.Message}", isError: true);
             }
         }
 
@@ -231,6 +232,33 @@ public partial class HardwareTelemetryControl : UserControl
         }
     }
 
+    private void SetFeedbackNotice(string msg, bool isError = false)
+    {
+        if (string.IsNullOrWhiteSpace(msg))
+        {
+            BoxFeedbackNotice.Visibility = Visibility.Collapsed;
+            TxtActionFeedback.Text = string.Empty;
+            return;
+        }
+
+        BoxFeedbackNotice.Visibility = Visibility.Visible;
+        TxtActionFeedback.Text = msg;
+        if (isError)
+        {
+            IcoActionFeedback.Text = "⚠";
+            TxtActionFeedback.Foreground = new SolidColorBrush(Color.FromRgb(248, 113, 113));
+            BoxFeedbackNotice.Background = new SolidColorBrush(Color.FromRgb(69, 10, 10));
+            BoxFeedbackNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(153, 27, 27));
+        }
+        else
+        {
+            IcoActionFeedback.Text = "✔";
+            TxtActionFeedback.Foreground = new SolidColorBrush(Color.FromRgb(52, 211, 153));
+            BoxFeedbackNotice.Background = new SolidColorBrush(Color.FromRgb(6, 78, 59));
+            BoxFeedbackNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(4, 120, 87));
+        }
+    }
+
     private void BtnToggleServer_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -238,17 +266,17 @@ public partial class HardwareTelemetryControl : UserControl
             if (_metricsExporter.IsRunning)
             {
                 _metricsExporter.Stop();
-                TxtActionFeedback.Text = "Servidor detenido correctamente.";
+                SetFeedbackNotice("Servidor detenido correctamente.", isError: false);
             }
             else
             {
                 _metricsExporter.Start(9182);
-                TxtActionFeedback.Text = "Servidor iniciado en http://localhost:9182/metrics";
+                SetFeedbackNotice("Servidor iniciado en http://localhost:9182/metrics", isError: false);
             }
         }
         catch (Exception ex)
         {
-            TxtActionFeedback.Text = $"Error: {ex.Message}";
+            SetFeedbackNotice($"Error al iniciar servidor en puerto 9182: {ex.Message}", isError: true);
             MessageBox.Show($"No se pudo cambiar el estado del servidor:\n{ex.Message}", "OmniWin Prometheus", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
@@ -260,11 +288,11 @@ public partial class HardwareTelemetryControl : UserControl
         try
         {
             Clipboard.SetText(_metricsExporter.MetricsUrl);
-            TxtActionFeedback.Text = "✔ URL copiada al portapapeles";
+            SetFeedbackNotice("URL copiada al portapapeles con éxito.", isError: false);
         }
         catch (Exception ex)
         {
-            TxtActionFeedback.Text = $"Error al copiar: {ex.Message}";
+            SetFeedbackNotice($"Error al copiar: {ex.Message}", isError: true);
         }
     }
 
@@ -439,12 +467,13 @@ public partial class HardwareTelemetryControl : UserControl
                 PbPcieWidth.Value = pct;
                 TxtPcieWidthPercent.Text = $"{pct:F0}% del ancho de banda nativo";
 
-                if (isDegraded)
+                if (isDegraded || currentWidth < maxWidth)
                 {
-                    TxtPcieWidthVal.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)); // Ámbar
-                    PbPcieWidth.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                    var alertColor = currentWidth <= 4 ? Color.FromRgb(239, 68, 68) : Color.FromRgb(245, 158, 11);
+                    TxtPcieWidthVal.Foreground = new SolidColorBrush(alertColor);
+                    PbPcieWidth.Foreground = new SolidColorBrush(alertColor);
                     BoxWidthBottleneck.Visibility = Visibility.Visible;
-                    TxtWidthBottleneckMsg.Text = bottleneckMsg;
+                    TxtWidthBottleneckMsg.Text = $"⚠ Negociación PCIe reducida a x{currentWidth} (Capacidad física: x{maxWidth}). Ancho de banda al {pct:F0}%. Posibles causas: Ranura secundaria, líneas compartidas con M.2 NVMe en Z790, o ahorro ASPM.";
                 }
                 else
                 {
@@ -454,9 +483,21 @@ public partial class HardwareTelemetryControl : UserControl
                 }
             }
 
-            // Generación PCIe
-            TxtPcieGenVal.Text = status.PcieGenCurrent > 0 ? $"PCIe {status.PcieGenCurrent}.0" : "PCIe Gen 4.0";
-            TxtPcieGenDetails.Text = $"GPU: Gen {status.PcieGenMax}.0 • Host: Gen {status.PcieGenHostMax}.0";
+            // Generación PCIe & Estado de Reposo ASPM
+            if (status.PcieGenCurrent > 0 && status.PcieGenMax > 0 && status.PcieGenCurrent < status.PcieGenMax)
+            {
+                TxtPcieGenVal.Text = $"PCIe {status.PcieGenCurrent}.0 (Reposo ASPM)";
+                TxtPcieGenVal.FontSize = 16;
+                TxtPcieGenVal.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)); // Ámbar
+                TxtPcieGenDetails.Text = $"Capaz de Gen {status.PcieGenMax}.0 • Enlace 2D en reposo (P8)";
+            }
+            else
+            {
+                TxtPcieGenVal.Text = status.PcieGenCurrent > 0 ? $"PCIe {status.PcieGenCurrent}.0" : "PCIe Gen 4.0";
+                TxtPcieGenVal.FontSize = 22;
+                TxtPcieGenVal.Foreground = new SolidColorBrush(Color.FromRgb(16, 185, 129)); // Verde
+                TxtPcieGenDetails.Text = $"GPU: Gen {status.PcieGenMax}.0 • Host: Gen {status.PcieGenHostMax}.0";
+            }
 
             // Apertura de Resizable BAR (BAR1)
             if (status.Bar1TotalMb > 0)
@@ -497,7 +538,27 @@ public partial class HardwareTelemetryControl : UserControl
         finally
         {
             BtnRefreshGpuDiag.IsEnabled = true;
-            BtnRefreshGpuDiag.Content = "🔄 Re-analizar Enlace";
+            BtnRefreshGpuDiag.Content = "🔄 Re-analizar";
+        }
+    }
+
+    private async void BtnAuditPcie_Click(object sender, RoutedEventArgs e)
+    {
+        BtnAuditPcie.IsEnabled = false;
+        BtnAuditPcie.Content = "⏳ Auditando...";
+        try
+        {
+            string report = await PcieLinkInspector.Instance.AuditDetailedBandwidthAsync();
+            MessageBox.Show(report, "OmniWin — Auditoría de Bus PCIe & NVMe", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error en auditoría: {ex.Message}", "OmniWin", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            BtnAuditPcie.IsEnabled = true;
+            BtnAuditPcie.Content = "⚡ Auditar Bus PCIe";
         }
     }
 

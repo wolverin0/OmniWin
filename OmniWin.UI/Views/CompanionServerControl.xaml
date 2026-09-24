@@ -47,9 +47,36 @@
             </Grid.ColumnDefinitions>
 
             <!-- LEFT: QR CODE & CONNECTION INFO -->
-            <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,12,0">
+            <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,12,0">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="CÓDIGO QR DE EMPAREJAMIENTO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="CÓDIGO QR DE EMPAREJAMIENTO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,8" />
+
+                    <!-- Network Selection Dropdown -->
+                    <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,10" Width="280">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="🌐 SELECCIONAR RED / INTERFAZ:" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" x:Name="BtnRefreshAdapters" Content="🔄" ToolTip="Escanear redes disponibles" Click="BtnRefreshAdapters_Click" Style="{DynamicResource SecondaryButton}" Padding="4,1" FontSize="10" Cursor="Hand" />
+                            </Grid>
+                            <ComboBox x:Name="CmbNetworkAdapters" SelectionChanged="CmbNetworkAdapters_SelectionChanged"
+                                      Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}"
+                                      BorderBrush="{DynamicResource CardBorderSubtle}" FontSize="11" Padding="6,3" Height="28">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0" />
+                                            <TextBlock Text="{Binding IpAddress}" Foreground="{DynamicResource Accent}" FontWeight="Bold" Margin="0,0,6,0" />
+                                            <TextBlock Text="{Binding Description}" FontSize="9.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" MaxWidth="110" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
 
                     <!-- QR Frame -->
                     <Border Background="#FFFFFF" CornerRadius="12" Padding="14" HorizontalAlignment="Center" VerticalAlignment="Center" Width="260" Height="260" SnapsToDevicePixels="True">
@@ -57,10 +84,10 @@
                     </Border>
 
                     <TextBlock Text="Apunta la cámara de tu móvil a este código para abrir el dashboard al instante." 
-                               TextWrapping="Wrap" TextAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,14,0,12" MaxWidth="280" />
+                               TextWrapping="Wrap" TextAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,12,0,10" MaxWidth="280" />
 
                     <!-- URL Box -->
-                    <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
+                    <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -141,21 +168,22 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
+                                <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
                                     <StackPanel>
                                         <TextBlock Text="DISPOSITIVOS ACTIVOS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                         <TextBlock x:Name="TxtConnectedClients" Text="0 conectados" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,4,0,0" />
                                     </StackPanel>
                                 </Border>
 
-                                <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                                <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
                                     <StackPanel>
                                         <TextBlock Text="DIRECCIÓN IP LOCAL" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                         <TextBlock x:Name="TxtLocalIp" Text="Detectando..." FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0" />
+                                        <TextBlock x:Name="TxtAdapterName" Text="Ethernet" FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                 </Border>
 
-                                <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
+                                <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
                                     <StackPanel>
                                         <TextBlock Text="PUERTO HTTP/WS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                         <TextBlock x:Name="TxtPort" Text="8766" FontSize="16" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0" />
@@ -169,7 +197,7 @@
         </Grid>
 
         <!-- FOOTER -->
-        <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
+        <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
             <TextBlock x:Name="TxtFooter" Text="OmniCompanion listo para recibir conexiones en la red de área local." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
         </Border>
     </Grid>

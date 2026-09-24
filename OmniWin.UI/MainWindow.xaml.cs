@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using OmniWin.Core.Services;
@@ -46,6 +48,7 @@ public class TweakDisplayItem
 
 public class StartupDisplayItem
 {
+    public StartupItem Item { get; set; } = new();
     public string Scope { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Command { get; set; } = string.Empty;
@@ -53,7 +56,7 @@ public class StartupDisplayItem
     public string StatusText => IsEnabled ? "✔ Activo" : "✖ Desactivado";
 }
 
-public partial class MainWindow : Window
+public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 {
     private readonly MemoryService _memoryService = new();
     private readonly DiskService _diskService = new();
@@ -122,7 +125,15 @@ public partial class MainWindow : Window
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         App.Log("MainWindow_Loaded: started.");
+        try
+        {
+            ThemeService.Instance.ThemeChanged += OnThemeChanged;
+            ThemeService.Instance.Initialize();
+            UpdateThemeButtonText(ThemeService.Instance.CurrentTheme);
+        }
+        catch (Exception ex) { App.Log($"ThemeService init error: {ex}"); }
         try { InitNavigation(); } catch (Exception ex) { App.Log($"InitNavigation error: {ex}"); }
+        try { InitActiveTasksDrawer(); } catch (Exception ex) { App.Log($"InitActiveTasksDrawer error: {ex}"); }
         try { UpdateAdminBadge(); } catch (Exception ex) { App.Log($"UpdateAdminBadge error: {ex}"); }
         try { RefreshDashboard(); } catch (Exception ex) { App.Log($"RefreshDashboard error: {ex}"); }
         try { RefreshStartup(); } catch (Exception ex) { App.Log($"RefreshStartup error: {ex}"); }
@@ -434,6 +445,43 @@ public partial class MainWindow : Window
         }
     }
 
+    private void InitActiveTasksDrawer()
+    {
+        ActiveTaskCoordinator.Instance.TasksChanged += OnActiveTasksChanged;
+        UpdateActiveTasksUi();
+    }
+
+    private void OnActiveTasksChanged()
+    {
+        Dispatcher.InvokeAsync(UpdateActiveTasksUi);
+    }
+
+    private void UpdateActiveTasksUi()
+    {
+        var tasks = ActiveTaskCoordinator.Instance.ActiveTasks;
+        if (tasks.Count > 0)
+        {
+            IcActiveTasks.ItemsSource = tasks;
+            PnlActiveTasksDrawer.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            IcActiveTasks.ItemsSource = null;
+            PnlActiveTasksDrawer.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void ActiveTaskItem_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement elem && elem.DataContext is ActiveTaskInfo task)
+        {
+            if (task.TargetTabIndex >= 0 && task.TargetTabIndex < MainTabs.Items.Count)
+            {
+                MainTabs.SelectedIndex = task.TargetTabIndex;
+            }
+        }
+    }
+
     private static (string Title, string Desc) GetTabHeaderInfo(int index) => index switch
     {
         0 => ("📊 Dashboard del Sistema", "Resumen de telemetría de hardware, almacenamiento y procesos activos en vivo."),
@@ -709,6 +757,10 @@ public partial class MainWindow : Window
             TxtRamSummary.Text = $"{usedGb:N1} / {totalGb:N1} GB";
             PbRam.Value = mem.UsagePercentage;
             TxtRamPercent.Text = $"Carga: {mem.UsagePercentage:N1}% ({availGb:N1} GB libres)";
+            if (TxtRamPercentBadge != null)
+            {
+                TxtRamPercentBadge.Text = $"{mem.UsagePercentage:N1}% en uso";
+            }
 
             TxtRamDetailLoad.Text = $"{mem.UsagePercentage:N1}% en uso";
             PbRamDetail.Value = mem.UsagePercentage;
@@ -729,10 +781,18 @@ public partial class MainWindow : Window
                 TxtCpuName.Text = tele.CpuName;
                 PbCpu.Value = tele.CpuLoadPercent ?? 0;
                 TxtCpuLoad.Text = $"Carga: {(tele.CpuLoadPercent.HasValue ? $"{tele.CpuLoadPercent:N0}%" : "0%")}";
+                if (TxtCpuLoadBadge != null)
+                {
+                    TxtCpuLoadBadge.Text = tele.CpuLoadPercent.HasValue ? $"{tele.CpuLoadPercent:N0}% Activo" : "--% Activo";
+                }
 
                 TxtGpuName.Text = tele.GpuName;
                 PbGpu.Value = tele.GpuLoadPercent ?? 0;
                 TxtGpuLoad.Text = $"Carga: {(tele.GpuLoadPercent.HasValue ? $"{tele.GpuLoadPercent:N0}%" : "0%")} | Temp: {(tele.GpuTemperatureCelsius.HasValue ? $"{tele.GpuTemperatureCelsius:N0}°C" : "--°C")}";
+                if (TxtGpuTempBadge != null)
+                {
+                    TxtGpuTempBadge.Text = tele.GpuTemperatureCelsius.HasValue ? $"{tele.GpuTemperatureCelsius:N0}°C" : "--°C";
+                }
 
                 if (_cachedGpuStatus != null && _cachedGpuStatus.IsNvidiaGpuDetected)
                 {
@@ -778,6 +838,19 @@ public partial class MainWindow : Window
     private void BtnQuickPurge_Click(object sender, RoutedEventArgs e) => ExecutePurge();
     private void BtnTopOverlay_Click(object sender, RoutedEventArgs e) => ToggleOverlay();
     private void BtnPurgeAllRam_Click(object sender, RoutedEventArgs e) => ExecutePurge();
+
+    private void BtnOpenDiskManagement_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("diskmgmt.msc") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            App.Log($"[DISK_MGMT_ERROR] {ex.Message}");
+            MessageBox.Show($"No se pudo abrir el Administrador de Discos: {ex.Message}", "OmniWin", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 
     private void ExecutePurge()
     {
@@ -878,6 +951,7 @@ public partial class MainWindow : Window
         var items = _startupService.GetStartupItems();
         var displayItems = items.Select(i => new StartupDisplayItem
         {
+            Item = i,
             Scope = i.Scope,
             Name = i.Name,
             Command = i.Command,
@@ -887,6 +961,106 @@ public partial class MainWindow : Window
     }
 
     private void BtnRefreshStartup_Click(object sender, RoutedEventArgs e) => RefreshStartup();
+
+    private void BtnToggleStartupItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (DgStartup.SelectedItem is StartupDisplayItem selected)
+        {
+            ToggleStartupItemInternal(selected.Item);
+        }
+        else
+        {
+            MessageBox.Show("Selecciona un elemento de la lista para alternar su estado.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void BtnRowToggleStartup_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is StartupDisplayItem displayItem)
+        {
+            ToggleStartupItemInternal(displayItem.Item);
+        }
+    }
+
+    private void DgStartup_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (DgStartup.SelectedItem is StartupDisplayItem selected)
+        {
+            ToggleStartupItemInternal(selected.Item);
+        }
+    }
+
+    private void ToggleStartupItemInternal(StartupItem item)
+    {
+        var result = _startupService.ToggleStartupItem(item);
+        TxtStartupLog.Text = result.Message;
+        TxtFooterStatus.Text = result.Message;
+        RefreshStartup();
+    }
+
+    private void BtnDeleteStartupItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (DgStartup.SelectedItem is StartupDisplayItem selected)
+        {
+            DeleteStartupItemInternal(selected.Item);
+        }
+        else
+        {
+            MessageBox.Show("Selecciona un elemento de la lista para eliminarlo.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void BtnRowDeleteStartup_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is StartupDisplayItem displayItem)
+        {
+            DeleteStartupItemInternal(displayItem.Item);
+        }
+    }
+
+    private void DeleteStartupItemInternal(StartupItem item)
+    {
+        var confirm = MessageBox.Show(
+            $"¿Estás seguro de que deseas eliminar permanentemente '{item.Name}' del inicio de Windows?",
+            "Confirmar Eliminación de Inicio",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm == MessageBoxResult.Yes)
+        {
+            var result = _startupService.DeleteStartupItem(item);
+            TxtStartupLog.Text = result.Message;
+            TxtFooterStatus.Text = result.Message;
+            RefreshStartup();
+        }
+    }
+
+    private void BtnOpenStartupLocation_Click(object sender, RoutedEventArgs e)
+    {
+        if (DgStartup.SelectedItem is StartupDisplayItem selected)
+        {
+            try
+            {
+                string path = selected.Command.Trim('\"');
+                if (File.Exists(path))
+                {
+                    Process.Start("explorer.exe", $"/select,\"{path}\"");
+                }
+                else if (Directory.Exists(selected.Item.Location))
+                {
+                    Process.Start("explorer.exe", $"\"{selected.Item.Location}\"");
+                }
+                else
+                {
+                    MessageBox.Show($"La ruta del archivo no existe o es una entrada de registro:\n{selected.Command}", "Ubicación", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error abriendo ubicación: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
 
     private void BtnOptimizeServices_Click(object sender, RoutedEventArgs e)
     {
@@ -1119,6 +1293,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BtnToggleTheme_Click(object sender, RoutedEventArgs e)
+    {
+        ThemeService.Instance.ToggleTheme();
+    }
+
+    private void OnThemeChanged(AppTheme theme)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.InvokeAsync(() => OnThemeChanged(theme));
+            return;
+        }
+        UpdateThemeButtonText(theme);
+    }
+
+    private void UpdateThemeButtonText(AppTheme theme)
+    {
+        if (BtnToggleTheme != null)
+        {
+            BtnToggleTheme.Content = theme == AppTheme.Dark ? "☀️ Modo Claro" : "🌙 Modo Oscuro";
+            BtnToggleTheme.ToolTip = theme == AppTheme.Dark
+                ? "Alternar a Modo Claro (Ceramic Minimalist)"
+                : "Alternar a Modo Oscuro (Obsidian Precision)";
+        }
+    }
+
     private void BtnLang_Click(object sender, RoutedEventArgs e)
     {
         string nextLang = _locService.CurrentLanguage == "es" ? "en" : "es";
@@ -1127,6 +1327,11 @@ public partial class MainWindow : Window
 
     private void OnLanguageChanged(string lang)
     {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.InvokeAsync(ApplyLocalization);
+            return;
+        }
         ApplyLocalization();
     }
 

@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.FirewallMonitorControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.FirewallMonitorControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -34,7 +34,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox x:Name="TxtSearchFilter" Width="180" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="11.5" Margin="0,0,8,0" Tag="Buscar proceso o IP..." TextChanged="TxtSearchFilter_TextChanged" />
+                    <TextBox x:Name="TxtSearchFilter" Width="180" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="11.5" Margin="0,0,8,0" Tag="Buscar proceso o IP..." TextChanged="TxtSearchFilter_TextChanged" />
                     <Button x:Name="BtnRefreshSockets" Content="🔄 Actualizar Sockets" Click="BtnRefreshSockets_Click" Padding="12,7" FontSize="12" Margin="0,0,8,0" />
                 </StackPanel>
             </Grid>
@@ -51,7 +51,7 @@
                 <TextBlock Text="CONEXIONES TCP ACTIVAS EN TIEMPO REAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8" />
 
                 <DataGrid Grid.Row="1" x:Name="DgConnections" AutoGenerateColumns="False" IsReadOnly="True"
-                          Background="Transparent" BorderThickness="0" RowBackground="#090D18" AlternatingRowBackground="#0E1422"
+                          Background="Transparent" BorderThickness="0" RowBackground="{DynamicResource CardDarkHover}" AlternatingRowBackground="{DynamicResource CardDark}"
                           Foreground="{DynamicResource TextPrimary}" GridLinesVisibility="None" HeadersVisibility="Column"
                           SelectionMode="Single" CanUserAddRows="False">
                     <DataGrid.Columns>
@@ -90,7 +90,7 @@
                 </StackPanel>
 
                 <DataGrid Grid.Row="1" x:Name="DgBlockedRules" AutoGenerateColumns="False" IsReadOnly="True"
-                          Background="Transparent" BorderThickness="0" RowBackground="#090D18" AlternatingRowBackground="#0E1422"
+                          Background="Transparent" BorderThickness="0" RowBackground="{DynamicResource CardDarkHover}" AlternatingRowBackground="{DynamicResource CardDark}"
                           Foreground="{DynamicResource TextPrimary}" GridLinesVisibility="None" HeadersVisibility="Column"
                           SelectionMode="Single" CanUserAddRows="False">
                     <DataGrid.Columns>
@@ -110,7 +110,7 @@
         </Border>
 
         <!-- FOOTER -->
-        <Border Grid.Row="4" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
+        <Border Grid.Row="4" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

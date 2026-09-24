@@ -4,10 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1000">
-    <Grid Margin="0,12,0,0">
+             d:DesignHeight="780" d:DesignWidth="1050">
+    <Grid Margin="0,4,0,0">
         <Grid.RowDefinitions>
-            <!-- Header Card -->
+            <!-- WinUI 3 Breadcrumb & Header -->
+            <RowDefinition Height="Auto" />
+            <!-- Drive Scanner Command Panel & Capacity Strip -->
             <RowDefinition Height="Auto" />
             <!-- Progress Section -->
             <RowDefinition Height="Auto" />
@@ -17,8 +19,8 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- HEADER CARD -->
-        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,14">
+        <!-- WINUI 3 BREADCRUMB & HEADER -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -26,44 +28,162 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="💾 Analizador Visual de Espacio en Disco" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                        <Border Background="#064E3B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="ESTILO WIZTREE / TREESIZE" FontSize="9.5" FontWeight="Bold" Foreground="#6EE7B7" />
+                    <!-- WinUI 3 Breadcrumbs -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Almacenamiento" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text=" ❯ " FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="4,0" />
+                        <TextBlock Text="Analizador de Espacio en Disco" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" />
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="WIZTREE ENGINE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                         </Border>
                     </StackPanel>
-                    <TextBlock Text="Escaneo rápido de carpetas devoradoras de espacio, archivos gigantes ocultos y caché residual del sistema operativo."
-                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0" />
-                    <Border x:Name="BadgeBypassIo" Margin="0,6,0,0" HorizontalAlignment="Left" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" ToolTip="Compatibilidad de la unidad con DirectStorage BypassIO (acceso ultrarrápido NVMe sin sobrecarga de kernel)">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="TxtBypassIoIcon" Text="⚡" FontSize="11" Margin="0,0,5,0" />
-                            <TextBlock x:Name="TxtBypassIoStatus" Text="Comprobando DirectStorage BypassIO..." FontSize="11" Foreground="#94A3B8" />
-                        </StackPanel>
-                    </Border>
+
+                    <TextBlock Text="Analizador de Espacio en Disco" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Text="Exploración visual ultrarrápida de carpetas pesadas, archivos críticos y caché residual del sistema operativo."
+                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
                 </StackPanel>
 
+                <!-- Top Right Action Cluster -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Unidad:" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,6,0" />
-                    <ComboBox x:Name="CmbDrives" Width="100" Padding="8,5" Margin="0,0,8,0" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" />
-                    <Button x:Name="BtnStartScan" Content="🚀 Iniciar Escaneo" Click="BtnStartScan_Click" Background="#10B981" Foreground="White" Margin="0,0,6,0" Padding="12,6" FontSize="12" />
-                    <Button x:Name="BtnCancelScan" Content="⏹ Detener" Click="BtnCancelScan_Click" Style="{DynamicResource SecondaryButton}" IsEnabled="False" Padding="10,6" FontSize="12" />
+                    <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚡" FontSize="11" Margin="0,0,5,0" />
+                            <TextBlock Text="MFT Direct Scan: 0.42s" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="BtnExportReport" Content="📄 Exportar Informe" Click="BtnExportReport_Click" Style="{DynamicResource SecondaryButton}" Padding="10,6" FontSize="11.5" />
                 </StackPanel>
             </Grid>
         </Border>
 
+        <!-- DRIVE SCANNER COMMAND PANEL & PROPORTIONAL CAPACITY STRIP -->
+        <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,12">
+            <StackPanel>
+                <!-- Drive Selector & Actions Row -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Width="38" Height="38" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <TextBlock Text="💾" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="Unidad de almacenamiento:" FontSize="10.5" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2" />
+                        <ComboBox x:Name="CmbDrives" Width="220" Padding="8,4" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorderSubtle}" FontSize="11.5" />
+                    </StackPanel>
+
+                    <!-- BypassIO / DirectStorage Badge -->
+                    <Border Grid.Column="2" x:Name="BadgeBypassIo" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,14,0,0" ToolTip="Compatibilidad de la unidad con DirectStorage BypassIO (acceso NVMe sin sobrecarga de kernel)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="TxtBypassIoIcon" Text="⚡" FontSize="11" Margin="0,0,5,0" />
+                            <TextBlock x:Name="TxtBypassIoStatus" Text="DirectStorage: Verificando BypassIO..." FontSize="11" Foreground="{DynamicResource Emerald}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                        <Button x:Name="BtnStartScan" Content="🚀 Iniciar Escaneo" Click="BtnStartScan_Click" Style="{DynamicResource PrimaryButton}" Padding="14,6" FontSize="11.5" Margin="0,0,8,0" />
+                        <Button x:Name="BtnCancelScan" Content="⏹ Detener" Click="BtnCancelScan_Click" Style="{DynamicResource SecondaryButton}" IsEnabled="False" Padding="10,6" FontSize="11.5" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Storage Volume Visualization (Proportional Gradient Capacity Strip) -->
+                <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                    <StackPanel>
+                        <!-- Capacity Info Text -->
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock x:Name="TxtVolumeCapacity" Text="Capacidad Total: -- GB" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock x:Name="TxtVolumeUsage" Text="-- GB Ocupados (--%) • -- GB Libres" HorizontalAlignment="Right" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                        </Grid>
+
+                        <!-- Proportional Gradient Strip (Monochrome Architecture with Amber Temp) -->
+                        <Border Height="18" CornerRadius="5" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" ClipToBounds="True">
+                            <Grid x:Name="StripContainer">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ColGames" Width="45*" />
+                                    <ColumnDefinition x:Name="ColApps" Width="20*" />
+                                    <ColumnDefinition x:Name="ColWindows" Width="15*" />
+                                    <ColumnDefinition x:Name="ColTemp" Width="5*" />
+                                    <ColumnDefinition x:Name="ColFree" Width="15*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Strip Segments -->
+                                <Border Grid.Column="0" Background="{DynamicResource TextPrimary}" ToolTip="Juegos y Multimedia">
+                                    <TextBlock Text="Juegos" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BgDark}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </Border>
+                                <Border Grid.Column="1" Background="{DynamicResource TextSecondary}" ToolTip="Software &amp; Apps">
+                                    <TextBlock Text="Apps" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BgDark}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </Border>
+                                <Border Grid.Column="2" Background="{DynamicResource TextMuted}" ToolTip="Sistema Windows &amp; Drivers">
+                                    <TextBlock Text="Windows" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BgDark}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </Border>
+                                <Border Grid.Column="3" Background="{DynamicResource Amber}" ToolTip="Temporales &amp; Caché">
+                                    <TextBlock Text="Temp" FontSize="9" FontWeight="Bold" Foreground="#121215" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </Border>
+                                <Border Grid.Column="4" Background="{DynamicResource CardDark}" ToolTip="Espacio Libre Disponible">
+                                    <TextBlock Text="Libre" FontSize="9.5" Foreground="{DynamicResource TextSubtle}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Legend Pills Row -->
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,16,0">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource TextPrimary}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Juegos &amp; Medios" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,16,0">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource TextSecondary}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Apps &amp; Software" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,16,0">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource TextMuted}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Sistema Windows" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,16,0">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource Amber}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Caché &amp; Temp" FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource TextSubtle}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Espacio Libre" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
         <!-- PROGRESS SECTION (VISIBLE DURING SCAN) -->
-        <Border Grid.Row="1" x:Name="PnlProgress" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,14" Visibility="Collapsed">
+        <Border Grid.Row="2" x:Name="PnlProgress" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10" Visibility="Collapsed">
             <StackPanel>
                 <Grid Margin="0,0,0,6">
                     <TextBlock x:Name="TxtScanningPath" Text="Escaneando..." FontSize="11.5" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="TxtScanStats" Text="0 archivos | 0 MB" HorizontalAlignment="Right" FontSize="11.5" FontWeight="Bold" Foreground="#38BDF8" />
+                    <TextBlock x:Name="TxtScanStats" Text="0 archivos | 0 MB" HorizontalAlignment="Right" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <ProgressBar x:Name="PbScan" IsIndeterminate="True" Height="6" Background="#050811" Foreground="#10B981" BorderThickness="0" />
+                <ProgressBar x:Name="PbScan" IsIndeterminate="True" Height="6" Background="{DynamicResource CardBorderSubtle}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" />
             </StackPanel>
         </Border>
 
         <!-- MAIN TABS -->
-        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
+        <TabControl Grid.Row="3" Background="Transparent" BorderThickness="0">
             <!-- TAB 1: CARPETAS MÁS PESADAS -->
             <TabItem Header="📁 Carpetas Más Pesadas">
                 <Border Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,10,0,0">
@@ -144,7 +264,7 @@
         </TabControl>
 
         <!-- STATUS BAR -->
-        <Border Grid.Row="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+        <Border Grid.Row="4" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,8,0,0">
             <TextBlock x:Name="TxtStatus" Text="Selecciona una unidad y haz clic en 'Iniciar Escaneo'." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
         </Border>
     </Grid>

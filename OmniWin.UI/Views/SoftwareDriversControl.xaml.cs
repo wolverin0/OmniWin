@@ -393,16 +393,45 @@ public partial class SoftwareDriversControl : UserControl
             if (res != MessageBoxResult.Yes) return;
 
             TxtUninstallStatus.Text = $"Ejecutando desinstalador para {app.DisplayName}...";
-            bool success = await _uninstallerService.LaunchUninstallerAsync(app, false);
+            var result = await _uninstallerService.LaunchUninstallerExAsync(app, false);
 
-            if (success)
+            if (result.Success)
             {
                 TxtUninstallStatus.Text = $"Desinstalador completado para {app.DisplayName}. Se recomienda ejecutar 'Escanear Rastros' para limpiar sobras residuales.";
                 await RefreshInstalledAppsAsync();
             }
+            else if (result.ExeNotFound)
+            {
+                var removeGhost = MessageBox.Show(
+                    $"El ejecutable del desinstalador no fue encontrado en el disco:\n\n\"{result.ExecutablePath}\"\n\nEsta es una entrada huérfana de registro (el programa fue borrado manualmente o la instalación quedó corrupta).\n\n¿Deseas que OmniWin elimine esta entrada fantasma del registro de Windows para que no vuelva a aparecer en la lista?",
+                    "Entrada Fantasma / Desinstalador No Encontrado",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (removeGhost == MessageBoxResult.Yes)
+                {
+                    bool removed = _uninstallerService.ForceRemoveAppRegistryEntry(app);
+                    if (removed)
+                    {
+                        MessageBox.Show($"La entrada '{app.DisplayName}' fue eliminada del registro de Windows exitosamente.", "Entrada Eliminada", MessageBoxButton.OK, MessageBoxImage.Information);
+                        TxtUninstallStatus.Text = $"✔ Entrada huérfana '{app.DisplayName}' eliminada del registro.";
+                        await RefreshInstalledAppsAsync();
+                    }
+                    else
+                    {
+                        MessageBox.Show("No se pudo eliminar la clave de registro. Asegúrate de ejecutar OmniWin como Administrador.", "Error de Permisos", MessageBoxButton.OK, MessageBoxImage.Error);
+                        TxtUninstallStatus.Text = "Error: no se pudo eliminar la clave de registro (se requieren permisos de Administrador).";
+                    }
+                }
+                else
+                {
+                    TxtUninstallStatus.Text = "Operación cancelada.";
+                }
+            }
             else
             {
-                TxtUninstallStatus.Text = $"No se pudo iniciar el comando de desinstalación.";
+                TxtUninstallStatus.Text = $"Error ejecutando desinstalador: {result.ErrorMessage}";
+                MessageBox.Show($"Error ejecutando el desinstalador:\n\n{result.ErrorMessage}", "Fallo al Iniciar Desinstalador", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         else

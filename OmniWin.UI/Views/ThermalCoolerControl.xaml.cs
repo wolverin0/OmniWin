@@ -83,13 +83,32 @@ public partial class ThermalCoolerControl : UserControl
                 ApplyTempStyling(TxtGpuTempBig, PbGpuTemp, TxtGpuTripStatus, gpu, _thermalService.Settings.GpuWarning, _thermalService.Settings.GpuCritical);
             }
 
-            // 3. Storage
-            if (snap.MaxStorageTemp.HasValue)
+            // 3. Storage (Primary NVMe + Disipador check)
+            if (snap.PrimaryStorageTemp.HasValue || snap.MaxStorageTemp.HasValue)
             {
-                double ssd = snap.MaxStorageTemp.Value;
+                double ssd = snap.PrimaryStorageTemp ?? snap.MaxStorageTemp!.Value;
                 PbStorageTemp.Value = ssd;
                 TxtStorageTempBig.Text = $"{ssd:F0}°C";
-                ApplyTempStyling(TxtStorageTempBig, PbStorageTemp, TxtStorageTripStatus, ssd, _thermalService.Settings.StorageWarning, _thermalService.Settings.StorageCritical);
+                if (!string.IsNullOrWhiteSpace(snap.PrimaryStorageName))
+                {
+                    TxtStorageModel.Text = snap.PrimaryStorageName;
+                }
+                bool isNvme = snap.PrimaryStorageName?.Contains("NVMe", StringComparison.OrdinalIgnoreCase) == true ||
+                              snap.PrimaryStorageName?.Contains("SSD", StringComparison.OrdinalIgnoreCase) == true ||
+                              snap.PrimaryStorageName?.Contains("Samsung", StringComparison.OrdinalIgnoreCase) == true;
+
+                double storageWarn = isNvme ? Math.Max(70.0, _thermalService.Settings.StorageWarning) : _thermalService.Settings.StorageWarning;
+                double storageCrit = isNvme ? Math.Max(80.0, _thermalService.Settings.StorageCritical) : _thermalService.Settings.StorageCritical;
+
+                if (snap.StorageHotspotTemp.HasValue && snap.StorageHotspotTemp.Value > ssd)
+                {
+                    TxtStorageThresholds.Text = $"NAND: {ssd:F0}°C • Hotspot ASIC: {snap.StorageHotspotTemp:F0}°C (Límite 105°C)";
+                }
+                else
+                {
+                    TxtStorageThresholds.Text = $"NAND Disipada • Umbrales: Warn {storageWarn:F0}°C • Crit {storageCrit:F0}°C";
+                }
+                ApplyTempStyling(TxtStorageTempBig, PbStorageTemp, TxtStorageTripStatus, ssd, storageWarn, storageCrit);
             }
 
             // 4. Global Badge Status

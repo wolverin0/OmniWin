@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.RepairConsoleControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.RepairConsoleControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -59,7 +59,7 @@
 
                 <!-- Action Buttons -->
                 <WrapPanel Grid.Row="1" Orientation="Horizontal">
-                    <Button x:Name="BtnRunFull" Content="⚡ Iniciar Reparación Integral Secuencial" Click="BtnRunFull_Click" Background="#0284C7" Margin="0,0,10,0" Padding="14,7" FontSize="12" FontWeight="Bold" />
+                    <Button x:Name="BtnRunFull" Content="⚡ Iniciar Reparación Integral Secuencial" Click="BtnRunFull_Click" Style="{DynamicResource PrimaryButton}" Margin="0,0,10,0" Padding="14,7" FontSize="12" FontWeight="Bold" />
                     <Button x:Name="BtnRunSfc" Content="🛡️ Ejecutar Solo SFC" Click="BtnRunSfc_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Padding="12,7" FontSize="12" />
                     <Button x:Name="BtnRunWinUpdate" Content="🔄 Ejecutar Solo WinUpdate Reset" Click="BtnRunWinUpdate_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Padding="12,7" FontSize="12" />
                     <Button x:Name="BtnCancel" Content="🛑 Cancelar Operación" Click="BtnCancel_Click" Background="#EF4444" IsEnabled="False" Padding="12,7" FontSize="12" />

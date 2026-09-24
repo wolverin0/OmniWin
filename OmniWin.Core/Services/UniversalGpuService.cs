@@ -44,7 +44,17 @@ public class UniversalGpuInfo
     public int PcieWidthCurrent { get; set; } = 16;
     public int PcieWidthMax { get; set; } = 16;
     public bool IsLinkWidthBottlenecked => PcieWidthMax > 0 && PcieWidthCurrent > 0 && PcieWidthCurrent < PcieWidthMax;
-    public string PcieLinkSummary => $"PCIe {PcieGenCurrent}.0 @ x{PcieWidthCurrent} (Capaz de Gen {PcieGenMax}.0 x{PcieWidthMax})";
+    public bool IsGenReducedForPowerSavings => PcieGenMax > 1 && PcieGenCurrent == 1;
+    public string PcieLinkSummary
+    {
+        get
+        {
+            string genDesc = IsGenReducedForPowerSavings ? $"PCIe {PcieGenCurrent}.0 (Reposo ASPM)" : $"PCIe {PcieGenCurrent}.0";
+            string widthDesc = IsLinkWidthBottlenecked ? $"@ x{PcieWidthCurrent} [⚠ Carril reducido: {PcieWidthCurrent}/{PcieWidthMax}]" : $"@ x{PcieWidthCurrent}";
+            return $"{genDesc} {widthDesc} (Capacidad: Gen {PcieGenMax}.0 x{PcieWidthMax})";
+        }
+    }
+    public string PcieLinkColorHex => IsLinkWidthBottlenecked ? (PcieWidthCurrent <= 4 ? "#EF4444" : "#F59E0B") : "#38BDF8";
 
     public string LatencyTweakName => VendorType switch
     {

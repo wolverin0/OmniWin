@@ -61,9 +61,9 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Sub Bar: Live Details & Feedback -->
+                    <!-- Sub Bar: Live Details & Feedback (Zero Overlap) -->
                     <Border Grid.Row="1" Background="#090D16" CornerRadius="6" Padding="12,8" Margin="0,14,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
-                        <Grid>
+                        <StackPanel>
                             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="URL Endpoint: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtEndpointUrl" Text="http://localhost:9182/metrics" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,0,18,0" />
@@ -77,8 +77,15 @@
                                 <TextBlock Text="Métricas: " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock Text="8 activas (CPU, RAM, Disco, Uptime, Handles, Threads)" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
                             </WrapPanel>
-                            <TextBlock x:Name="TxtActionFeedback" Text="" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
-                        </Grid>
+
+                            <!-- Dedicated Status & Conflict Banner (isolated row, zero text collision) -->
+                            <Border x:Name="BoxFeedbackNotice" Visibility="Collapsed" Background="#161426" BorderBrush="#3B2D54" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="IcoActionFeedback" Text="ℹ️" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TxtActionFeedback" Text="" FontSize="11" FontWeight="SemiBold" Foreground="#F87171" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </Border>
                 </Grid>
             </Border>
@@ -169,14 +176,15 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="BtnRefreshGpuDiag" Content="🔄 Re-analizar Enlace" Click="BtnRefreshGpuDiag_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" ToolTip="Vuelve a consultar los registros de enlace PCIe y memoria BAR1 directamente del controlador" />
+                            <Button x:Name="BtnAuditPcie" Content="⚡ Auditar Bus PCIe" Click="BtnAuditPcie_Click" Style="{DynamicResource PrimaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" ToolTip="Ejecuta una auditoría profunda de carriles de bus PCIe y NVMe para detectar degradaciones o cuellos de botella" />
+                            <Button x:Name="BtnRefreshGpuDiag" Content="🔄 Re-analizar" Click="BtnRefreshGpuDiag_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" ToolTip="Vuelve a consultar los registros de enlace PCIe y memoria BAR1 directamente del controlador" />
                         </StackPanel>
                     </Grid>
 
                     <!-- Hardware Identification Chips -->
                     <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
                         <!-- VBIOS Chip -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="VBIOS: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtGpuVbiosChip" Text="Detectando..." FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8" />
@@ -184,7 +192,7 @@
                         </Border>
 
                         <!-- Bus Slot Chip -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Slot PCIe: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtGpuSlotChip" Text="0000:06:00.0" FontSize="11" FontWeight="SemiBold" Foreground="#34D399" />
@@ -192,7 +200,7 @@
                         </Border>
 
                         <!-- Vendor Chip -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Fabricante: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtGpuVendorChip" Text="ZOTAC Technology" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" />
@@ -200,7 +208,7 @@
                         </Border>
 
                         <!-- Driver Chip -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Driver: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtGpuDriverChip" Text="NVIDIA 596.02" FontSize="11" FontWeight="SemiBold" Foreground="#A78BFA" />
@@ -218,7 +226,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Card 1: PCIe Link Width -->
-                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
+                        <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,6,0">
                             <StackPanel>
                                 <TextBlock Text="CARRIL PCIE (LINK WIDTH)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,6,0,4">
@@ -231,7 +239,7 @@
                         </Border>
 
                         <!-- Card 2: PCIe Generation -->
-                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                        <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
                             <StackPanel>
                                 <TextBlock Text="GENERACIÓN PCIE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtPcieGenVal" Text="PCIe 4.0" FontSize="22" FontWeight="Bold" Foreground="#10B981" Margin="0,6,0,4" />
@@ -241,7 +249,7 @@
                         </Border>
 
                         <!-- Card 3: Resizable BAR (ReBAR) -->
-                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
+                        <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="3,0,3,0">
                             <StackPanel>
                                 <Grid Margin="0,0,0,4">
                                     <TextBlock Text="RESIZABLE BAR (REBAR)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
@@ -256,7 +264,7 @@
                         </Border>
 
                         <!-- Card 4: Framebuffer VRAM -->
-                        <Border Grid.Column="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
+                        <Border Grid.Column="3" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="6,0,0,0">
                             <StackPanel>
                                 <TextBlock Text="MEMORIA VRAM" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtVramTotalVal" Text="10240 MiB" FontSize="22" FontWeight="Bold" Foreground="#38BDF8" Margin="0,6,0,4" />
@@ -448,7 +456,7 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="BtnApplyHighResTimer" Content="⚡ Activar Timer 0.5ms" Click="BtnApplyHighResTimer_Click" Background="#0284C7" Foreground="White" Margin="0,0,8,0" Padding="12,6" FontSize="11" />
+                            <Button x:Name="BtnApplyHighResTimer" Content="⚡ Activar Timer 0.5ms" Click="BtnApplyHighResTimer_Click" Style="{DynamicResource PrimaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="11" />
                             <Button x:Name="BtnBenchmarkLatency" Content="🧪 Test de Jitter DPC" Click="BtnBenchmarkLatency_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" Margin="0,0,8,0" />
                             <Button x:Name="BtnTriggerStutterCheck" Content="⚠️ Auditar Stutter" Click="BtnTriggerStutterCheck_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11" ToolTip="Analiza los últimos 30 segundos de telemetría para diagnosticar la causa raíz del tirón o microcorte" />
                         </StackPanel>
@@ -530,7 +538,7 @@
                     </Border>
 
                     <!-- Devices List -->
-                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock Text="DISPOSITIVOS PCIE CRÍTICOS (GPU, RED, AUDIO, ALMACENAMIENTO)" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="2,2,0,8" />
                             <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

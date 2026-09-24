@@ -28,8 +28,8 @@
 
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                        <Border Background="#064E3B" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
-                                            <TextBlock x:Name="TxtUpgradesBadge" Text="0 ACTUALIZACIONES" FontSize="11" FontWeight="Bold" Foreground="#34D399" />
+                                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                            <TextBlock x:Name="TxtUpgradesBadge" Text="0 ACTUALIZACIONES" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Emerald}" />
                                         </Border>
                                         <TextBlock Text="Actualizador Universal de Software (WinGet &amp; MS Store)" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                                     </StackPanel>
@@ -38,7 +38,7 @@
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Button x:Name="BtnCheckUpdates" Content="🔄 Buscar Actualizaciones" Click="BtnCheckUpdates_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
-                                    <Button x:Name="BtnUpgradeAll" Content="🚀 Actualizar Todo en 1 Clic" Click="BtnUpgradeAll_Click" Background="#10B981" Foreground="White" Padding="14,6" FontSize="12" />
+                                    <Button x:Name="BtnUpgradeAll" Content="🚀 Actualizar Todo en 1 Clic" Click="BtnUpgradeAll_Click" Style="{DynamicResource PrimaryButton}" Padding="14,6" FontSize="12" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -59,14 +59,14 @@
                                         <DataGridTemplateColumn Header="Acción" Width="*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <Button Content="Actualizar" Click="BtnUpgradeSingle_Click" Padding="8,3" FontSize="11" Background="{DynamicResource Accent}" Foreground="White" />
+                                                    <Button Content="Actualizar" Click="BtnUpgradeSingle_Click" Padding="8,3" FontSize="11" Style="{DynamicResource SecondaryButton}" />
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <TextBlock x:Name="TxtNoUpgrades" Text="✔ Todos los programas compatibles con WinGet están actualizados." FontSize="12" Foreground="#34D399" Visibility="Collapsed" Margin="0,8,0,0" />
+                                <TextBlock x:Name="TxtNoUpgrades" Text="✔ Todos los programas compatibles con WinGet están actualizados." FontSize="12" Foreground="{DynamicResource Emerald}" Visibility="Collapsed" Margin="0,8,0,0" />
                             </StackPanel>
                         </Border>
 
@@ -78,7 +78,7 @@
                                         <TextBlock Text="⚡ Instalador Masivo de Software Esencial (Estilo Ninite)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                                         <TextBlock Text="Selecciona las aplicaciones que deseas instalar y OmniWin las descargará e instalará automáticamente sin interacción." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
                                     </StackPanel>
-                                    <Button x:Name="BtnInstallSelectedApps" Content="📥 Instalar Apps Seleccionadas" Click="BtnInstallSelectedApps_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0284C7" Foreground="White" Padding="14,6" FontSize="12" />
+                                    <Button x:Name="BtnInstallSelectedApps" Content="📥 Instalar Apps Seleccionadas" Click="BtnInstallSelectedApps_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{DynamicResource PrimaryButton}" Padding="14,6" FontSize="12" />
                                 </Grid>
 
                                 <WrapPanel x:Name="WpEssentialApps" Orientation="Horizontal">
@@ -99,10 +99,10 @@
                         </Border>
 
                         <!-- Live Streaming Console Output -->
-                        <Border Background="#050811" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14">
+                        <Border Background="{DynamicResource BgInput}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14">
                             <StackPanel>
                                 <TextBlock Text="TERMINAL DE INSTALACIÓN WINGET" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
-                                <TextBox x:Name="TxtConsoleOutput" Text="Listo para actualizar o instalar software." IsReadOnly="True" Background="Transparent" Foreground="#34D399" FontFamily="Consolas" FontSize="11.5" BorderThickness="0" TextWrapping="Wrap" MaxHeight="140" VerticalScrollBarVisibility="Auto" />
+                                <TextBox x:Name="TxtConsoleOutput" Text="Listo para actualizar o instalar software." IsReadOnly="True" Background="Transparent" Foreground="{DynamicResource TextPrimary}" FontFamily="Consolas" FontSize="11.5" BorderThickness="0" TextWrapping="Wrap" MaxHeight="140" VerticalScrollBarVisibility="Auto" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -133,11 +133,11 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBox x:Name="TxtDriverSearch" Width="160" Padding="8,5" Margin="0,0,6,0" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" TextChanged="TxtDriverSearch_TextChanged" ToolTip="Buscar por proveedor o nombre..." />
+                                <TextBox x:Name="TxtDriverSearch" Width="160" Padding="8,5" Margin="0,0,6,0" TextChanged="TxtDriverSearch_TextChanged" ToolTip="Buscar por proveedor o nombre..." />
                                 <Button x:Name="BtnRefreshDrivers" Content="🔄 Actualizar" Click="BtnRefreshDrivers_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,6,0" Padding="10,6" FontSize="11" />
-                                <Button x:Name="BtnExportDrivers" Content="💾 Backup Drivers" Click="BtnExportDrivers_Click" Background="#2563EB" Foreground="White" Margin="0,0,6,0" Padding="10,6" FontSize="11" ToolTip="Exporta todos los controladores OEM a una carpeta (C:\OmniWin_DriverBackup)" />
+                                <Button x:Name="BtnExportDrivers" Content="💾 Backup Drivers" Click="BtnExportDrivers_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,6,0" Padding="10,6" FontSize="11" ToolTip="Exporta todos los controladores OEM a una carpeta (C:\OmniWin_DriverBackup)" />
                                 <Button x:Name="BtnRestoreDrivers" Content="📥 Restaurar" Click="BtnRestoreDrivers_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,6,0" Padding="10,6" FontSize="11" ToolTip="Instala controladores desde una carpeta de respaldo" />
-                                <Button x:Name="BtnDeleteSelectedDriver" Content="🗑️ Eliminar" Click="BtnDeleteSelectedDriver_Click" Background="#DC2626" Foreground="White" Padding="10,6" FontSize="11" />
+                                <Button x:Name="BtnDeleteSelectedDriver" Content="🗑️ Eliminar" Click="BtnDeleteSelectedDriver_Click" Style="{DynamicResource DestructiveButton}" Padding="10,6" FontSize="11" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -156,7 +156,7 @@
                         </DataGrid>
                     </Border>
 
-                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
                         <TextBlock x:Name="TxtDriverStatus" Text="Cargando controladores del DriverStore..." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </Border>
                 </Grid>
@@ -186,10 +186,10 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBox x:Name="TxtAppSearch" Width="200" Padding="8,5" Margin="0,0,8,0" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" TextChanged="TxtAppSearch_TextChanged" ToolTip="Buscar programa..." />
+                                <TextBox x:Name="TxtAppSearch" Width="200" Padding="8,5" Margin="0,0,8,0" TextChanged="TxtAppSearch_TextChanged" ToolTip="Buscar programa..." />
                                 <Button x:Name="BtnRefreshApps" Content="🔄 Actualizar" Click="BtnRefreshApps_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
-                                <Button x:Name="BtnUninstallApp" Content="Desinstalar" Click="BtnUninstallApp_Click" Background="#DC2626" Foreground="White" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
-                                <Button x:Name="BtnScanLeftovers" Content="🔍 Escanear Rastros" Click="BtnScanLeftovers_Click" Background="#0284C7" Foreground="White" Padding="12,6" FontSize="12" />
+                                <Button x:Name="BtnUninstallApp" Content="Desinstalar" Click="BtnUninstallApp_Click" Style="{DynamicResource DestructiveButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
+                                <Button x:Name="BtnScanLeftovers" Content="🔍 Escanear Rastros" Click="BtnScanLeftovers_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -208,7 +208,7 @@
                         </DataGrid>
                     </Border>
 
-                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
                         <TextBlock x:Name="TxtUninstallStatus" Text="Selecciona un programa para desinstalar o analizar sobras." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </Border>
                 </Grid>
@@ -243,29 +243,29 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Motherboard Column -->
-                                    <Border Grid.Column="0" Background="#090D18" CornerRadius="6" Padding="14" Margin="0,0,8,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                                    <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" CornerRadius="6" Padding="14" Margin="0,0,8,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
                                         <StackPanel>
                                             <TextBlock Text="PLACA BASE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8" />
-                                            <TextBlock x:Name="TxtMbProduct" Text="Cargando..." FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="0,0,0,4" />
+                                            <TextBlock x:Name="TxtMbProduct" Text="Cargando..." FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4" />
                                             <TextBlock x:Name="TxtMbManufacturer" Text="Fabricante: --" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2" />
                                             <TextBlock x:Name="TxtMbVersion" Text="Versión: --" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                                         </StackPanel>
                                     </Border>
 
                                     <!-- BIOS Column -->
-                                    <Border Grid.Column="1" Background="#090D18" CornerRadius="6" Padding="14" Margin="8,0,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                                    <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" CornerRadius="6" Padding="14" Margin="8,0,0,0" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
                                         <StackPanel>
                                             <TextBlock Text="BIOS / FIRMWARE UEFI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8" />
-                                            <TextBlock x:Name="TxtBiosVersion" Text="Cargando..." FontSize="16" FontWeight="Bold" Foreground="#34D399" Margin="0,0,0,4" />
+                                            <TextBlock x:Name="TxtBiosVersion" Text="Cargando..." FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Emerald}" Margin="0,0,0,4" />
                                             <TextBlock x:Name="TxtBiosVendor" Text="Fabricante: --" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2" />
                                             <TextBlock x:Name="TxtBiosDate" Text="Fecha: --" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6" />
 
                                             <WrapPanel Orientation="Horizontal">
-                                                <Border x:Name="BadgeSecureBoot" Background="#064E3B" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
-                                                    <TextBlock x:Name="TxtSecureBootStatus" Text="Secure Boot: Activo ✔" FontSize="10.5" FontWeight="Bold" Foreground="#34D399" />
+                                                <Border x:Name="BadgeSecureBoot" Background="{DynamicResource CardBorderSubtle}" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                    <TextBlock x:Name="TxtSecureBootStatus" Text="Secure Boot: Activo ✔" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Emerald}" />
                                                 </Border>
-                                                <Border x:Name="BadgeTpm" Background="#064E3B" CornerRadius="4" Padding="6,2">
-                                                    <TextBlock x:Name="TxtTpmStatus" Text="TPM 2.0: Habilitado ✔" FontSize="10.5" FontWeight="Bold" Foreground="#34D399" />
+                                                <Border x:Name="BadgeTpm" Background="{DynamicResource CardBorderSubtle}" CornerRadius="4" Padding="6,2">
+                                                    <TextBlock x:Name="TxtTpmStatus" Text="TPM 2.0: Habilitado ✔" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Emerald}" />
                                                 </Border>
                                             </WrapPanel>
                                         </StackPanel>
@@ -282,15 +282,15 @@
                                         <TextBlock Text="Módulos de Memoria RAM Física &amp; Frecuencias" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                                         <TextBlock x:Name="TxtRamTopologySummary" Text="Detectando topología de memoria..." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
                                     </StackPanel>
-                                    <Border Background="#1E293B" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                        <TextBlock x:Name="TxtRamTotalHeader" Text="Total: -- GB" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
+                                    <Border Background="{DynamicResource CardBorderSubtle}" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TxtRamTotalHeader" Text="Total: -- GB" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                                     </Border>
                                 </Grid>
 
                                 <ItemsControl x:Name="IcRamModules">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                            <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="140" />
@@ -302,27 +302,27 @@
 
                                                     <StackPanel VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding DeviceLocator}" FontWeight="Bold" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" />
-                                                        <TextBlock Text="Ranura DIMM" FontSize="10.5" Foreground="#64748B" />
+                                                        <TextBlock Text="Ranura DIMM" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Manufacturer}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource Accent}" />
-                                                        <TextBlock Text="Fabricante de Módulo" FontSize="10.5" Foreground="#64748B" />
+                                                        <TextBlock Text="{Binding Manufacturer}" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}" />
+                                                        <TextBlock Text="Fabricante de Módulo" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding CapacityGb, StringFormat='{}{0:F0} GB'}" FontWeight="Bold" FontSize="13" Foreground="#34D399" />
-                                                        <TextBlock Text="Capacidad" FontSize="10.5" Foreground="#64748B" />
+                                                        <TextBlock Text="{Binding CapacityGb, StringFormat='{}{0:F0} GB'}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource Emerald}" />
+                                                        <TextBlock Text="Capacidad" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="3" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding SpeedMtS, StringFormat='{}{0} MT/s'}" FontWeight="Bold" FontSize="13" Foreground="#F59E0B" />
-                                                        <TextBlock Text="Velocidad Reloj" FontSize="10.5" Foreground="#64748B" />
+                                                        <TextBlock Text="{Binding SpeedMtS, StringFormat='{}{0} MT/s'}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource Amber}" />
+                                                        <TextBlock Text="Velocidad Reloj" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="4" VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding PartNumber}" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextPrimary}" />
-                                                        <TextBlock Text="Número de Parte (XMP/EXPO)" FontSize="10.5" Foreground="#64748B" />
+                                                        <TextBlock Text="Número de Parte (XMP/EXPO)" FontSize="10.5" Foreground="{DynamicResource TextMuted}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>

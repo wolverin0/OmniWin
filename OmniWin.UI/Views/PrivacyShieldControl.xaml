@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.PrivacyShieldControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.PrivacyShieldControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -84,7 +84,7 @@
                     </Border>
 
                     <!-- Footer Status -->
-                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
                         <TextBlock x:Name="TxtPrivacyFooterStatus" Text="Auditoría de privacidad completada. Las mutaciones están respaldadas con WAL transaccional." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </Border>
                 </Grid>
@@ -140,7 +140,7 @@
                                 <ListBox x:Name="LbCanaryFiles" Background="Transparent" BorderThickness="0" MaxHeight="380">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,0,0,6">
+                                            <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,0,0,6">
                                                 <StackPanel>
                                                     <TextBlock Text="🪤 Trampa Señuelo" FontSize="11" FontWeight="Bold" Foreground="#F59E0B" />
                                                     <TextBlock Text="{Binding}" FontSize="11" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
@@ -190,7 +190,7 @@
                     </Grid>
 
                     <!-- Canary Footer -->
-                    <Border Grid.Row="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,12,0,0">
                         <TextBlock x:Name="TxtCanaryFooterStatus" Text="Escudo canario listo para defender documentos y fotos contra ataques de cifrado." FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </Border>
                 </Grid>

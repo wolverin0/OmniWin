@@ -89,8 +89,8 @@ public class ThermalThresholdSettings
     public double GpuWarning { get; set; } = 75.0;
     public double GpuCritical { get; set; } = 85.0;
 
-    public double StorageWarning { get; set; } = 60.0;
-    public double StorageCritical { get; set; } = 70.0;
+    public double StorageWarning { get; set; } = 70.0;
+    public double StorageCritical { get; set; } = 80.0;
 
     public bool EnableAudioAlarm { get; set; } = false;
     public bool EnableEmergencyCooling { get; set; } = false;
@@ -108,6 +108,10 @@ public class ThermalSnapshot
     public double? CpuPowerWatts { get; set; }
     public double? GpuMemoryUsedMb { get; set; }
     public double? MaxStorageTemp { get; set; }
+    public string? PrimaryStorageName { get; set; }
+    public double? PrimaryStorageTemp { get; set; }
+    public double? StorageHotspotTemp { get; set; }
+    public string? StorageHotspotName { get; set; }
     public ThermalSeverity GlobalSeverity { get; set; } = ThermalSeverity.Normal;
 }
 
@@ -266,6 +270,10 @@ public class ThermalSensorService : IDisposable
                 var pkg = cpuTemps.FirstOrDefault(t => t.Name.Contains("Package", StringComparison.OrdinalIgnoreCase) || t.Name.Contains("Total", StringComparison.OrdinalIgnoreCase)) ?? cpuTemps.First();
                 snapshot.CpuPackageTemp = pkg.ValueCelsius;
             }
+            else
+            {
+                TryFallbackCpuTemperature(snapshot);
+            }
 
             var gpuTemps = snapshot.Temperatures.Where(t => t.HardwareType.Equals("Gpu", StringComparison.OrdinalIgnoreCase)).ToList();
             if (gpuTemps.Count > 0)
@@ -277,7 +285,67 @@ public class ThermalSensorService : IDisposable
             var ssdTemps = snapshot.Temperatures.Where(t => t.HardwareType.Equals("Storage", StringComparison.OrdinalIgnoreCase)).ToList();
             if (ssdTemps.Count > 0)
             {
-                snapshot.MaxStorageTemp = ssdTemps.Max(t => t.ValueCelsius);
+                // Identify NVMe SSDs vs legacy mechanical HDDs (exclude legacy SATA like HD322HJ)
+                var nvmeTemps = ssdTemps.Where(t => (t.HardwareName.Contains("NVMe", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("SSD", StringComparison.OrdinalIgnoreCase) ||
+                                                    (t.HardwareName.Contains("Samsung", StringComparison.OrdinalIgnoreCase) && !t.HardwareName.Contains("HD322", StringComparison.OrdinalIgnoreCase))) &&
+                                                    !t.HardwareName.Contains("HD322", StringComparison.OrdinalIgnoreCase)).ToList();
+
+                var pool = nvmeTemps.Count > 0 ? nvmeTemps : ssdTemps;
+
+                // Prioritize OS boot / primary drive (e.g. 990 PRO, 970 EVO Plus) for the main dashboard telemetry
+                var primaryDrives = pool.Where(t => t.HardwareName.Contains("990", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("980", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("970", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("PRO", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("EVO", StringComparison.OrdinalIgnoreCase) ||
+                                                    t.HardwareName.Contains("C:", StringComparison.OrdinalIgnoreCase)).ToList();
+                var primaryPool = primaryDrives.Count > 0 ? primaryDrives : pool;
+
+                // For Samsung & modern NVMe SSDs (like 970 EVO Plus / 990 PRO), NAND Flash is always the cooler sensor (typically 30-50°C),
+                // while the ASIC memory controller (Phoenix / Elpis / Pascal) operates at 60-78°C.
+                var nonHotspotSensors = primaryPool.Where(t =>
+                    !t.Name.Contains("Temperature 2", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("Temperature 3", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("Sensor 2", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("Sensor 3", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("Hotspot", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("Controller", StringComparison.OrdinalIgnoreCase) &&
+                    !t.Name.Contains("ASIC", StringComparison.OrdinalIgnoreCase)).ToList();
+
+                var explicitFlash = nonHotspotSensors.FirstOrDefault(t =>
+                    t.Name.Contains("Flash", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Equals("Temperature 1", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Equals("Sensor 1", StringComparison.OrdinalIgnoreCase));
+
+                // Composite temperature (NAND Flash)
+                var composite = explicitFlash
+                    ?? (nonHotspotSensors.Count > 1
+                        ? nonHotspotSensors.OrderBy(t => t.ValueCelsius).FirstOrDefault()
+                        : nonHotspotSensors.FirstOrDefault())
+                    ?? primaryPool.OrderBy(t => t.ValueCelsius).FirstOrDefault();
+
+                var hotspot = primaryPool.Where(t =>
+                    t.Name.Contains("Temperature 2", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("Temperature 3", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("Sensor 2", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("Sensor 3", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("Hotspot", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("Controller", StringComparison.OrdinalIgnoreCase) ||
+                    t.Name.Contains("ASIC", StringComparison.OrdinalIgnoreCase) ||
+                    (composite != null && t.ValueCelsius > composite.ValueCelsius + 8.0))
+                    .OrderByDescending(t => t.ValueCelsius).FirstOrDefault()
+                    ?? pool.OrderByDescending(t => t.ValueCelsius).FirstOrDefault();
+
+                snapshot.PrimaryStorageName = composite?.HardwareName ?? primaryPool.First().HardwareName;
+                snapshot.PrimaryStorageTemp = composite?.ValueCelsius ?? hotspot?.ValueCelsius;
+                snapshot.MaxStorageTemp = snapshot.PrimaryStorageTemp;
+
+                if (hotspot != null && composite != null && hotspot.ValueCelsius > composite.ValueCelsius)
+                {
+                    snapshot.StorageHotspotTemp = hotspot.ValueCelsius;
+                    snapshot.StorageHotspotName = $"{hotspot.HardwareName} ({hotspot.Name})";
+                }
             }
 
             // Evaluate Thresholds & Trigger Alarms
@@ -308,6 +376,31 @@ public class ThermalSensorService : IDisposable
                 // Filter out disconnected Super I/O pins (e.g. 105C, 110C, 127C) or out-of-range readings
                 if (val <= 0 || val > 120.0) continue;
                 if (normalizedType == "Motherboard" && val >= 90.0) continue;
+
+                // Storage sanitization:
+                // Mechanical HDDs operate between 25°C and 48°C. Readings > 65°C on mechanical drives
+                // indicate SMART Attribute 190 (Airflow Temp) normalized as (100 - temp), e.g. 100 - 16 = 84°C.
+                bool isMechanicalHdd = hardware.Name.Contains("WDC", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("WD", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("ST", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("Seagate", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("Hitachi", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("HTS", StringComparison.OrdinalIgnoreCase) ||
+                                       hardware.Name.Contains("HD322", StringComparison.OrdinalIgnoreCase);
+
+                if (normalizedType == "Storage")
+                {
+                    if (sensor.Name.Contains("Airflow", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (val > 60.0 && val < 100.0) val = Math.Round(100.0 - val, 1);
+                        else continue;
+                    }
+                    else if (isMechanicalHdd && val > 65.0)
+                    {
+                        if (val < 100.0) val = Math.Round(100.0 - val, 1);
+                        else continue;
+                    }
+                }
 
                 snapshot.Temperatures.Add(new ThermalSensorReading
                 {
@@ -444,6 +537,63 @@ public class ThermalSensorService : IDisposable
         catch { }
     }
 
+    private void TryFallbackCpuTemperature(ThermalSnapshot snapshot)
+    {
+        try
+        {
+            // 1. Check if Motherboard/SuperIO exposed a CPU sensor
+            var mbCpu = snapshot.Temperatures.FirstOrDefault(t =>
+                t.HardwareType.Equals("Motherboard", StringComparison.OrdinalIgnoreCase) &&
+                (t.Name.Contains("CPU", StringComparison.OrdinalIgnoreCase) ||
+                 t.Name.Contains("Core", StringComparison.OrdinalIgnoreCase) ||
+                 t.Name.Contains("Socket", StringComparison.OrdinalIgnoreCase)) &&
+                t.ValueCelsius >= 20.0 && t.ValueCelsius <= 110.0);
+
+            if (mbCpu != null)
+            {
+                snapshot.CpuPackageTemp = mbCpu.ValueCelsius;
+                return;
+            }
+
+            // 2. Query Win32_PerfFormattedData_Counters_ThermalZoneInformation via WMI (non-elevated)
+            using var searcher = new System.Management.ManagementObjectSearcher(
+                "SELECT Temperature, HighPrecisionTemperature FROM Win32_PerfFormattedData_Counters_ThermalZoneInformation");
+            foreach (System.Management.ManagementObject obj in searcher.Get())
+            {
+                double valC = 0;
+                if (obj["HighPrecisionTemperature"] != null &&
+                    double.TryParse(obj["HighPrecisionTemperature"].ToString(), out double highPrecision) &&
+                    highPrecision > 2000)
+                {
+                    valC = (highPrecision / 10.0) - 273.15;
+                }
+                else if (obj["Temperature"] != null &&
+                         double.TryParse(obj["Temperature"].ToString(), out double kelvin) &&
+                         kelvin > 200)
+                {
+                    valC = kelvin - 273.15;
+                }
+
+                if (valC >= 15.0 && valC <= 115.0)
+                {
+                    double rounded = Math.Round(valC, 1);
+                    snapshot.CpuPackageTemp = rounded;
+                    snapshot.Temperatures.Add(new ThermalSensorReading
+                    {
+                        Identifier = "wmi_acpi_thermal_zone_cpu",
+                        Name = "CPU Package (ACPI)",
+                        HardwareName = "Procesador Intel Core",
+                        HardwareType = "Cpu",
+                        ValueCelsius = rounded,
+                        MaxCelsius = rounded
+                    });
+                    return;
+                }
+            }
+        }
+        catch { }
+    }
+
     private void EvaluateThresholds(ThermalSnapshot snapshot)
     {
         ThermalSeverity highest = ThermalSeverity.Normal;
@@ -457,11 +607,40 @@ public class ThermalSensorService : IDisposable
                 continue;
             }
 
+            bool isStorageHotspot = reading.HardwareType == "Storage" &&
+                (reading.Name.Contains("Temperature 2", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("Temperature 3", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("Sensor 2", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("Sensor 3", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("Hotspot", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("Controller", StringComparison.OrdinalIgnoreCase) ||
+                 reading.Name.Contains("ASIC", StringComparison.OrdinalIgnoreCase));
+
+            bool isSamsungNvme = reading.HardwareType == "Storage" &&
+                reading.HardwareName.Contains("Samsung", StringComparison.OrdinalIgnoreCase) &&
+                (reading.HardwareName.Contains("NVMe", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("970", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("980", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("990", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("EVO", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("PRO", StringComparison.OrdinalIgnoreCase));
+
+            bool isNvmeDrive = reading.HardwareType == "Storage" &&
+                (isSamsungNvme ||
+                 reading.HardwareName.Contains("NVMe", StringComparison.OrdinalIgnoreCase) ||
+                 reading.HardwareName.Contains("SSD", StringComparison.OrdinalIgnoreCase));
+
+            // Samsung NVMe controller hotspot runs normally between 60°C and 78°C.
+            // Official Samsung operating spec warns at 82-85°C and throttles at 90-105°C.
             double warnLimit = reading.HardwareType switch
             {
                 "Cpu" => Settings.CpuWarning,
                 "Gpu" => Settings.GpuWarning,
-                "Storage" => Settings.StorageWarning,
+                "Storage" => isStorageHotspot 
+                    ? 95.0 
+                    : (isSamsungNvme 
+                        ? Math.Max(82.0, Settings.StorageWarning) 
+                        : (isNvmeDrive ? Math.Max(72.0, Settings.StorageWarning) : Settings.StorageWarning)),
                 _ => 85.0
             };
 
@@ -469,7 +648,11 @@ public class ThermalSensorService : IDisposable
             {
                 "Cpu" => Settings.CpuCritical,
                 "Gpu" => Settings.GpuCritical,
-                "Storage" => Settings.StorageCritical,
+                "Storage" => isStorageHotspot 
+                    ? 105.0 
+                    : (isSamsungNvme 
+                        ? Math.Max(90.0, Settings.StorageCritical) 
+                        : (isNvmeDrive ? Math.Max(82.0, Settings.StorageCritical) : Settings.StorageCritical)),
                 _ => 95.0
             };
 

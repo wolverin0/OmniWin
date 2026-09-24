@@ -4,7 +4,9 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using OmniWin.Core.Services;
 using OmniWin.UI;
+using OmniWin.UI.Services;
 using OmniWin.UI.Views;
 using Xunit;
 
@@ -13,31 +15,8 @@ namespace OmniWin.Tests;
 [Collection("WpfVisualTests")]
 public class NewFeaturesVisualTests
 {
-    private static readonly object _appLock = new();
-
-    private static void RunInSta(Action action)
-    {
-        Exception? threadEx = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex)
-            {
-                threadEx = ex;
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join(20000);
-
-        if (threadEx != null)
-        {
-            throw new AggregateException("STA thread failed", threadEx);
-        }
-    }
+    private static readonly object _appLock = WpfTestHelper.AppLock;
+    private static void RunInSta(Action action) => WpfTestHelper.Run(action);
 
     private static void EnsureAppResources()
     {
@@ -84,8 +63,14 @@ public class NewFeaturesVisualTests
         Directory.CreateDirectory(dir);
 
         string filePath = Path.Combine(dir, outputFileName);
-        using var fs = File.Create(filePath);
-        encoder.Save(fs);
+        using (var fs = File.Create(filePath))
+        {
+            encoder.Save(fs);
+        }
+
+        string reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+        Directory.CreateDirectory(reportsDir);
+        try { File.Copy(filePath, Path.Combine(reportsDir, outputFileName), true); } catch { }
 
         window.Close();
     }
@@ -253,6 +238,200 @@ public class NewFeaturesVisualTests
             win.DrawerSettings.Visibility = Visibility.Visible;
             RenderWindowToFile(win, "26_gaming_hud_drawer.png");
             Assert.True(File.Exists(@"C:\Users\pauol\Pictures\Screenshots\OmniWinTests\26_gaming_hud_drawer.png"));
+        });
+    }
+
+    private static void RenderControlToFileWithTheme(FrameworkElement control, string outputFileName, AppTheme theme)
+    {
+        ThemeService.Instance.ApplyTheme(theme);
+        var bg = theme == AppTheme.Dark ? Color.FromRgb(0x09, 0x09, 0x0B) : Color.FromRgb(0xF4, 0xF4, 0xF6);
+        var window = new Window
+        {
+            Width = 1100,
+            Height = 750,
+            Content = control,
+            Background = new SolidColorBrush(bg),
+            WindowStyle = WindowStyle.None
+        };
+
+        window.Show();
+        window.UpdateLayout();
+
+        var width = (int)window.ActualWidth;
+        var height = (int)window.ActualHeight;
+        if (width <= 0) width = 1100;
+        if (height <= 0) height = 750;
+
+        var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(window);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+        string dir = @"C:\Users\pauol\Pictures\Screenshots\OmniWinTests";
+        Directory.CreateDirectory(dir);
+
+        string filePath = Path.Combine(dir, outputFileName);
+        using (var fs = File.Create(filePath))
+        {
+            encoder.Save(fs);
+        }
+
+        string artifactDir = @"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285";
+        Directory.CreateDirectory(artifactDir);
+        try { File.Copy(filePath, Path.Combine(artifactDir, outputFileName), true); } catch { }
+
+        string reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+        Directory.CreateDirectory(reportsDir);
+        try { File.Copy(filePath, Path.Combine(reportsDir, outputFileName), true); } catch { }
+
+        window.Close();
+    }
+
+    private static void RenderMainWindowWithTheme(string outputFileName, AppTheme theme)
+    {
+        AppSettingsService.Instance.SaveSettings(s => s.ThemeMode = theme.ToString());
+        ThemeService.Instance.ApplyTheme(theme);
+        var bg = theme == AppTheme.Dark ? Color.FromRgb(0x09, 0x09, 0x0B) : Color.FromRgb(0xF4, 0xF4, 0xF6);
+        var window = new MainWindow
+        {
+            Width = 1200,
+            Height = 780,
+            Background = new SolidColorBrush(bg),
+            WindowStyle = WindowStyle.None,
+            WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None
+        };
+
+        window.Show();
+        ThemeService.Instance.ApplyTheme(theme);
+        window.WelcomeTourOverlay.Visibility = Visibility.Collapsed;
+        window.OnboardingOverlay.Visibility = Visibility.Collapsed;
+        window.WizardControl.Visibility = Visibility.Collapsed;
+        window.TourControl.Visibility = Visibility.Collapsed;
+        window.UpdateLayout();
+
+        var width = (int)window.ActualWidth;
+        var height = (int)window.ActualHeight;
+        if (width <= 0) width = 1200;
+        if (height <= 0) height = 780;
+
+        var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(window);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+        string dir = @"C:\Users\pauol\Pictures\Screenshots\OmniWinTests";
+        Directory.CreateDirectory(dir);
+
+        string filePath = Path.Combine(dir, outputFileName);
+        using (var fs = File.Create(filePath))
+        {
+            encoder.Save(fs);
+        }
+
+        string artifactDir = @"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285";
+        Directory.CreateDirectory(artifactDir);
+        try { File.Copy(filePath, Path.Combine(artifactDir, outputFileName), true); } catch { }
+
+        string reportsDir = @"C:\Users\pauol\Source\Repos\OmniWin\scripts\reports";
+        Directory.CreateDirectory(reportsDir);
+        try { File.Copy(filePath, Path.Combine(reportsDir, outputFileName), true); } catch { }
+
+        window.Close();
+    }
+
+    [Fact]
+    public void Render_Dashboard_ObsidianDark_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            RenderMainWindowWithTheme("omniwin_obsidian_dark_dashboard.png", AppTheme.Dark);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_obsidian_dark_dashboard.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_Dashboard_CeramicLight_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            RenderMainWindowWithTheme("omniwin_ceramic_light_dashboard.png", AppTheme.Light);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_ceramic_light_dashboard.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_GameProfiler_ObsidianDark_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new GameProfilerControl();
+            RenderControlToFileWithTheme(control, "omniwin_obsidian_dark_game_profiler.png", AppTheme.Dark);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_obsidian_dark_game_profiler.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_GameProfiler_CeramicLight_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new GameProfilerControl();
+            RenderControlToFileWithTheme(control, "omniwin_ceramic_light_game_profiler.png", AppTheme.Light);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_ceramic_light_game_profiler.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_DiskSpaceAnalyzer_ObsidianDark_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new DiskSpaceAnalyzerControl();
+            RenderControlToFileWithTheme(control, "omniwin_obsidian_dark_disk_analyzer.png", AppTheme.Dark);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_obsidian_dark_disk_analyzer.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_DiskSpaceAnalyzer_CeramicLight_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new DiskSpaceAnalyzerControl();
+            RenderControlToFileWithTheme(control, "omniwin_ceramic_light_disk_analyzer.png", AppTheme.Light);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_ceramic_light_disk_analyzer.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_DeduplicationControl_CeramicLight_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new DeduplicationControl();
+            RenderControlToFileWithTheme(control, "omniwin_ceramic_light_deduplication.png", AppTheme.Light);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_ceramic_light_deduplication.png"));
+        });
+    }
+
+    [Fact]
+    public void Render_SoftwareDriversControl_CeramicLight_VisualTest()
+    {
+        RunInSta(() =>
+        {
+            EnsureAppResources();
+            var control = new SoftwareDriversControl();
+            RenderControlToFileWithTheme(control, "omniwin_ceramic_light_softwaredrivers.png", AppTheme.Light);
+            Assert.True(File.Exists(@"C:\Users\pauol\.gemini\antigravity-cli\brain\b45df942-f950-4a39-be78-996814694285\omniwin_ceramic_light_softwaredrivers.png"));
         });
     }
 }

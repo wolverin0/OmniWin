@@ -48,23 +48,31 @@
                                            FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" />
                             </StackPanel>
 
-                            <!-- Gaming Profile & Report Buttons -->
+                            <!-- Gaming Profile, Snapshot & Report Buttons -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button x:Name="BtnExportSnapshot" Content="📦 Exportar .omniwin" 
+                                <Button x:Name="BtnCreateSnapshot" Content="📸 Snapshot" 
+                                        Click="BtnCreateSnapshot_Click"
+                                        Style="{DynamicResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
+                                        ToolTip="Crear Snapshot de Registro y Punto de Restauración antes de aplicar cambios" />
+                                <Button x:Name="BtnRollbackSnapshot" Content="↺ Rollback 1-Clic" 
+                                        Click="BtnRollbackSnapshot_Click"
+                                        Style="{DynamicResource DestructiveButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
+                                        ToolTip="Revertir el último snapshot restaurando claves y valores originales del registro" />
+                                <Button x:Name="BtnExportSnapshot" Content="📦 Exportar" 
                                         Click="BtnExportSnapshot_Click"
                                         Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
                                         ToolTip="Exportar estado de optimizaciones y configuración a un paquete portable .omniwin para clonar en otra máquina" />
-                                <Button x:Name="BtnImportSnapshot" Content="📥 Importar .omniwin" 
+                                <Button x:Name="BtnImportSnapshot" Content="📥 Importar" 
                                         Click="BtnImportSnapshot_Click"
-                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,8,0"
+                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
                                         ToolTip="Restaurar y aplicar un paquete de configuración .omniwin en esta máquina" />
-                                <Button x:Name="BtnExportTweaksReport" Content="📄 Reporte HTML" 
+                                <Button x:Name="BtnExportTweaksReport" Content="📄 Reporte" 
                                         Click="BtnExportTweaksReport_Click"
-                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,8,0"
+                                        Style="{StaticResource SecondaryButton}" Padding="10,8" FontSize="11.5" Margin="0,0,6,0"
                                         ToolTip="Generar informe HTML interactivo con el estado de todas las optimizaciones" />
                                 <Button x:Name="BtnApplyGamingProfile" Content="⚡ Perfil Gaming" 
                                         Click="BtnApplyGamingProfile_Click"
-                                        Background="{StaticResource Accent}" Foreground="White" Padding="12,8" FontSize="11.5" FontWeight="Bold" />
+                                        Style="{DynamicResource PrimaryButton}" Padding="12,8" FontSize="11.5" FontWeight="Bold" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -79,7 +87,7 @@
 
                             <!-- Category Filter Buttons -->
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button x:Name="BtnFilterAll" Content="🌟 Todos" Click="BtnFilterCategory_Click" Tag="Todos" Margin="0,0,6,0" Padding="10,5" FontSize="11" Background="#0284C7" Foreground="White" />
+                                <Button x:Name="BtnFilterAll" Content="🌟 Todos" Click="BtnFilterCategory_Click" Tag="Todos" Margin="0,0,6,0" Padding="10,5" FontSize="11" Style="{DynamicResource PrimaryButton}" />
                                 <Button x:Name="BtnFilterGaming" Content="🎮 Gaming &amp; Latencia" Click="BtnFilterCategory_Click" Tag="Gaming &amp; Latencia" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
                                 <Button x:Name="BtnFilterPrivacy" Content="🛡️ Privacidad Radical" Click="BtnFilterCategory_Click" Tag="Privacidad Radical" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />
                                 <Button x:Name="BtnFilterWin11" Content="🪟 Windows 11 UI" Click="BtnFilterCategory_Click" Tag="Windows 11 UI &amp; Explorer" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="10,5" FontSize="11" />

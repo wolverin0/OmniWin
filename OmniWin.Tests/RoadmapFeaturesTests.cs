@@ -159,4 +159,115 @@ public class RoadmapFeaturesTests
         Assert.Contains("InstallerType: zip", installerContent);
         Assert.Contains("PortableCommandAlias: omniwin", installerContent);
     }
+
+    [Fact]
+    public void EtwFramePacing_CalculatesMetricsAndLowsAccurately()
+    {
+        var service = EtwFramePacingService.Instance;
+        Assert.NotNull(service);
+
+        // Test static frame pacing calculation with known distribution
+        // 100 frames: 98 frames at 6.94ms (~144 FPS) and 2 frames at 30ms (~33 FPS)
+        var frametimes = new System.Collections.Generic.List<double>();
+        for (int i = 0; i < 98; i++) frametimes.Add(6.94);
+        frametimes.Add(30.0);
+        frametimes.Add(35.0);
+
+        var report = FramePacingBenchmarkService.CalculateReport("Test Benchmark", TimeSpan.FromSeconds(1), frametimes);
+
+        Assert.NotNull(report);
+        Assert.Equal(100, report.TotalFrames);
+        Assert.True(report.AverageFps > 120, $"Average FPS expected > 120, was {report.AverageFps}");
+        Assert.True(report.OnePercentLowFps < report.AverageFps, "1% Low must be lower than Average FPS");
+        Assert.True(report.PointOnePercentLowFps <= report.OnePercentLowFps, "0.1% Low must be <= 1% Low");
+        Assert.True(report.StutterCount >= 2, "Stutter count should capture frame spikes");
+    }
+
+    [Fact]
+    public async Task PcieLinkInspector_AuditDetailedBandwidth_ExecutesAndClassifies()
+    {
+        var inspector = PcieLinkInspector.Instance;
+        Assert.NotNull(inspector);
+
+        var doctorResult = inspector.RunDoctorCheck();
+        Assert.NotNull(doctorResult);
+        Assert.NotNull(doctorResult.Devices);
+
+        string reportText = await inspector.AuditDetailedBandwidthAsync();
+        Assert.False(string.IsNullOrWhiteSpace(reportText));
+        Assert.Contains("OMNIWIN — AUDITORÍA PROFUNDA DE BUS PCIE", reportText);
+    }
+
+    [Fact]
+    public async Task RollbackSnapshotService_CreatesAndListsSnapshots()
+    {
+        var service = RollbackSnapshotService.Instance;
+        Assert.NotNull(service);
+
+        // Don't invoke Windows Restore Point in unit tests to avoid requiring admin elevation
+        var snapshot = await service.CreateSnapshotAsync("Unit Test Pre-Tweak", "Validation Profile", createWindowsRestorePoint: false);
+        Assert.NotNull(snapshot);
+        Assert.Equal("Unit Test Pre-Tweak", snapshot.Name);
+        Assert.True(snapshot.RegistryKeysCount > 0);
+
+        string backupFile = Path.Combine(service.SnapshotDirectory, $"{snapshot.Id}.json");
+        Assert.True(File.Exists(backupFile), "Backup JSON file must exist on disk");
+
+        var all = service.GetSnapshots();
+        Assert.Contains(all, s => s.Id == snapshot.Id);
+    }
+
+    [Fact]
+    public async Task OpenRgbClientService_ThermalReactiveGradient_ComputesExpectedColors()
+    {
+        var service = OpenRgbClientService.Instance;
+        Assert.NotNull(service);
+
+        // Cold temperature (< 45°C) -> Should set Cyan/Arctic
+        await service.SetThermalReactiveColorAsync(35.0);
+        Assert.Equal("#00E5FF", service.CurrentHexColor);
+
+        // Normal temperature (45 - 65°C) -> Should set Emerald
+        await service.SetThermalReactiveColorAsync(55.0);
+        Assert.Equal("#10B981", service.CurrentHexColor);
+
+        // Warm temperature (65 - 75°C) -> Should set Amber
+        await service.SetThermalReactiveColorAsync(70.0);
+        Assert.Equal("#F59E0B", service.CurrentHexColor);
+
+        // Hot temperature (> 75°C) -> Should set Red
+        await service.SetThermalReactiveColorAsync(85.0);
+        Assert.Equal("#EF4444", service.CurrentHexColor);
+    }
+
+    [Fact]
+    public void CompanionServer_NetworkAdapterSelection_UpdatesPairingUrlAndQrCode()
+    {
+        var server = CompanionServerService.Instance;
+        Assert.NotNull(server);
+
+        var adapters = CompanionServerService.GetAvailableNetworkAdapters();
+        Assert.NotNull(adapters);
+        Assert.NotEmpty(adapters);
+
+        var first = adapters[0];
+        Assert.False(string.IsNullOrWhiteSpace(first.IpAddress));
+        Assert.False(string.IsNullOrWhiteSpace(first.DisplayName));
+
+        // Test changing IP selection
+        string testIp = "192.168.100.188";
+        server.SetSelectedIp(testIp);
+
+        Assert.Equal(testIp, server.LocalIp);
+        Assert.Contains(testIp, server.PairingUrl);
+        Assert.Contains($":{server.Port}/?token=", server.PairingUrl);
+
+        // Verify QR code generation succeeds for the updated URL
+        byte[] qrBytes = server.GenerateQrCodePngBytes(5);
+        Assert.NotNull(qrBytes);
+        Assert.True(qrBytes.Length > 0);
+
+        // Verify setting was persisted in AppSettingsService
+        Assert.Equal(testIp, AppSettingsService.Instance.Settings.PreferredCompanionIp);
+    }
 }

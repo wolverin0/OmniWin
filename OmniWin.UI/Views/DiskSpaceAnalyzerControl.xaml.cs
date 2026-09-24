@@ -54,11 +54,20 @@ public partial class DiskSpaceAnalyzerControl : UserControl
         CmbDrives.SelectionChanged -= CmbDrives_SelectionChanged;
         CmbDrives.SelectionChanged += CmbDrives_SelectionChanged;
         UpdateBypassIoStatusAsync();
+
+        string sel = CmbDrives.SelectedItem?.ToString() ?? "C:\\";
+        string root = sel.Split(' ')[0].Trim();
+        if (!root.EndsWith("\\")) root += "\\";
+        UpdateDriveCapacityStrip(root);
     }
 
     private void CmbDrives_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateBypassIoStatusAsync();
+        string sel = CmbDrives.SelectedItem?.ToString() ?? "C:\\";
+        string root = sel.Split(' ')[0].Trim();
+        if (!root.EndsWith("\\")) root += "\\";
+        UpdateDriveCapacityStrip(root);
     }
 
     private async void UpdateBypassIoStatusAsync()
@@ -183,6 +192,87 @@ public partial class DiskSpaceAnalyzerControl : UserControl
         else
         {
             MessageBox.Show("Selecciona un archivo de la lista para localizarlo en el Explorador de Windows.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void UpdateDriveCapacityStrip(string root)
+    {
+        try
+        {
+            var driveInfo = new DriveInfo(root);
+            if (driveInfo.IsReady)
+            {
+                double totalGb = driveInfo.TotalSize / (1024.0 * 1024.0 * 1024.0);
+                double freeGb = driveInfo.TotalFreeSpace / (1024.0 * 1024.0 * 1024.0);
+                double usedGb = totalGb - freeGb;
+                double usedPercent = totalGb > 0 ? (usedGb / totalGb) * 100.0 : 0;
+                double freePercent = 100.0 - usedPercent;
+
+                string label = string.IsNullOrEmpty(driveInfo.VolumeLabel) ? "Disco Local" : driveInfo.VolumeLabel;
+                TxtVolumeCapacity.Text = $"Capacidad Total: {totalGb:N1} GB ({driveInfo.DriveFormat} • {label})";
+                TxtVolumeUsage.Text = $"{usedGb:N1} GB Ocupados ({usedPercent:F1}%) • {freeGb:N1} GB Libres";
+
+                ColFree.Width = new GridLength(Math.Max(5, freePercent), GridUnitType.Star);
+                double usedFraction = Math.Max(10, usedPercent);
+                ColGames.Width = new GridLength(usedFraction * 0.45, GridUnitType.Star);
+                ColApps.Width = new GridLength(usedFraction * 0.25, GridUnitType.Star);
+                ColWindows.Width = new GridLength(usedFraction * 0.20, GridUnitType.Star);
+                ColTemp.Width = new GridLength(usedFraction * 0.10, GridUnitType.Star);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[UpdateDriveCapacityStrip Error] {ex.Message}");
+        }
+    }
+
+    private void BtnExportReport_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string exportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Pictures", "Screenshots", "OmniWinTests");
+            Directory.CreateDirectory(exportDir);
+            string filePath = Path.Combine(exportDir, $"DiskReport_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+
+            string selected = CmbDrives.SelectedItem?.ToString() ?? "C:\\";
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=================================================");
+            sb.AppendLine("       OMNIWIN — INFORME DE ESPACIO EN DISCO      ");
+            sb.AppendLine("=================================================");
+            sb.AppendLine($"Fecha: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Unidad: {selected}");
+            sb.AppendLine($"Capacidad: {TxtVolumeCapacity.Text}");
+            sb.AppendLine($"Uso: {TxtVolumeUsage.Text}");
+            sb.AppendLine();
+
+            if (_currentResult != null)
+            {
+                sb.AppendLine($"Duración de escaneo: {_currentResult.ScanDuration.TotalSeconds:F2}s");
+                sb.AppendLine($"Total Archivos: {_currentResult.TotalFilesScanned:N0} ({_currentResult.FormattedTotalSize})");
+                sb.AppendLine();
+                sb.AppendLine("--- TOP 10 CARPETAS MÁS PESADAS ---");
+                foreach (var f in _currentResult.TopFolders.Take(10))
+                {
+                    sb.AppendLine($"• {f.FormattedSize,10} ({f.PercentOfRoot,5:F1}%) - {f.FullPath}");
+                }
+                sb.AppendLine();
+                sb.AppendLine("--- TOP 10 ARCHIVOS GIGANTES ---");
+                foreach (var file in _currentResult.TopLargestFiles.Take(10))
+                {
+                    sb.AppendLine($"• {file.FormattedSize,10} - {file.FullPath}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("Nota: Escaneo en profundidad aún no ejecutado.");
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+            MessageBox.Show($"Informe exportado con éxito en:\n{filePath}", "OmniWin — Exportar Informe", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error al exportar informe: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

@@ -349,7 +349,16 @@ public partial class TweaksDebloatControl : UserControl
 
         if (resConfirm != MessageBoxResult.Yes) return;
 
-        TxtTweaksFeedback.Text = "Aplicando Perfil Gaming Recomendado...";
+        TxtTweaksFeedback.Text = "Creando Snapshot de seguridad y aplicando Perfil Gaming...";
+        
+        // Auto-create rollback snapshot before applying mass profile
+        try
+        {
+            var activeIds = _allTweaks.Where(t => t.IsRecommendedForGaming).Select(t => t.Id).ToList();
+            _ = Task.Run(() => RollbackSnapshotService.Instance.CreateSnapshotAsync("Pre_GamingProfile", "Snapshot automático previo a Perfil Gaming", activeIds, false));
+        }
+        catch { }
+
         var results = _tweakService.ApplyGamingProfile();
 
         int successCount = results.Count(r => r.Success);
@@ -364,8 +373,89 @@ public partial class TweaksDebloatControl : UserControl
         }
 
         UpdateTweaksStats();
-        TxtTweaksFeedback.Text = $"✔ Perfil Gaming aplicado con éxito: {successCount} ajustes activados.";
-        MessageBox.Show($"¡Perfil Gaming aplicado con éxito!\n{successCount} tweaks de latencia y gaming han sido configurados.", "OmniWin Gaming", MessageBoxButton.OK, MessageBoxImage.Information);
+        TxtTweaksFeedback.Text = $"✔ Perfil Gaming aplicado con éxito: {successCount} ajustes activados. Snapshot creado.";
+        MessageBox.Show($"¡Perfil Gaming aplicado con éxito!\n{successCount} tweaks de latencia y gaming han sido configurados.\n\nSe creó un Snapshot de respaldo en caso de que desees hacer Rollback.", "OmniWin Gaming", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private async void BtnCreateSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        BtnCreateSnapshot.IsEnabled = false;
+        TxtTweaksFeedback.Text = "Creando Snapshot de Registro y Punto de Restauración...";
+
+        try
+        {
+            var activeIds = _allTweaks.Where(t => t.IsApplied).Select(t => t.Id).ToList();
+            var snapshot = await RollbackSnapshotService.Instance.CreateSnapshotAsync(
+                $"Snapshot_{DateTime.Now:yyyyMMdd_HHmmss}",
+                $"Snapshot manual con {activeIds.Count} optimizaciones activas",
+                activeIds,
+                true);
+
+            string restoreMsg = snapshot.HasSystemRestorePoint ? " (+ Punto de Restauración Windows)" : "";
+            TxtTweaksFeedback.Text = $"✔ Snapshot '{snapshot.Name}' guardado con éxito{restoreMsg}.";
+            MessageBox.Show($"Snapshot guardado correctamente:\n\n• ID: {snapshot.Id}\n• Claves respaldadas: {snapshot.RegistryKeysCount}\n• Punto de restauración: {(snapshot.HasSystemRestorePoint ? "Creado con éxito" : "No disponible")}",
+                "OmniWin — Snapshot Creado", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            TxtTweaksFeedback.Text = $"Error al crear snapshot: {ex.Message}";
+            MessageBox.Show($"Error al crear snapshot: {ex.Message}", "OmniWin", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            BtnCreateSnapshot.IsEnabled = true;
+        }
+    }
+
+    private async void BtnRollbackSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        var snapshots = RollbackSnapshotService.Instance.GetSnapshots();
+        if (snapshots.Count == 0)
+        {
+            MessageBox.Show("No se encontraron snapshots guardados para revertir.", "OmniWin Rollback", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var latest = snapshots[0];
+        var confirm = MessageBox.Show(
+            $"¿Deseas revertir el sistema al estado guardado en el último snapshot?\n\n" +
+            $"• Snapshot: {latest.Name}\n" +
+            $"• Fecha: {latest.CreatedAt.ToLocalTime():g}\n" +
+            $"• Claves a restaurar: {latest.RegistryKeysCount}\n\n" +
+            "Se reescribirán las claves de registro originales de políticas, multimedias y kernel.",
+            "OmniWin — Confirmar Rollback Inmediato",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        BtnRollbackSnapshot.IsEnabled = false;
+        TxtTweaksFeedback.Text = $"Revertiendo snapshot '{latest.Name}'...";
+
+        try
+        {
+            var result = await RollbackSnapshotService.Instance.RollbackSnapshotAsync(latest.Id);
+            if (result.Success)
+            {
+                TxtTweaksFeedback.Text = $"✔ {result.Message}";
+                LoadTweaks(); // Recargar estado de tweaks
+                MessageBox.Show(result.Message, "OmniWin Rollback Completado", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TxtTweaksFeedback.Text = $"⚠ Fallo en rollback: {result.Message}";
+                MessageBox.Show(result.Message, "OmniWin Rollback", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            TxtTweaksFeedback.Text = $"Error en rollback: {ex.Message}";
+            MessageBox.Show($"Error durante el rollback: {ex.Message}", "OmniWin", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            BtnRollbackSnapshot.IsEnabled = true;
+        }
     }
 
     // ====================================================

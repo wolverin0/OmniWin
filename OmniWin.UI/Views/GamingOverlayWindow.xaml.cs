@@ -480,22 +480,45 @@ public partial class GamingOverlayWindow : Window
             {
                 // Config mode: header bar visible for dragging and toggling settings
                 HeaderBar.Visibility = Visibility.Visible;
-                RootBorder.Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x09, 0x0D, 0x16));
-                RootBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8));
-                RootBorder.BorderThickness = new Thickness(1);
-                RootBorder.Padding = new Thickness(12, 10, 12, 10);
-                RootShadow.Opacity = 0.6;
+                if (opacity <= 0.05)
+                {
+                    RootBorder.Background = new SolidColorBrush(Color.FromArgb(0x15, 0x09, 0x0D, 0x16));
+                    RootBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x38, 0xBD, 0xF8));
+                    RootBorder.BorderThickness = new Thickness(1);
+                    RootBorder.Padding = new Thickness(6, 4, 6, 4);
+                    RootShadow.Opacity = 0;
+                }
+                else
+                {
+                    byte alpha = (byte)(opacity * 255);
+                    RootBorder.Background = new SolidColorBrush(Color.FromArgb(alpha, 0x09, 0x0D, 0x16));
+                    RootBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8));
+                    RootBorder.BorderThickness = new Thickness(1);
+                    RootBorder.Padding = new Thickness(12, 10, 12, 10);
+                    RootShadow.Opacity = opacity * 0.5;
+                }
             }
         }
         else if (style == 1) // Glassmorphic Card Mode
         {
             HeaderBar.Visibility = Visibility.Visible;
-            byte alpha = (byte)(Math.Max(0.25, opacity > 0.05 ? opacity : 0.88) * 255);
-            RootBorder.Background = new SolidColorBrush(Color.FromArgb(alpha, 0x09, 0x0D, 0x16));
-            RootBorder.BorderBrush = new SolidColorBrush(_isClickThrough ? Color.FromArgb(0x40, 0x38, 0xBD, 0xF8) : Color.FromRgb(0x38, 0xBD, 0xF8));
-            RootBorder.BorderThickness = new Thickness(1);
-            RootBorder.Padding = new Thickness(12, 10, 12, 10);
-            RootShadow.Opacity = 0.6;
+            if (opacity <= 0.05)
+            {
+                RootBorder.Background = Brushes.Transparent;
+                RootBorder.BorderBrush = new SolidColorBrush(_isClickThrough ? Brushes.Transparent.Color : Color.FromArgb(0x60, 0x38, 0xBD, 0xF8));
+                RootBorder.BorderThickness = _isClickThrough ? new Thickness(0) : new Thickness(1);
+                RootBorder.Padding = new Thickness(10, 8, 10, 8);
+                RootShadow.Opacity = 0;
+            }
+            else
+            {
+                byte alpha = (byte)(opacity * 255);
+                RootBorder.Background = new SolidColorBrush(Color.FromArgb(alpha, 0x09, 0x0D, 0x16));
+                RootBorder.BorderBrush = new SolidColorBrush(_isClickThrough ? Color.FromArgb((byte)(alpha * 0.3), 0x38, 0xBD, 0xF8) : Color.FromRgb(0x38, 0xBD, 0xF8));
+                RootBorder.BorderThickness = new Thickness(1);
+                RootBorder.Padding = new Thickness(12, 10, 12, 10);
+                RootShadow.Opacity = opacity * 0.6;
+            }
         }
         else // Compact Bar Mode
         {
@@ -525,11 +548,23 @@ public partial class GamingOverlayWindow : Window
             else
             {
                 HeaderBar.Visibility = Visibility.Visible;
-                RootBorder.Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x09, 0x0D, 0x16));
-                RootBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8));
-                RootBorder.BorderThickness = new Thickness(1);
-                RootBorder.Padding = new Thickness(10, 8, 10, 8);
-                RootShadow.Opacity = 0.5;
+                if (opacity <= 0.05)
+                {
+                    RootBorder.Background = new SolidColorBrush(Color.FromArgb(0x15, 0x09, 0x0D, 0x16));
+                    RootBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x38, 0xBD, 0xF8));
+                    RootBorder.BorderThickness = new Thickness(1);
+                    RootBorder.Padding = new Thickness(6, 4, 6, 4);
+                    RootShadow.Opacity = 0;
+                }
+                else
+                {
+                    byte alpha = (byte)(opacity * 255);
+                    RootBorder.Background = new SolidColorBrush(Color.FromArgb(alpha, 0x09, 0x0D, 0x16));
+                    RootBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8));
+                    RootBorder.BorderThickness = new Thickness(1);
+                    RootBorder.Padding = new Thickness(10, 8, 10, 8);
+                    RootShadow.Opacity = opacity * 0.5;
+                }
             }
         }
     }

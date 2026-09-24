@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.PowerCpuManagerControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.PowerCpuManagerControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -45,34 +45,34 @@
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button x:Name="BtnRefreshAll" Content="🔄 Actualizar Estado" Click="BtnRefreshAll_Click" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Padding="12,6" FontSize="12" />
-                            <Button x:Name="BtnUnlockUltimate" Content="⚡ Desbloquear Ultimate Perf" Click="BtnUnlockUltimate_Click" Background="#0284C7" Foreground="White" Padding="12,6" FontSize="12" ToolTip="Desbloquea el esquema oculto de Microsoft 'Ultimate Performance' en Windows" />
+                            <Button x:Name="BtnUnlockUltimate" Content="⚡ Desbloquear Ultimate Perf" Click="BtnUnlockUltimate_Click" Style="{DynamicResource PrimaryButton}" Padding="12,6" FontSize="12" ToolTip="Desbloquea el esquema oculto de Microsoft 'Ultimate Performance' en Windows" />
                         </StackPanel>
                     </Grid>
 
                     <!-- CPU Hardware Specs Chips -->
                     <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,14,0,0">
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Arquitectura: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtCpuArchChip" Text="Intel Híbrido (P-Cores + E-Cores)" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8" />
                             </StackPanel>
                         </Border>
 
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Hilos Lógicos: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtCpuThreadsChip" Text="32 Hilos" FontSize="11" FontWeight="SemiBold" Foreground="#10B981" />
                             </StackPanel>
                         </Border>
 
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Timer NT: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtTimerResChip" Text="0.5 ms (Máxima Precisión)" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" />
                             </StackPanel>
                         </Border>
 
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,0,10,6">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Plan de Energía Activo: " FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtActivePlanChip" Text="Azurite Power Plan" FontSize="11" FontWeight="SemiBold" Foreground="#EC4899" />
@@ -103,7 +103,7 @@
                         <ItemsControl x:Name="IcPowerSchemes">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                    <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -128,7 +128,7 @@
                         </ItemsControl>
 
                         <!-- Timer Resolution Quick Switch -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,4,0,0">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,4,0,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -155,7 +155,7 @@
                         </Grid>
 
                         <!-- Recommendations Details Box -->
-                        <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                        <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
                             <StackPanel>
                                 <!-- Core Parking Recommendation -->
                                 <TextBlock Text="ESTACIONAMIENTO DE NÚCLEOS (CORE PARKING):" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
@@ -199,7 +199,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Tuning 1: Core Parking Min Cores -->
-                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,6,0">
+                        <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,6,0">
                             <StackPanel>
                                 <Grid Margin="0,0,0,6">
                                     <TextBlock Text="CORE PARKING MÍNIMO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
@@ -211,7 +211,7 @@
                         </Border>
 
                         <!-- Tuning 2: Energy Performance Preference (EPP) -->
-                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="3,0,3,0">
+                        <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="3,0,3,0">
                             <StackPanel>
                                 <Grid Margin="0,0,0,6">
                                     <TextBlock Text="PREFERENCIA ENERGÉTICA (EPP)" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
@@ -223,7 +223,7 @@
                         </Border>
 
                         <!-- Tuning 3: Heterogeneous Scheduler / Preset Buttons -->
-                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="6,0,0,0">
+                        <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="6,0,0,0">
                             <StackPanel>
                                 <TextBlock Text="PERFILES RÁPIDOS DE CPU" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,8" />
                                 <StackPanel Orientation="Vertical">
@@ -255,7 +255,7 @@
                     <ItemsControl x:Name="IcGpus">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
+                                <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -276,7 +276,7 @@
                                                     <TextBlock Text="GPU PRIMARIA" FontSize="9.5" FontWeight="Bold" Foreground="#34D399" />
                                                 </Border>
                                             </StackPanel>
-                                            <TextBlock Text="{Binding PcieLinkSummary}" FontSize="11" Foreground="#38BDF8" Margin="0,2,0,0" />
+                                            <TextBlock Text="{Binding PcieLinkSummary}" FontSize="11" Foreground="{Binding PcieLinkColorHex}" Margin="0,2,0,0" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock Text="{Binding ReBarTechnologyName}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                                 <TextBlock Text=": " FontSize="10.5" Foreground="{DynamicResource TextSecondary}" />
@@ -332,7 +332,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Cell 1: Nivel de Carga -->
-                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,8,0">
+                        <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,8,0">
                             <StackPanel>
                                 <TextBlock Text="ESTADO DE CARGA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtBatteryChargeLevel" Text="100% • Conectado" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,2" />
@@ -341,7 +341,7 @@
                         </Border>
 
                         <!-- Cell 2: Salud y Degradación -->
-                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
+                        <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
                             <StackPanel>
                                 <TextBlock Text="SALUD DE CELDAS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtBatteryHealthPercent" Text="100.0% Salud" FontSize="15" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,2" />
@@ -350,7 +350,7 @@
                         </Border>
 
                         <!-- Cell 3: Capacidad Real vs Diseño -->
-                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
+                        <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="4,0,4,0">
                             <StackPanel>
                                 <TextBlock Text="CAPACIDAD (mWh)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtBatteryCapacityReal" Text="-- / -- mWh" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,2" />
@@ -359,7 +359,7 @@
                         </Border>
 
                         <!-- Cell 4: Consumo / Descarga en Watts -->
-                        <Border Grid.Column="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="8,0,0,0">
+                        <Border Grid.Column="3" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="8,0,0,0">
                             <StackPanel>
                                 <TextBlock Text="POTENCIA INSTANTÁNEA" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBlock x:Name="TxtBatteryDischargeWatts" Text="0.00 W" FontSize="15" FontWeight="Bold" Foreground="#F59E0B" Margin="0,4,0,2" />

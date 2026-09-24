@@ -1,4 +1,4 @@
-<UserControl x:Class="OmniWin.UI.Views.NetworkQosControl"
+﻿<UserControl x:Class="OmniWin.UI.Views.NetworkQosControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -58,7 +58,7 @@
                         <TextBlock Text="POLÍTICA DE CONTROL DE ANCHO DE BANDA (QOS)" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="🎮 Preset Gaming (Steam/Discord a 300 KB/s)" Click="BtnGamingPreset_Click" Background="#2563EB" Foreground="White" Padding="12,5" FontSize="11.5" Margin="0,0,8,0" />
+                            <Button Content="🎮 Preset Gaming (Steam/Discord a 300 KB/s)" Click="BtnGamingPreset_Click" Style="{DynamicResource PrimaryButton}" Padding="12,5" FontSize="11.5" Margin="0,0,8,0" />
                             <Button Content="♾️ Quitar Todos los Límites" Click="BtnRemoveAllQos_Click" Style="{DynamicResource SecondaryButton}" Padding="12,5" FontSize="11.5" />
                         </StackPanel>
                     </Grid>
@@ -71,7 +71,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBox x:Name="TxtQosApp" Text="steam.exe" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="12" Margin="0,0,8,0" ToolTip="Nombre del ejecutable (ej. steam.exe, chrome.exe, qbittorrent.exe)" />
+                        <TextBox x:Name="TxtQosApp" Text="steam.exe" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="12" Margin="0,0,8,0" ToolTip="Nombre del ejecutable (ej. steam.exe, chrome.exe, qbittorrent.exe)" />
                         
                         <!-- Speed Slider -->
                         <Grid Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -83,7 +83,7 @@
                             <TextBlock Grid.Column="1" x:Name="TxtSliderValue" Text="500 KB/s" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="10,0,0,0" VerticalAlignment="Center" Width="75" />
                         </Grid>
 
-                        <ComboBox Grid.Column="2" x:Name="CbQosPresets" SelectedIndex="1" SelectionChanged="CbQosPresets_SelectionChanged" Background="#090D18" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <ComboBox Grid.Column="2" x:Name="CbQosPresets" SelectedIndex="1" SelectionChanged="CbQosPresets_SelectionChanged" Background="{DynamicResource CardDarkHover}" Margin="0,0,8,0" VerticalAlignment="Center">
                             <ComboBoxItem Content="100 KB/s" Tag="100" />
                             <ComboBoxItem Content="500 KB/s" Tag="500" />
                             <ComboBoxItem Content="1.000 KB/s" Tag="1000" />
@@ -153,13 +153,13 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="Puerto a Consultar:" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <TextBox Grid.Column="1" x:Name="TxtPortSearch" Text="80" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,5" FontSize="12" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" x:Name="TxtPortSearch" Text="80" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,5" FontSize="12" VerticalAlignment="Center" />
                     <Button Grid.Column="2" Content="🔍 Diagnosticar" Click="BtnDiagnosePort_Click" Style="{DynamicResource SecondaryButton}" Margin="8,0,0,0" Padding="12,5" FontSize="12" VerticalAlignment="Center" />
 
                     <!-- Quick Status Output -->
                     <TextBlock Grid.Column="3" x:Name="TxtPortDiagnosisResult" Text="Ingresa un puerto (ej. 80, 443, 3000, 8080) o revisa la lista inferior." FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="16,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
 
-                    <Button Grid.Column="4" x:Name="BtnReleasePort" Content="🔓 Liberar Puerto" Click="BtnReleasePort_Click" Background="#DC2626" Foreground="White" Padding="12,5" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed" />
+                    <Button Grid.Column="4" x:Name="BtnReleasePort" Content="🔓 Liberar Puerto" Click="BtnReleasePort_Click" Style="{DynamicResource DestructiveButton}" Padding="12,5" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed" />
                 </Grid>
             </Border>
 
@@ -211,7 +211,7 @@
                         <TextBlock Text="Ejecuta optimizaciones críticas del sistema de forma completamente silenciosa e imperceptible cuando no estés usando la computadora." FontSize="12.5" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,16" />
 
                         <!-- Status Card -->
-                        <Border Background="#090D18" CornerRadius="6" Padding="16" Margin="0,0,0,18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
+                        <Border Background="{DynamicResource CardDarkHover}" CornerRadius="6" Padding="16" Margin="0,0,0,18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -226,7 +226,7 @@
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Button x:Name="BtnToggleIdleMonitor" Content="Detener Monitor" Click="BtnToggleIdleMonitor_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="12" Margin="0,0,8,0" />
-                                    <Button Content="⚡ Ejecutar Ahora" Click="BtnRunIdleNow_Click" Background="#2563EB" Foreground="White" Padding="14,6" FontSize="12" FontWeight="Bold" />
+                                    <Button Content="⚡ Ejecutar Ahora" Click="BtnRunIdleNow_Click" Style="{DynamicResource PrimaryButton}" Padding="14,6" FontSize="12" FontWeight="Bold" />
                                 </StackPanel>
                             </Grid>
                         </Border>

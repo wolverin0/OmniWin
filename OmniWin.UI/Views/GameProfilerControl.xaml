@@ -4,17 +4,19 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1000">
-    <Grid Margin="0,12,0,0">
+             d:DesignHeight="780" d:DesignWidth="1050">
+    <Grid Margin="0,4,0,0">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- HEADER -->
-        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,16">
+        <!-- WINUI 3 BREADCRUMB & HEADER -->
+        <Border Grid.Row="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -22,137 +24,252 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🎮 Auto-Game &amp; App Profiler" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                        <Border Background="#1A2D4C" BorderBrush="{DynamicResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="P-CORES &amp; 0.5MS TIMER" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
-                        </Border>
+                    <!-- WinUI 3 Breadcrumb -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Rendimiento &amp; Gaming" FontSize="11" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text=" ❯ " FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="4,0" />
+                        <TextBlock Text="Auto-Game &amp; App Profiler" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" />
                     </StackPanel>
-                    <TextBlock Text="Detecta automáticamente cuando abres tus juegos o suites pesadas (Blender, Premiere, Unreal) para fijar afinidad a núcleos P-Cores de alto rendimiento, activar timer de 0.5ms y purgar la lista de reserva de RAM."
-                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0" />
+                    <TextBlock Text="Auto-Game &amp; App Profiler" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Text="Optimización reactiva por proceso: Afinidad P-Cores, micro-timer NT de 0.50ms y purga de Standby Cache."
+                               FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" />
                 </StackPanel>
 
+                <!-- Action Cluster -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BtnToggleProfiler" Content="⏸️ Pausar Detección" Click="BtnToggleProfiler_Click" Padding="14,7" FontSize="12" Margin="0,0,8,0" />
-                    <Button x:Name="BtnRefreshProfiler" Content="🔄 Actualizar" Click="BtnRefreshProfiler_Click" Style="{DynamicResource SecondaryButton}" Padding="12,7" FontSize="12" />
+                    <Button x:Name="BtnEtwBenchmark" Content="⚡ Benchmark 1% Low (ETW)" Click="BtnEtwBenchmark_Click" Style="{DynamicResource PrimaryButton}" Padding="12,6" FontSize="11.5" Margin="0,0,8,0" />
+                    <Button x:Name="BtnToggleProfiler" Content="⏸️ Pausar Detección" Click="BtnToggleProfiler_Click" Style="{DynamicResource SecondaryButton}" Padding="12,6" FontSize="11.5" Margin="0,0,8,0" />
+                    <Button x:Name="BtnRefreshProfiler" Content="🔄 Actualizar" Click="BtnRefreshProfiler_Click" Style="{DynamicResource SecondaryButton}" Padding="10,6" FontSize="11.5" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- STATUS & GLOBAL POLICIES BANNER -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="360" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Status Card -->
-            <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="ESTADO DEL PROFILER" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
-                        <Ellipse x:Name="DotGameActive" Width="10" Height="10" Fill="#10B981" Margin="0,0,8,0" VerticalAlignment="Center" />
-                        <TextBlock x:Name="TxtActiveGame" Text="Monitoreando en segundo plano..." FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <TextBlock x:Name="TxtProfilerDetail" Text="Detección activa cada 2000ms. Listo para optimizar." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-
-            <!-- Global Optimization Policies Overview -->
-            <Border Grid.Column="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16">
-                <StackPanel>
-                    <TextBlock Text="POLÍTICAS DE OPTIMIZACIÓN APLICADAS AUTOMÁTICAMENTE" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,4,0">
-                            <StackPanel>
-                                <TextBlock Text="⚡ Afinidad P-Cores" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
-                                <TextBlock Text="Asigna hilos a núcleos rápidos sin tocar E-Cores." FontSize="9.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="1" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="2,0,2,0">
-                            <StackPanel>
-                                <TextBlock Text="⏱️ Timer 0.50ms" FontSize="10.5" FontWeight="Bold" Foreground="#10B981" />
-                                <TextBlock Text="NtSetTimerResolution para minimizar latencia." FontSize="9.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="2,0,2,0">
-                            <StackPanel>
-                                <TextBlock Text="🧹 Purga Standby" FontSize="10.5" FontWeight="Bold" Foreground="#F59E0B" />
-                                <TextBlock Text="Vaciado preventivo de lista de memoria en arranque." FontSize="9.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="4,0,0,0">
-                            <StackPanel>
-                                <TextBlock Text="💤 Hibernar CEF" FontSize="10.5" FontWeight="Bold" Foreground="#A78BFA" />
-                                <TextBlock Text="EcoQoS y trim de RAM en Discord, Steam y Epic." FontSize="9.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- MAIN TABLE: MONITORED GAMES -->
-        <Border Grid.Row="2" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+        <!-- HERO STATUS CARD: KERNEL WATCHDOG & QUICK METRICS -->
+        <Border Grid.Row="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Add Game Row -->
+                <!-- Top Row: Watchdog Info & Metrics Pill -->
                 <Grid Grid.Row="0" Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="240" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Icon Badge -->
+                    <Border Width="40" Height="40" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,12,0" VerticalAlignment="Top">
+                        <TextBlock Text="🎮" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Watchdog Description -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Kernel Watchdog v4.8" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                            <Border Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="DotGameActive" Width="7" Height="7" Fill="{DynamicResource Emerald}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="TxtActiveGame" Text="Monitoreando en segundo plano" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource Emerald}" />
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Text="• Polleo cada 2000ms" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <TextBlock x:Name="TxtProfilerDetail" Text="El planificador detecta en tiempo real la ejecución de binarios de alta prioridad, forzando arquitectura híbrida P-Core de Intel/AMD 3D V-Cache e inhibiendo subprocesos en segundo plano del subsistema Chromium."
+                                   FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <!-- Quick Metrics Pill -->
+                    <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="Latencia Base" FontSize="10" Foreground="{DynamicResource TextMuted}" />
+                                <TextBlock Text="0.498ms" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            </StackPanel>
+                            <Border Width="1" Background="{DynamicResource CardBorderSubtle}" Margin="0,2,12,2" />
+                            <StackPanel>
+                                <TextBlock Text="Memoria Ahorrada" FontSize="10" Foreground="{DynamicResource TextMuted}" />
+                                <TextBlock Text="2.41 GB" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Bottom Row: 4-Item Optimization Feature Policy Grid -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBox x:Name="TxtNewExe" Text="" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="11.5" Margin="0,0,8,0" Tag="ej. cod.exe" />
-                    <TextBox x:Name="TxtNewName" Grid.Column="1" Text="" Background="#090D18" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorder}" Padding="8,6" FontSize="11.5" Margin="0,0,8,0" Tag="ej. Call of Duty Warzone" />
-                    <Button Grid.Column="2" Content="➕ Agregar Perfil" Click="BtnAddGame_Click" Padding="12,6" FontSize="11.5" />
-                    <TextBlock Grid.Column="3" Text="Ingresa el nombre del ejecutable (.exe) y la etiqueta descriptiva." VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="12,0,0,0" />
-                </Grid>
+                    <Border Grid.Column="0" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,6,0">
+                        <StackPanel>
+                            <TextBlock Text="⚡ Afinidad P-Cores" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock Text="Hilos a núcleos de máximo reloj sin E-Cores" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
 
-                <!-- DataGrid -->
-                <DataGrid Grid.Row="1" x:Name="DgGames" AutoGenerateColumns="False" IsReadOnly="True"
-                          Background="Transparent" BorderThickness="0" RowBackground="#090D18" AlternatingRowBackground="#0E1422"
-                          Foreground="{DynamicResource TextPrimary}" GridLinesVisibility="None" HeadersVisibility="Column"
-                          SelectionMode="Single" CanUserAddRows="False">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Nombre / Título" Binding="{Binding DisplayName}" Width="200" />
-                        <DataGridTextColumn Header="Ejecutable" Binding="{Binding ExecutableName}" Width="160" />
-                        <DataGridCheckBoxColumn Header="P-Cores" Binding="{Binding AutoEnforcePCores}" Width="80" />
-                        <DataGridCheckBoxColumn Header="Timer 0.5ms" Binding="{Binding AutoSetTimer05ms}" Width="90" />
-                        <DataGridCheckBoxColumn Header="Purga RAM" Binding="{Binding AutoPurgeRam}" Width="90" />
-                        <DataGridCheckBoxColumn Header="Prioridad Alta" Binding="{Binding AutoHighPriority}" Width="95" />
-                        <DataGridCheckBoxColumn Header="Hibernar CEF" Binding="{Binding AutoHibernateLaunchers}" Width="100" />
-                        <DataGridTemplateColumn Header="Acción" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="🗑️ Eliminar" Click="BtnRemoveGame_Click" Style="{DynamicResource SecondaryButton}" Padding="6,2" FontSize="10.5" Margin="2" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <Border Grid.Column="1" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,6,0">
+                        <StackPanel>
+                            <TextBlock Text="⏱️ Timer 0.50ms" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Emerald}" />
+                            <TextBlock Text="NtSetTimerResolution activo para baja latencia" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,6,0">
+                        <StackPanel>
+                            <TextBlock Text="🧹 Purga Standby" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Amber}" />
+                            <TextBlock Text="Flush preventivo al arrancar sin pausas" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="3" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="10,8">
+                        <StackPanel>
+                            <TextBlock Text="💤 Hibernar CEF" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock Text="EcoQoS en Discord, Steam &amp; Epic Games" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
+        <!-- ETW FRAME PACING & 1% LOW TELEMETRY BANNER (PHASE 27) -->
+        <Border x:Name="PnlEtwTelemetry" Visibility="Collapsed" Grid.Row="2" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <Border Width="10" Height="10" CornerRadius="5" Background="{DynamicResource Emerald}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock x:Name="TxtEtwEngineMode" Text="KERNEL ETW PRESENT ENGINE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
+                        <TextBlock x:Name="TxtEtwTarget" Text="Target: Proceso en Primer Plano" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Metric Badges: FPS, 1% Low, 0.1% Low, Frametime & Stutters -->
+                <Grid Grid.Column="1" HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Live FPS -->
+                    <Border Grid.Column="0" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="FPS PROMEDIO" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="TxtLiveFps" Text="-- FPS" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Emerald}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 1% Low -->
+                    <Border Grid.Column="1" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="1% LOW" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="Txt1PercentLow" Text="-- FPS" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 0.1% Low -->
+                    <Border Grid.Column="2" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="0.1% LOW" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="TxtPointOneLow" Text="-- FPS" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Amber}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Frametime ms -->
+                    <Border Grid.Column="3" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="FRAMETIME" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="TxtFrametimeMs" Text="-- ms" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Stutter Rate -->
+                    <Border Grid.Column="4" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="MICRO-TIRONES" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="TxtStutterRate" Text="0.0%" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Right: Stop & Report Button -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnStopEtw" Content="⏹️ Detener &amp; Reporte" Click="BtnStopEtw_Click" Style="{DynamicResource SecondaryButton}" Padding="10,6" FontSize="11" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- PROFILE MANAGEMENT & SEARCH BAR -->
+        <Border Grid.Row="3" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="140" />
+                    <ColumnDefinition Width="160" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Search box -->
+                <Grid Grid.Column="0" Margin="0,0,12,0">
+                    <TextBox x:Name="TxtSearchProfile" TextChanged="TxtSearchProfile_TextChanged"
+                             Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorderSubtle}"
+                             Padding="24,5,8,5" FontSize="11" VerticalContentAlignment="Center" />
+                    <TextBlock Text="🔍" FontSize="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False" />
+                    <TextBlock x:Name="TxtSearchPlaceholder" Text="Filtrar por nombre o .exe..." FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="26,0,0,0" IsHitTestVisible="False" />
+                </Grid>
+
+                <!-- Spacer / info -->
+                <TextBlock Grid.Column="1" Text="Nuevo perfil de optimización:" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,8,0" />
+
+                <!-- Add new profile inputs -->
+                <TextBox x:Name="TxtNewExe" Grid.Column="2" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorderSubtle}" Padding="8,5" FontSize="11" Margin="0,0,6,0" Tag="ej. cod.exe" ToolTip="Nombre del ejecutable (ej. juego.exe)" />
+                <TextBox x:Name="TxtNewName" Grid.Column="3" Background="{DynamicResource BgInput}" Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource CardBorderSubtle}" Padding="8,5" FontSize="11" Margin="0,0,8,0" Tag="ej. Call of Duty" ToolTip="Nombre descriptivo del juego o app" />
+                <Button Grid.Column="4" Content="➕ Agregar Perfil" Click="BtnAddGame_Click" Style="{DynamicResource PrimaryButton}" Padding="12,5" FontSize="11" />
+            </Grid>
+        </Border>
+
+        <!-- MAIN TABLE: MONITORED GAMES -->
+        <Border Grid.Row="4" Background="{DynamicResource CardDark}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="12">
+            <DataGrid x:Name="DgGames" AutoGenerateColumns="False" IsReadOnly="True"
+                      Background="Transparent" BorderThickness="0" RowBackground="Transparent" AlternatingRowBackground="{DynamicResource CardDarkHover}"
+                      Foreground="{DynamicResource TextPrimary}" GridLinesVisibility="None" HeadersVisibility="Column"
+                      SelectionMode="Single" CanUserAddRows="False" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nombre / Título" Binding="{Binding DisplayName}" Width="220" />
+                    <DataGridTextColumn Header="Ejecutable" Binding="{Binding ExecutableName}" Width="180" />
+                    <DataGridCheckBoxColumn Header="P-Cores" Binding="{Binding AutoEnforcePCores}" Width="90" />
+                    <DataGridCheckBoxColumn Header="Timer 0.5ms" Binding="{Binding AutoSetTimer05ms}" Width="100" />
+                    <DataGridCheckBoxColumn Header="Purga RAM" Binding="{Binding AutoPurgeRam}" Width="95" />
+                    <DataGridCheckBoxColumn Header="Prioridad Alta" Binding="{Binding AutoHighPriority}" Width="105" />
+                    <DataGridCheckBoxColumn Header="Hibernar CEF" Binding="{Binding AutoHibernateLaunchers}" Width="105" />
+                    <DataGridTemplateColumn Header="Acciones" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="🗑️ Eliminar" Click="BtnRemoveGame_Click" Style="{DynamicResource SecondaryButton}" Padding="8,3" FontSize="10.5" HorizontalAlignment="Right" Margin="0,0,8,0" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
         <!-- FOOTER -->
-        <Border Grid.Row="3" Background="#090D18" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,12,0,0">
-            <TextBlock x:Name="TxtProfilerFooter" Text="OmniWin Profiler: Supervisando procesos del sistema continuamente." FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+        <Border Grid.Row="5" Background="{DynamicResource CardDarkHover}" BorderBrush="{DynamicResource CardBorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,6" Margin="0,8,0,0">
+            <TextBlock x:Name="TxtProfilerFooter" Text="OmniWin Profiler: Supervisando procesos del sistema continuamente." FontSize="11" Foreground="{DynamicResource TextSecondary}" />
         </Border>
     </Grid>
 </UserControl>

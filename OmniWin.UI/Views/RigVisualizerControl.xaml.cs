@@ -23,8 +23,27 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
         {
             _currentRgbBrush = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentRgbColor));
         }
     }
+
+    public Color CurrentRgbColor => _currentRgbBrush.Color;
+
+    private string _liveCpuTempString = "48°C";
+    public string LiveCpuTempString
+    {
+        get => _liveCpuTempString;
+        set { _liveCpuTempString = value; OnPropertyChanged(); }
+    }
+
+    private string _liveGpuTempString = "54°C";
+    public string LiveGpuTempString
+    {
+        get => _liveGpuTempString;
+        set { _liveGpuTempString = value; OnPropertyChanged(); }
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _livePoller;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -64,6 +83,32 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
         UpdateOpenRgbUi(connected);
 
         LoadAiRenderImage();
+
+        _livePoller = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+        _livePoller.Tick += async (s, ev) =>
+        {
+            try
+            {
+                var snap = ThermalSensorService.Instance.GetSnapshot();
+                if (snap.CpuPackageTemp.HasValue)
+                {
+                    LiveCpuTempString = $"{snap.CpuPackageTemp.Value:F0}°C";
+                    TxtCpuTempCircle.Text = LiveCpuTempString;
+
+                    if (ChkThermalRgb.IsChecked == true)
+                    {
+                        await _rgbService.SetThermalReactiveColorAsync(snap.CpuPackageTemp.Value);
+                    }
+                }
+                if (snap.GpuCoreTemp.HasValue)
+                {
+                    LiveGpuTempString = $"{snap.GpuCoreTemp.Value:F0}°C";
+                    TxtGpuTemp.Text = LiveGpuTempString;
+                }
+            }
+            catch { }
+        };
+        _livePoller.Start();
     }
 
     private void LoadAiRenderImage()
@@ -72,9 +117,11 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
         {
             string[] candidatePaths = new[]
             {
+                System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "pc_rig_live.jpg"),
+                @"C:\Users\pauol\Source\Repos\OmniWin\OmniWin.UI\Assets\pc_rig_live.jpg",
                 System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "rig_render.jpg"),
                 @"C:\Users\pauol\Source\Repos\OmniWin\OmniWin.UI\Assets\rig_render.jpg",
-                System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "OmniWin.UI", "Assets", "rig_render.jpg")
+                System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "OmniWin.UI", "Assets", "pc_rig_live.jpg")
             };
 
             foreach (var path in candidatePaths)
@@ -86,7 +133,7 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
                     bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
                     bmp.UriSource = new Uri(System.IO.Path.GetFullPath(path), UriKind.Absolute);
                     bmp.EndInit();
-                    ImgAiRender.Source = bmp;
+                    ImgInteractiveRig.Source = bmp;
                     break;
                 }
             }
@@ -187,16 +234,16 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
     private void BtnModeHologram_Click(object sender, RoutedEventArgs e)
     {
         PnlHologramView.Visibility = Visibility.Visible;
-        PnlAiRenderView.Visibility = Visibility.Collapsed;
+        PnlInteractiveRigView.Visibility = Visibility.Collapsed;
         BtnModeHologram.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
-        BtnModeAiRender.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+        BtnModeRealisticRig.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
     }
 
     private void BtnModeAiRender_Click(object sender, RoutedEventArgs e)
     {
         PnlHologramView.Visibility = Visibility.Collapsed;
-        PnlAiRenderView.Visibility = Visibility.Visible;
-        BtnModeAiRender.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
+        PnlInteractiveRigView.Visibility = Visibility.Visible;
+        BtnModeRealisticRig.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
         BtnModeHologram.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
     }
 
@@ -307,6 +354,108 @@ public partial class RigVisualizerControl : UserControl, INotifyPropertyChanged
         finally
         {
             BtnReconnectOpenRgb.IsEnabled = true;
+        }
+    }
+
+    private Point _lastMousePos;
+    private bool _isDraggingRig;
+
+    private void RigContainer_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        double zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
+        double newScale = Math.Clamp(RigScaleTransform.ScaleX * zoomFactor, 0.7, 3.0);
+        RigScaleTransform.ScaleX = newScale;
+        RigScaleTransform.ScaleY = newScale;
+        e.Handled = true;
+    }
+
+    private void RigContainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is FrameworkElement fe && fe.Tag is string)
+        {
+            // Allow component click handler to process first
+            return;
+        }
+
+        _isDraggingRig = true;
+        _lastMousePos = e.GetPosition(this);
+        RigInteractiveContainer.CaptureMouse();
+    }
+
+    private void RigContainer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isDraggingRig)
+        {
+            _isDraggingRig = false;
+            RigInteractiveContainer.ReleaseMouseCapture();
+        }
+    }
+
+    private void RigContainer_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isDraggingRig && e.LeftButton == MouseButtonState.Pressed)
+        {
+            Point currentPos = e.GetPosition(this);
+            Vector delta = currentPos - _lastMousePos;
+            _lastMousePos = currentPos;
+
+            RigTranslateTransform.X += delta.X;
+            RigTranslateTransform.Y += delta.Y;
+        }
+    }
+
+    private void BtnPerspective_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string perspective)
+        {
+            BtnPerspectiveIsometric.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+            BtnPerspectiveFront.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+            BtnPerspectiveExploded.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+            btn.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
+
+            switch (perspective)
+            {
+                case "Isometric":
+                    RigScaleTransform.ScaleX = 1.0;
+                    RigScaleTransform.ScaleY = 1.0;
+                    RigRotateTransform.Angle = -3.5;
+                    RigSkewTransform.AngleX = 4.0;
+                    RigSkewTransform.AngleY = -2.0;
+                    RigTranslateTransform.X = 0;
+                    RigTranslateTransform.Y = 0;
+                    break;
+
+                case "Front":
+                    RigScaleTransform.ScaleX = 1.0;
+                    RigScaleTransform.ScaleY = 1.0;
+                    RigRotateTransform.Angle = 0;
+                    RigSkewTransform.AngleX = 0;
+                    RigSkewTransform.AngleY = 0;
+                    RigTranslateTransform.X = 0;
+                    RigTranslateTransform.Y = 0;
+                    break;
+
+                case "Zoom":
+                    RigScaleTransform.ScaleX = 1.55;
+                    RigScaleTransform.ScaleY = 1.55;
+                    RigRotateTransform.Angle = 0;
+                    RigSkewTransform.AngleX = 0;
+                    RigSkewTransform.AngleY = 0;
+                    RigTranslateTransform.X = -35;
+                    RigTranslateTransform.Y = -20;
+                    break;
+
+                case "Reset":
+                    RigScaleTransform.ScaleX = 1.0;
+                    RigScaleTransform.ScaleY = 1.0;
+                    RigRotateTransform.Angle = 0;
+                    RigSkewTransform.AngleX = 0;
+                    RigSkewTransform.AngleY = 0;
+                    RigTranslateTransform.X = 0;
+                    RigTranslateTransform.Y = 0;
+                    BtnPerspectiveFront.Background = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB));
+                    break;
+            }
         }
     }
 }
